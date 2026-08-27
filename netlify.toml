@@ -1,0 +1,25 @@
+[functions]
+  directory = "netlify/functions"
+
+[functions."daily-report"]
+  schedule = "0 10 * * *"
+
+[[redirects]]
+from = "/images/*"
+to = "https://res.cloudinary.com/CLOUDINARY_CLOUD_NAME/image/fetch/f_auto,q_auto/https://steung-cafe-menu.netlify.app/cld-assets/images/:splat?_a=BBFAAAAA0"
+status = 302
+force = true
+
+[[redirects]]
+from = "/cld-assets/images/*"
+to = "/images/:splat"
+status = 200
+force = true
+
+[context]
+
+  [context.production]
+
+  [context.master]
+[build]
+  functions = "netlify/functions"

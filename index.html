@@ -1,0 +1,2228 @@
+<!DOCTYPE html><html lang="km"><head>
+<meta charset="UTF-8">
+<title>ស្ទឹងកាហ្វេ - Digital Menu Board</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Moul&amp;family=Kantumruy+Pro:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+  :root{
+    --char:        #17110D;
+    --char-2:      #1F1610;
+    --char-3:      #241A13;
+    --ember:       #E8592A;
+    --ember-deep:  #B23A24;
+    --amber:       #F0A93A;
+    --rice:        #F5ECD9;
+    --smoke:       #8C7E6E;
+    --line:        #3a2c20;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;height:100%;}
+  body{
+    background:var(--char);
+    font-family:'Kantumruy Pro', sans-serif;
+    color:var(--rice);
+    overflow:hidden;
+  }
+
+  .board{
+    display:grid;
+    grid-template-columns:280px 1fr;
+    height:100vh;
+    width:100vw;
+  }
+
+  /* ================= EMBER PARTICLES ================= */
+  .embers{
+    position:fixed; inset:0;
+    pointer-events:none;
+    z-index:0;
+    overflow:hidden;
+  }
+  .embers span{
+    position:absolute;
+    bottom:-10px;
+    width:3px; height:3px;
+    border-radius:50%;
+    background:var(--amber);
+    box-shadow:0 0 6px 2px rgba(240,169,58,0.6);
+    animation:rise linear infinite;
+    opacity:0;
+  }
+  @keyframes rise{
+    0%{ transform:translateY(0) translateX(0); opacity:0; }
+    10%{ opacity:.8; }
+    90%{ opacity:.3; }
+    100%{ transform:translateY(-100vh) translateX(20px); opacity:0; }
+  }
+  @media (prefers-reduced-motion:reduce){
+    .embers{display:none;}
+  }
+
+  /* ================= SIDEBAR ================= */
+  .sidebar{
+    position:relative;
+    z-index:2;
+    background:linear-gradient(180deg, var(--char-3) 0%, var(--char-2) 100%);
+    border-right:1px solid var(--line);
+    padding:28px 24px;
+    display:flex;
+    flex-direction:column;
+    height:100vh;
+    overflow:hidden;
+  }
+
+  .grate{
+    height:8px; width:100%;
+    border-radius:4px;
+    background:repeating-linear-gradient(90deg, var(--ember-deep) 0 16px, var(--amber) 16px 19px, var(--ember-deep) 19px 35px, transparent 35px 38px);
+    opacity:.85;
+    margin-bottom:26px;
+  }
+
+  .brand{
+    text-align:center;
+    margin-bottom:22px;
+  }
+  .brand .eyebrow{
+    font-size:10px;
+    letter-spacing:.32em;
+    text-transform:uppercase;
+    color:var(--amber);
+    font-weight:700;
+    margin-bottom:8px;
+  }
+  .brand .title{
+    font-family:'Moul', serif;
+    font-size:34px;
+    color:var(--rice);
+    text-shadow:0 0 30px rgba(232,89,42,.5);
+    letter-spacing:1px;
+  }
+  .brand .roman{
+    font-size:11px;
+    letter-spacing:.28em;
+    text-transform:uppercase;
+    color:var(--smoke);
+    margin-top:6px;
+    max-height:0; opacity:0; overflow:hidden;
+    transition:all .3s ease;
+  }
+  body.lang-en .brand .roman{ max-height:20px; opacity:1; }
+
+  .clock{
+    text-align:center;
+    padding:14px 10px;
+    margin-bottom:20px;
+    background:var(--char);
+    border:1px solid var(--line);
+    border-radius:12px;
+  }
+  .clock .time{
+    font-size:26px;
+    font-weight:800;
+    color:var(--amber);
+    letter-spacing:1px;
+    font-variant-numeric:tabular-nums;
+  }
+  .clock .date{
+    font-size:10.5px;
+    color:var(--smoke);
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    margin-top:3px;
+  }
+
+  .lang-toggle{
+    display:flex;
+    background:var(--char);
+    border:1px solid var(--line);
+    border-radius:999px;
+    padding:4px;
+    margin-bottom:22px;
+    cursor:pointer;
+    user-select:none;
+  }
+  .lang-toggle .opt{
+    flex:1;
+    text-align:center;
+    padding:8px 0;
+    border-radius:999px;
+    font-size:12px;
+    font-weight:700;
+    letter-spacing:.05em;
+    color:var(--smoke);
+    transition:all .2s ease;
+  }
+  .lang-toggle .opt.active{
+    background:linear-gradient(135deg, var(--ember), var(--ember-deep));
+    color:var(--rice);
+  }
+
+  .side-label{
+    font-size:10px;
+    letter-spacing:.24em;
+    text-transform:uppercase;
+    color:var(--smoke);
+    margin:4px 0 10px;
+  }
+
+  .side-nav{
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+    flex:1;
+  }
+  .side-item{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:11px 12px;
+    border-radius:10px;
+    cursor:pointer;
+    color:var(--smoke);
+    transition:all .18s ease;
+    border:1px solid transparent;
+  }
+  .side-item svg{ width:18px; height:18px; flex-shrink:0; stroke:currentColor; }
+  .side-item .lbl{ font-size:13.5px; font-weight:600; }
+  .side-item .count{
+    margin-left:auto;
+    font-size:10.5px;
+    color:var(--char-2);
+    background:var(--smoke);
+    padding:1px 7px;
+    border-radius:999px;
+    font-weight:700;
+  }
+  .side-item:hover{ color:var(--rice); background:rgba(255,255,255,.03); }
+  .side-item.active{
+    color:var(--rice);
+    background:var(--char);
+    border-color:var(--line);
+  }
+  .side-item.active svg{ stroke:var(--ember); }
+  .side-item.active .count{ background:var(--ember); color:var(--rice); }
+
+  .sidebar-footer{
+    padding-top:16px;
+    border-top:1px solid var(--line);
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+  .contact-row{
+    display:flex;
+    align-items:center;
+    gap:9px;
+    font-size:12.5px;
+    color:var(--rice);
+    font-weight:600;
+  }
+  .contact-row svg{ width:14px; height:14px; stroke:var(--amber); flex-shrink:0; }
+  .hours-row{
+    font-size:11px;
+    color:var(--amber);
+    font-weight:600;
+    letter-spacing:.02em;
+  }
+
+  .telegram-btn{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    padding:10px 12px;
+    margin-bottom:12px;
+    border-radius:10px;
+    background:linear-gradient(135deg, #2FA9DE, #1E88C7);
+    color:#fff;
+    font-size:12.5px;
+    font-weight:700;
+    letter-spacing:.02em;
+    text-decoration:none;
+    box-shadow:0 6px 16px rgba(47,169,222,.25);
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .telegram-btn svg{ width:16px; height:16px; fill:#fff; flex-shrink:0; }
+  .telegram-btn:hover{
+    transform:translateY(-1px);
+    box-shadow:0 8px 20px rgba(47,169,222,.35);
+  }
+
+  /* ================= MAIN ================= */
+  .main{
+    position:relative;
+    z-index:2;
+    height:100vh;
+    overflow-y:auto;
+    padding:30px 40px 40px;
+    background:
+      radial-gradient(ellipse 900px 400px at 80% -10%, rgba(232,89,42,.14), transparent 60%);
+  }
+
+  .main-top{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    margin-bottom:26px;
+  }
+  .main-top h1{
+    font-family:'Moul', serif;
+    font-size:26px;
+    color:var(--rice);
+    margin:0 0 4px;
+    font-weight:400;
+  }
+  .main-top .sub{
+    font-size:12.5px;
+    color:var(--smoke);
+    letter-spacing:.02em;
+  }
+  .live-pill{
+    display:flex;
+    align-items:center;
+    gap:7px;
+    background:var(--char-3);
+    border:1px solid var(--line);
+    padding:8px 16px;
+    border-radius:999px;
+    font-size:11.5px;
+    font-weight:700;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    color:var(--amber);
+  }
+  .live-dot{
+    width:7px; height:7px; border-radius:50%;
+    background:var(--ember);
+    box-shadow:0 0 8px 2px rgba(232,89,42,.7);
+    animation:pulse 1.6s ease-in-out infinite;
+  }
+  @keyframes pulse{ 0%,100%{opacity:1;} 50%{opacity:.35;} }
+
+  .live-pill.closed{ color:var(--smoke); }
+  .live-pill.closed .live-dot{
+    background:var(--smoke);
+    box-shadow:none;
+    animation:none;
+  }
+
+  .search-bar{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    background:var(--char-3);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:12px 16px;
+    margin-bottom:20px;
+    max-width:420px;
+    transition:border-color .18s ease;
+  }
+  .search-bar:focus-within{
+    border-color:var(--ember);
+  }
+  .search-bar svg{
+    width:17px; height:17px;
+    stroke:var(--smoke);
+    flex-shrink:0;
+  }
+  .search-bar input{
+    flex:1;
+    background:none;
+    border:none;
+    outline:none;
+    color:var(--rice);
+    font-family:'Kantumruy Pro', sans-serif;
+    font-size:13.5px;
+  }
+  .search-bar input::placeholder{
+    color:var(--smoke);
+  }
+  .search-clear{
+    display:none;
+    width:18px; height:18px;
+    align-items:center;
+    justify-content:center;
+    border-radius:50%;
+    background:var(--char);
+    color:var(--smoke);
+    cursor:pointer;
+    flex-shrink:0;
+    font-size:11px;
+  }
+  .search-clear.show{ display:flex; }
+
+  .empty-state{
+    grid-column:1 / -1;
+    text-align:center;
+    padding:50px 20px;
+    color:var(--smoke);
+    font-size:13.5px;
+  }
+
+  .order-panel{
+    background:linear-gradient(180deg, rgba(36,26,19,0.92) 0%, rgba(31,22,16,0.96) 100%);
+    border:1px solid var(--line);
+    border-radius:18px;
+    padding:16px;
+    margin-bottom:18px;
+    box-shadow:0 12px 28px rgba(0,0,0,.2);
+  }
+  .order-panel-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    margin-bottom:12px;
+  }
+  .order-panel-head h3{
+    margin:0;
+    font-size:15px;
+    color:var(--rice);
+    font-weight:700;
+  }
+  .order-panel-head .pill{
+    background:rgba(232,89,42,.16);
+    color:var(--amber);
+    border:1px solid rgba(232,89,42,.3);
+    border-radius:999px;
+    padding:5px 10px;
+    font-size:11px;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:.06em;
+  }
+  .order-empty{
+    padding:14px 8px;
+    border:1px dashed var(--line);
+    border-radius:12px;
+    text-align:center;
+    color:var(--smoke);
+    font-size:13px;
+    line-height:1.5;
+  }
+  .order-items{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    margin-bottom:12px;
+  }
+  .order-item{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    padding:10px 12px;
+    border-radius:12px;
+    background:rgba(255,255,255,.03);
+    border:1px solid rgba(255,255,255,.04);
+  }
+  .order-item-top{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .order-item-info{ display:flex; flex-direction:column; gap:2px; min-width:0; }
+  .order-item-name{ font-size:13px; font-weight:700; color:var(--rice); }
+  .order-item-price{ font-size:11.5px; color:var(--smoke); }
+  .order-item-controls{ display:flex; align-items:center; gap:8px; flex-shrink:0; }
+  .order-item-options{ display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
+  .option-chip{
+    border:1px solid var(--line);
+    background:var(--char);
+    color:var(--smoke);
+    font-size:11px;
+    font-weight:700;
+    padding:5px 10px;
+    border-radius:999px;
+    cursor:pointer;
+    font-family:'Kantumruy Pro', sans-serif;
+    transition:all .15s ease;
+  }
+  .option-chip.active{
+    background:var(--ember);
+    border-color:var(--ember);
+    color:#fff;
+  }
+  .order-item-note{
+    width:100%;
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:7px 9px;
+    background:var(--char);
+    color:var(--rice);
+    font-family:'Kantumruy Pro', sans-serif;
+    font-size:12px;
+    outline:none;
+    box-sizing:border-box;
+  }
+  .order-item-note:focus{ border-color:var(--ember); }
+  .order-item-note::placeholder{ color:var(--smoke); opacity:.7; }
+  .qty-btn{
+    width:28px; height:28px; border:none; border-radius:8px; background:var(--char);
+    color:var(--rice); display:flex; align-items:center; justify-content:center; cursor:pointer;
+    font-size:16px; font-weight:700;
+  }
+  .qty-value{ min-width:24px; text-align:center; font-size:13px; font-weight:700; color:var(--amber); }
+  .customer-field{
+    margin-bottom:10px;
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+  }
+  .customer-field label{
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    color:var(--smoke);
+  }
+  .customer-field input{
+    width:100%;
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:9px 10px;
+    background:var(--char);
+    color:var(--rice);
+    font-family:'Kantumruy Pro', sans-serif;
+    font-size:13px;
+    outline:none;
+  }
+  .customer-field input:focus{ border-color:var(--ember); }
+  .required-mark{ color:var(--ember); font-weight:800; }
+  .optional-mark{ color:var(--smoke); font-weight:500; font-size:11px; }
+  .customer-field input.invalid{ border-color:#e2574c; box-shadow:0 0 0 1px #e2574c; }
+  .contact-note{
+    margin-bottom:12px;
+    font-size:11px;
+    color:var(--smoke);
+    text-align:center;
+  }
+  .order-summary{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding-top:10px;
+    margin-top:2px;
+    border-top:1px solid var(--line);
+    font-size:14px;
+    font-weight:700;
+  }
+  .order-summary .value{ color:var(--amber); }
+  .order-actions{ display:flex; gap:8px; margin-top:12px; }
+  .order-actions button{
+    flex:1; border:none; border-radius:10px; padding:9px 10px; font-size:12px; font-weight:700;
+    cursor:pointer; font-family:'Kantumruy Pro', sans-serif;
+  }
+  .order-send-btn{ background:linear-gradient(135deg, var(--ember), var(--ember-deep)); color:var(--rice); }
+  .order-clear-btn{ background:rgba(255,255,255,.06); color:var(--smoke); border:1px solid var(--line); }
+
+  /* ================= CLOSED HOURS POPUP ================= */
+  .closed-overlay{
+    display:none;
+    position:fixed; inset:0;
+    z-index:50;
+    background:rgba(10,7,5,.78);
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+    backdrop-filter:blur(3px);
+  }
+  .closed-overlay.show{ display:flex; }
+
+  .closed-modal{
+    background:linear-gradient(180deg, var(--char-3) 0%, var(--char-2) 100%);
+    border:1px solid var(--line);
+    border-radius:20px;
+    padding:32px 28px;
+    max-width:340px;
+    width:100%;
+    text-align:center;
+    box-shadow:0 30px 60px rgba(0,0,0,.5);
+  }
+  .closed-modal .icon-ring{
+    width:64px; height:64px;
+    margin:0 auto 16px;
+    border-radius:50%;
+    background:rgba(232,89,42,.12);
+    border:1px solid rgba(232,89,42,.35);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .closed-modal .icon-ring svg{ width:30px; height:30px; stroke:var(--ember); }
+  .closed-modal h2{
+    font-family:'Moul', serif;
+    font-size:20px;
+    color:var(--rice);
+    margin:0 0 8px;
+    font-weight:400;
+  }
+  .closed-modal .msg{
+    font-size:13px;
+    color:var(--smoke);
+    line-height:1.5;
+    margin-bottom:18px;
+  }
+  .closed-modal .hours-pill{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    background:var(--char);
+    border:1px solid var(--line);
+    border-radius:999px;
+    padding:8px 18px;
+    font-size:12.5px;
+    font-weight:700;
+    color:var(--amber);
+    margin-bottom:20px;
+  }
+  #orderStatusIcon.success{
+    background:rgba(46,184,92,.12);
+    border:1px solid rgba(46,184,92,.4);
+  }
+  #orderStatusIcon.success svg{ stroke:#3fcf76; }
+  #orderStatusIcon.error{
+    background:rgba(226,87,76,.12);
+    border:1px solid rgba(226,87,76,.4);
+  }
+  #orderStatusIcon.error svg{ stroke:#e2574c; }
+  .order-status-close-btn{
+    border:none;
+    background:var(--ember);
+    color:#fff;
+    font-family:'Kantumruy Pro', sans-serif;
+    font-weight:700;
+    font-size:13px;
+    padding:10px 24px;
+    border-radius:999px;
+    cursor:pointer;
+  }
+
+  /* ================= ORDER CONFIRM MODAL ================= */
+  .confirm-modal{
+    background:linear-gradient(180deg, var(--char-3) 0%, var(--char-2) 100%);
+    border:1px solid var(--line);
+    border-radius:20px;
+    padding:26px 24px 22px;
+    max-width:420px;
+    width:100%;
+    max-height:86vh;
+    display:flex;
+    flex-direction:column;
+    box-shadow:0 30px 60px rgba(0,0,0,.5);
+    text-align:left;
+  }
+  .confirm-modal h2{
+    font-family:'Moul', serif;
+    font-size:19px;
+    color:var(--rice);
+    margin:0 0 14px;
+    font-weight:400;
+    text-align:center;
+  }
+  .confirm-meta{
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+    background:var(--char);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:12px 14px;
+    margin-bottom:14px;
+    font-size:12.5px;
+  }
+  .confirm-meta .row{
+    display:flex;
+    justify-content:space-between;
+    gap:10px;
+    color:var(--smoke);
+  }
+  .confirm-meta .row span:last-child{
+    color:var(--rice);
+    font-weight:600;
+    text-align:right;
+  }
+  .confirm-list{
+    overflow-y:auto;
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    margin-bottom:14px;
+    padding-right:2px;
+  }
+  .confirm-item{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:10px;
+    padding-bottom:10px;
+    border-bottom:1px solid var(--line);
+  }
+  .confirm-item:last-child{ border-bottom:none; padding-bottom:0; }
+  .confirm-item-info{ flex:1; }
+  .confirm-item-name{
+    font-size:13.5px;
+    font-weight:600;
+    color:var(--rice);
+  }
+  .confirm-item-qty{
+    font-size:11.5px;
+    color:var(--amber);
+    font-weight:700;
+    margin-top:1px;
+  }
+  .confirm-item-note{
+    font-size:11px;
+    color:var(--smoke);
+    margin-top:2px;
+    font-style:italic;
+  }
+  .confirm-item-price{
+    font-size:13px;
+    font-weight:700;
+    color:var(--rice);
+    white-space:nowrap;
+  }
+  .confirm-total{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding-top:12px;
+    border-top:1px solid var(--line);
+    margin-bottom:16px;
+    font-size:14px;
+    font-weight:700;
+    color:var(--rice);
+  }
+  .confirm-total .value{ color:var(--amber); font-size:17px; }
+  .confirm-actions{
+    display:flex;
+    gap:10px;
+  }
+  .confirm-cancel-btn, .confirm-send-btn{
+    flex:1;
+    border:none;
+    font-family:'Kantumruy Pro', sans-serif;
+    font-weight:700;
+    font-size:13px;
+    padding:12px 16px;
+    border-radius:999px;
+    cursor:pointer;
+    transition:transform .15s ease, opacity .15s ease;
+  }
+  .confirm-cancel-btn{
+    background:var(--char);
+    border:1px solid var(--line);
+    color:var(--rice);
+  }
+  .confirm-cancel-btn:hover{ background:rgba(255,255,255,.05); }
+  .confirm-send-btn{
+    background:linear-gradient(135deg, var(--ember), var(--ember-deep));
+    color:#fff;
+    box-shadow:0 10px 22px rgba(232,89,42,.3);
+  }
+  .confirm-send-btn:hover{ transform:translateY(-1px); }
+  .confirm-send-btn:disabled, .confirm-cancel-btn:disabled{
+    opacity:.6;
+    cursor:not-allowed;
+    transform:none;
+  }
+  .tabs{
+    display:flex;
+    gap:10px;
+    margin-bottom:26px;
+    flex-wrap:wrap;
+  }
+  .tab{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:10px 18px;
+    border-radius:999px;
+    background:var(--char-3);
+    border:1px solid var(--line);
+    color:var(--smoke);
+    font-size:13px;
+    font-weight:600;
+    cursor:pointer;
+    transition:all .18s ease;
+  }
+  .tab svg{ width:15px; height:15px; stroke:currentColor; }
+  .tab:hover{ color:var(--rice); }
+  .tab.active{
+    background:linear-gradient(135deg, var(--ember), var(--ember-deep));
+    color:var(--rice);
+    border-color:transparent;
+    box-shadow:0 6px 18px rgba(232,89,42,.35);
+  }
+
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(220px, 1fr));
+    gap:18px;
+    padding-bottom:20px;
+  }
+
+  .card{
+    position:relative;
+    background:var(--char-3);
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:12px;
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+    transition:transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+    opacity:0;
+    animation:cardFadeIn .38s ease forwards;
+    overflow:hidden;
+  }
+  @keyframes cardFadeIn{
+    from{ opacity:0; transform:translateY(10px) scale(.98); }
+    to{ opacity:1; transform:translateY(0) scale(1); }
+  }
+  @media (prefers-reduced-motion:reduce){
+    .card{ opacity:1; animation:none; }
+  }
+  .card:hover{
+    transform:translateY(-3px);
+    border-color:var(--ember);
+    box-shadow:0 14px 30px rgba(0,0,0,.35);
+  }
+
+  /* ================= CARD IMAGE CONFIGS ================= */
+  .card-img-wrapper{
+    position:relative;
+    width:100%;
+    height:130px;
+    border-radius:10px;
+    overflow:hidden;
+    background:var(--char);
+    border:1px solid rgba(255,255,255,0.03);
+  }
+  .card-img-wrapper img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    transition:transform 0.3s ease;
+  }
+  .card:hover .card-img-wrapper img{
+    transform:scale(1.05);
+  }
+  .card-img-overlay{
+    position:absolute;
+    inset:0;
+    background:linear-gradient(to bottom, rgba(36,26,19,0.2) 0%, rgba(36,26,19,0.75) 100%);
+    pointer-events:none;
+  }
+
+  /* Tag overlays above image frames */
+  .card-tags-overlay{
+    position:absolute;
+    top:8px; left:8px; right:8px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    z-index:3;
+  }
+
+  .num-tag{
+    font-size:10px;
+    font-weight:700;
+    color:var(--rice);
+    background:rgba(31,22,16,0.85);
+    backdrop-filter:blur(4px);
+    border:1px solid var(--line);
+    padding:3px 8px;
+    border-radius:999px;
+  }
+
+  .popular-tag{
+    display:flex;
+    align-items:center;
+    gap:4px;
+    font-size:9.5px;
+    font-weight:700;
+    letter-spacing:.05em;
+    text-transform:uppercase;
+    color:#fff;
+    background:linear-gradient(135deg, var(--ember), var(--ember-deep));
+    padding:3px 8px;
+    border-radius:999px;
+    box-shadow:0 2px 8px rgba(232,89,42,0.4);
+    margin-left:auto; /* Pushes to right when number is absent */
+  }
+  .popular-tag svg{ width:10px; height:10px; stroke:#fff; fill:#fff; }
+
+  .card-name{
+    font-size:15.5px;
+    font-weight:700;
+    color:var(--rice);
+    line-height:1.35;
+    min-height:42px;
+    padding:0 4px;
+  }
+
+  .card-bottom{
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    margin-top:auto;
+    padding:0 4px 4px;
+  }
+  .price-block{
+    display:flex;
+    flex-direction:column;
+    align-items:flex-end;
+    line-height:1.2;
+  }
+  .card-price{
+    font-size:16.5px;
+    font-weight:800;
+    color:var(--amber);
+  }
+  .card-price-usd{
+    font-size:11px;
+    font-weight:600;
+    color:var(--smoke);
+    margin-top:2px;
+  }
+  .order-btn{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+    width:100%;
+    margin-top:8px;
+    padding:8px 10px;
+    border:none;
+    border-radius:10px;
+    background:linear-gradient(135deg, var(--ember), var(--ember-deep));
+    color:var(--rice);
+    font-size:12px;
+    font-weight:700;
+    font-family:'Kantumruy Pro', sans-serif;
+    cursor:pointer;
+    transition:transform .15s ease;
+  }
+  .order-btn:hover{ transform:translateY(-1px); }
+  .order-btn svg{ width:14px; height:14px; stroke:var(--rice); fill:none; }
+  
+  /* Unavailable/closed items styling */
+  .card-unavailable{
+    opacity:0.6;
+    pointer-events:none;
+  }
+  .card-unavailable:hover{
+    transform:none;
+    border-color:var(--line);
+    box-shadow:none;
+  }
+  .closed-tag{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:9px;
+    font-weight:800;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    color:#fff;
+    background:rgba(139,69,19,0.9);
+    backdrop-filter:blur(4px);
+    padding:4px 10px;
+    border-radius:999px;
+    box-shadow:0 2px 8px rgba(0,0,0,0.4);
+  }
+  .order-btn.disabled{
+    background:rgba(80,80,80,0.7);
+    cursor:not-allowed;
+    pointer-events:auto;
+  }
+  .order-btn.disabled:hover{
+    transform:none;
+  }
+  .order-btn.disabled svg{
+    stroke:var(--smoke);
+  }
+  
+  .card-cat{
+    font-size:10px;
+    color:var(--smoke);
+    letter-spacing:.06em;
+    text-transform:uppercase;
+  }
+
+  /* scrollbar */
+  .main::-webkit-scrollbar{ width:8px; }
+  .main::-webkit-scrollbar-thumb{ background:var(--line); border-radius:4px; }
+  .main::-webkit-scrollbar-track{ background:transparent; }
+
+  /* ================= MENU TRIGGER (mobile) ================= */
+  .menu-trigger{
+    display:none;
+    position:fixed;
+    top:16px; left:16px;
+    z-index:20;
+    width:42px; height:42px;
+    align-items:center;
+    justify-content:center;
+    background:var(--char-3);
+    border:1px solid var(--line);
+    border-radius:12px;
+    cursor:pointer;
+    box-shadow:0 8px 22px rgba(0,0,0,.45);
+  }
+  .menu-trigger svg{ width:20px; height:20px; stroke:var(--rice); }
+
+  /* ================= SIDEBAR BACKDROP ================= */
+  .sidebar-backdrop{
+    display:none;
+    position:fixed; inset:0;
+    z-index:24;
+    background:rgba(0,0,0,.55);
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .28s ease;
+  }
+  .sidebar-backdrop.open{
+    opacity:1;
+    pointer-events:auto;
+  }
+
+  @media (max-width:980px){
+    .board{ grid-template-columns:1fr; }
+    .main{ padding:20px; padding-top:64px; }
+    .menu-trigger{ display:flex; }
+    .sidebar-backdrop{ display:block; }
+
+    .sidebar{
+      display:flex;
+      position:fixed;
+      top:0; left:0;
+      z-index:25;
+      width:280px;
+      max-width:82vw;
+      height:100vh;
+      box-shadow:0 0 40px rgba(0,0,0,.5);
+      transform:translateX(-100%);
+      transition:transform .3s cubic-bezier(.4,0,.2,1);
+      overflow-y:auto;
+    }
+    .sidebar.open{
+      transform:translateX(0);
+    }
+
+    .tabs{
+      flex-wrap:nowrap;
+      overflow-x:auto;
+      overflow-y:hidden;
+      -webkit-overflow-scrolling:touch;
+      scrollbar-width:none;
+      scroll-snap-type:x proximity;
+      margin-left:-20px;
+      margin-right:-20px;
+      padding-left:20px;
+      padding-right:20px;
+      -webkit-mask-image:linear-gradient(90deg, transparent 0, #000 20px, #000 calc(100% - 20px), transparent 100%);
+      mask-image:linear-gradient(90deg, transparent 0, #000 20px, #000 calc(100% - 20px), transparent 100%);
+    }
+    .tabs::-webkit-scrollbar{ display:none; }
+    .tab{
+      flex-shrink:0;
+      scroll-snap-align:start;
+    }
+  }
+
+  /* ================= PHONE: MINIMAL 2-COLUMN GRID ================= */
+  @media (max-width:600px){
+    .grid{
+      grid-template-columns:repeat(2, 1fr);
+      gap:10px;
+    }
+    .card{
+      padding:8px;
+      gap:8px;
+    }
+    .card-img-wrapper {
+      height: 95px;
+    }
+    .card-name{
+      font-size:12.5px;
+      min-height:32px;
+    }
+    .card-price{ font-size:14px; }
+    .card-price-usd{ font-size:10px; }
+    .card-cat{ font-size:8.5px; }
+    .num-tag{ font-size:9px; padding:2px 6px; }
+    .popular-tag{ font-size:8px; padding:2px 6px; }
+    .popular-tag svg{ width:8px; height:8px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="embers" id="embers"></div>
+
+<div class="menu-trigger" id="menuTrigger">
+  <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+</div>
+
+<div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+<div class="closed-overlay" id="closedOverlay">
+  <div class="closed-modal">
+    <div class="icon-ring">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3.5 2"></path></svg>
+    </div>
+    <h2 data-km="បិទនៅពេលនេះ" data-en="We're Closed Right Now">បិទនៅពេលនេះ</h2>
+    <div class="msg" data-km="សូមអភ័យទោស! សូមអញ្ជើញមកម្តងទៀតក្នុងម៉ោងបើក។" data-en="Sorry! We is closed at the moment. Please come back during our opening hours.">សូមអភ័យទោស! ស្ទឹងកាហ្វេបិទហើយ។ សូមអញ្ជើញមកម្តងទៀតក្នុងម៉ោងបើកបរិការ។</div>
+    <div class="hours-pill" data-km="ភេសជ្ជៈ: 7ព្រឹក-5ល្ងាច | អាហារ: 5ល្ងាច-1យប់" data-en="Drinks: 7 AM - 5 PM | Foods: 5 PM - 1 AM">ភេសជ្ជៈ: 7ព្រឹក-5ល្ងាច | អាហារ: 5ល្ងាច-1យប់</div>
+  </div>
+</div>
+
+<div class="closed-overlay" id="geoOverlay">
+  <div class="closed-modal">
+    <div class="icon-ring">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+    </div>
+    <h2 id="geoOverlayTitle">កំពុងពិនិត្យទីតាំង...</h2>
+    <div class="msg" id="geoOverlayMsg">សូមរង់ចាំមួយភ្លែត ខណៈយើងកំពុងផ្ទៀងផ្ទាត់ថាអ្នកនៅជិតហាង។</div>
+    <div class="hours-pill" id="geoDistancePill"></div>
+    <button class="order-status-close-btn" id="geoOverlayCloseBtn" type="button" style="display:none;"></button>
+  </div>
+</div>
+
+<div class="closed-overlay" id="orderStatusOverlay">
+  <div class="closed-modal" id="orderStatusModal">
+    <div class="icon-ring" id="orderStatusIcon"></div>
+    <h2 id="orderStatusTitle"></h2>
+    <div class="msg" id="orderStatusMsg"></div>
+    <button class="order-status-close-btn" id="orderStatusCloseBtn" type="button"></button>
+  </div>
+</div>
+
+<div class="closed-overlay" id="orderConfirmOverlay">
+  <div class="confirm-modal" id="orderConfirmModal">
+    <h2 id="orderConfirmTitle"></h2>
+    <div class="confirm-meta" id="orderConfirmMeta"></div>
+    <div class="confirm-list" id="orderConfirmList"></div>
+    <div class="confirm-total">
+      <span id="orderConfirmTotalLabel"></span>
+      <span class="value" id="orderConfirmTotalValue"></span>
+    </div>
+    <div class="confirm-actions">
+      <button class="confirm-cancel-btn" id="orderConfirmCancelBtn" type="button"></button>
+      <button class="confirm-send-btn" id="orderConfirmSendBtn" type="button"></button>
+    </div>
+  </div>
+</div>
+
+<div class="board">
+
+  <!-- ================= SIDEBAR ================= -->
+  <aside class="sidebar">
+    <div class="grate"></div>
+
+    <div class="brand">
+      <div class="eyebrow" data-km="ម៉ឺនុយឌីជីថល" data-en="DIGITAL MENU">ម៉ឺនុយឌីជីថល</div>
+      <div class="title">ស្ទឹងកាហ្វេ</div>
+      <div class="roman">Steung Cafe</div>
+    </div>
+
+    <div class="clock">
+      <div class="time" id="clockTime">--:--</div>
+      <div class="date" id="clockDate">-- --- ----</div>
+    </div>
+
+    <div class="lang-toggle" id="langToggle">
+      <span class="opt active" id="optKm">ខ្មែរ</span>
+      <span class="opt" id="optEn">EN</span>
+    </div>
+
+    <div class="side-label" data-km="ប្រភេទ" data-en="CATEGORIES">ប្រភេទ</div>
+    <nav class="side-nav" id="sideNav"></nav>
+
+    <div class="sidebar-footer">
+      <a class="telegram-btn" href="https://t.me/+85517779670" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24"><path d="M21.9 3.5 2.5 11.2c-1.2.5-1.2 1.2-.2 1.5l4.9 1.5 1.9 5.8c.2.6.4.8.9.8.4 0 .6-.2.9-.5l2.2-2.1 4.6 3.4c.8.5 1.4.2 1.6-.8L23.9 4.6c.3-1.2-.4-1.8-1.6-1.3zM8.3 13.9l9.7-6.1c.5-.3.9-.1.6.2L10.6 15c-.2.2-.4.3-.7.3l.3-3.3z"></path></svg>
+        Telegram — 017 779 670
+      </a>
+      <div class="hours-row" data-km="ភេសជ្ជៈ: 7ព្រឹក-5ល្ងាច | អាហារ: 5ល្ងាច-1យប់" data-en="Drinks: 7 AM - 5 PM | Foods: 5 PM - 1 AM">ភេសជ្ជៈ: 7ព្រឹក-5ល្ងាច | អាហារ: 5ល្ងាច-1យប់</div>
+      <div class="contact-row">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.6 10.8c1.4 2.8 3.8 5.2 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.4 21 3 13.6 3 4c0-.6.4-1 1-1h3.4c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.4 0 .8-.2 1L6.6 10.8z"></path></svg>
+        017 779 670
+      </div>
+      <div class="contact-row">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.6 10.8c1.4 2.8 3.8 5.2 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.4 21 3 13.6 3 4c0-.6.4-1 1-1h3.4c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.4 0 .8-.2 1L6.6 10.8z"></path></svg>
+        096 322 3105
+      </div>
+    </div>
+  </aside>
+
+  <!-- ================= MAIN ================= -->
+  <main class="main">
+    <div class="main-top">
+      <div>
+        <h1 data-km="ម៉ឺនុយថ្ងៃនេះ" data-en="Today's Menu">ម៉ឺនុយថ្ងៃនេះ</h1>
+        <div class="sub" data-km="គ្រឿងអាំងស្រស់ៗ ជូនរាល់ថ្ងៃ" data-en="Fresh grilled dishes, served daily">គ្រឿងអាំងស្រស់ៗ ជូនរាល់ថ្ងៃ</div>
+      </div>
+      <div class="live-pill" id="livePill"><span class="live-dot" id="liveDot"></span><span id="liveLabel"></span></div>
+    </div>
+
+    <div class="search-bar">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+      <input type="text" id="searchInput" data-km-ph="ស្វែងរកម្ហូប..." data-en-ph="Search menu..." placeholder="ស្វែងរកម្ហូប...">
+      <span class="search-clear" id="searchClear">✕</span>
+    </div>
+
+    <div class="order-panel" id="orderPanel"></div>
+
+    <div class="tabs" id="tabs"></div>
+
+    <div class="grid" id="grid"></div>
+  </main>
+
+</div>
+
+<!-- ================= ICON LIBRARY ================= -->
+<svg style="display:none">
+  <defs>
+    <symbol id="ic-flame" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 2c1 3-2 4-2 7a4 4 0 1 0 8 0c0-1.5-1-2.5-1-2.5.5 2-.5 3-1.5 3.5C17 8 15 5 12 2z"></path>
+      <path d="M9 14a3 3 0 1 0 6 0c0-1.5-1.5-2-1.5-3.5 0 0-4 1.5-4.5 3.5z"></path>
+    </symbol>
+    <symbol id="ic-fish" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 12c3.5-4.5 9-5.5 13-2.5M16 9.5C20 10.5 21 12 21 12s-1 1.5-5 2.5M3 12c3.5 4.5 9 5.5 13 2.5"></path>
+      <circle cx="8.5" cy="11" r=".6" fill="currentColor" stroke="none"></circle>
+      <path d="M3 12l-2-2m2 2l-2 2"></path>
+    </symbol>
+    <symbol id="ic-skewer" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="3" y1="21" x2="21" y2="3"></line>
+      <rect x="6.5" y="9.5" width="4" height="4" rx="1" transform="rotate(45 8.5 11.5)"></rect>
+      <rect x="11" y="5" width="4" height="4" rx="1" transform="rotate(45 13 7)"></rect>
+      <rect x="2" y="14" width="4" height="4" rx="1" transform="rotate(45 4 16)"></rect>
+    </symbol>
+    <symbol id="ic-leaf" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M20 4C10 4 4 10 4 18c8 0 14-6 14-14z"></path>
+      <path d="M9 15c3-3 6-6 10-9"></path>
+    </symbol>
+    <symbol id="ic-shell" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 15C4 8 8 4 12 4s8 4 8 11c-2.5 1.5-5 2.5-8 2.5S6.5 16.5 4 15z"></path>
+      <path d="M12 4v13.5M8 6.5c1 3 1 7 0 10M16 6.5c-1 3-1 7 0 10"></path>
+    </symbol>
+    <symbol id="ic-shrimp" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M6 18c-2-3-2-8 1-11 3-2.5 7-2 8 1.5"></path>
+      <path d="M15 8.5c2 0 4 1.5 4 4.5 0 3.5-3 6-7 6"></path>
+      <path d="M4 15.5l-2 1M4.5 13l-2.3.3M5.5 10.8l-2-.8"></path>
+    </symbol>
+    <symbol id="ic-frog" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <ellipse cx="12" cy="14" rx="7" ry="5.5"></ellipse>
+      <circle cx="8" cy="7.5" r="2"></circle>
+      <circle cx="16" cy="7.5" r="2"></circle>
+      <path d="M6 18l-2.5 2.5M18 18l2.5 2.5"></path>
+    </symbol>
+    <symbol id="ic-bowl" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 12h18c0 4.5-4 7.5-9 7.5S3 16.5 3 12z"></path>
+      <path d="M9 5.5c-.7.8-.7 1.7 0 2.5M12 4.5c-.7.8-.7 1.7 0 2.5M15 5.5c-.7.8-.7 1.7 0 2.5"></path>
+    </symbol>
+    <symbol id="ic-droplet" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 3c4 5 6.5 8.5 6.5 11.5a6.5 6.5 0 1 1-13 0C5.5 11.5 8 8 12 3z"></path>
+    </symbol>
+    <symbol id="ic-can" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="7" y="3" width="10" height="18" rx="2.5"></rect>
+      <path d="M7 8h10M7 16h10"></path>
+    </symbol>
+    <symbol id="ic-bottle" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M10 2h4v4l2 3v11a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2V9l2-3V2z"></path>
+      <path d="M8 13h8"></path>
+    </symbol>
+    <symbol id="ic-glass" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M7 3h10l-1.5 15a2.5 2.5 0 0 1-2.5 2.3h-2a2.5 2.5 0 0 1-2.5-2.3L7 3z"></path>
+      <path d="M8 9h8"></path>
+    </symbol>
+  </defs>
+</svg>
+
+<script>
+  /* ======================================================================
+     MANUAL "CLOSED TODAY" POPUP SWITCH
+     ----------------------------------------------------------------------
+     Set this to true whenever you want the "We're Closed" popup to show
+     right away for visitors (holiday, event, unexpected closure, etc.),
+     no matter what time it is or what the normal opening hours are.
+
+     Set it back to false to turn the popup off and return to normal.
+
+         true  -> popup shows
+         false -> popup hidden (normal hours logic still applies)
+     ====================================================================== */
+  const CAFE_CLOSED_TODAY = false;
+
+  // ================= GPS GEOFENCING =================
+  // Café's real-world coordinates (from the shared Google Maps location).
+  const CAFE_LOCATION = { lat: 13.3499168, lng: 103.8525531 };
+  const GEOFENCE_RADIUS_METERS = 50;
+
+  // geoState: 'pending' (checking), 'in-range', 'out-of-range', 'unavailable' (denied/unsupported/error)
+  let geoState = 'pending';
+  let geoDistanceMeters = null;
+
+  function haversineDistanceMeters(lat1, lng1, lat2, lng2){
+    const R = 6371000; // Earth radius in meters
+    const toRad = deg => deg * Math.PI / 180;
+    const dLat = toRad(lat2 - lat1);
+    const dLng = toRad(lng2 - lng1);
+    const a = Math.sin(dLat / 2) ** 2 +
+              Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+              Math.sin(dLng / 2) ** 2;
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  }
+
+  // Fail-closed: ordering requires an explicit, confirmed 'in-range' location
+  // for this visit. While the check is pending, or if location is
+  // denied/unavailable/off, or if the customer is confirmed out of range,
+  // ordering is blocked.
+  function isWithinGeofence(){
+    return geoState === 'in-range';
+  }
+
+  function formatDistance(meters){
+    if (meters == null) return '';
+    if (meters < 1000) return `${Math.round(meters)} m`;
+    return `${(meters / 1000).toFixed(1)} km`;
+  }
+
+  function updateGeoOverlay(){
+    const overlay = document.getElementById('geoOverlay');
+    const titleEl = document.getElementById('geoOverlayTitle');
+    const msgEl = document.getElementById('geoOverlayMsg');
+    const distancePill = document.getElementById('geoDistancePill');
+    const closeBtn = document.getElementById('geoOverlayCloseBtn');
+    if (!overlay) return;
+
+    if (geoState === 'in-range'){
+      overlay.classList.remove('show');
+      return;
+    }
+
+    if (geoState === 'out-of-range'){
+      const distText = formatDistance(geoDistanceMeters);
+      titleEl.textContent = lang === 'km' ? 'អ្នកនៅឆ្ងាយពីហាង' : "You're Outside Our Order Area";
+      msgEl.textContent = lang === 'km'
+        ? 'ការកម្ម៉ង់អាចធ្វើបានតែនៅជិតហាងប៉ុណ្ណោះ។'
+        : 'Ordering is only available near Steung Cafe.';
+      distancePill.textContent = lang === 'km'
+        ? `អ្នកនៅចម្ងាយ ${distText} ពីហាង (ត្រូវការក្នុងចម្ងាយ ${GEOFENCE_RADIUS_METERS} ម៉ែត្រ)`
+        : `You're ${distText} away (must be within ${GEOFENCE_RADIUS_METERS}m)`;
+      if (closeBtn){
+        closeBtn.style.display = '';
+        closeBtn.textContent = lang === 'km' ? 'យល់ព្រម' : 'OK';
+      }
+    } else if (geoState === 'unavailable'){
+      titleEl.textContent = lang === 'km' ? 'ត្រូវការទីតាំង' : 'Location Required';
+      msgEl.textContent = lang === 'km'
+        ? 'សូមបើកសេវាទីតាំង (GPS) ហើយអនុញ្ញាតឱ្យគេហទំព័រនេះប្រើប្រាស់ទីតាំងរបស់អ្នក ដើម្បីកម្ម៉ង់។'
+        : 'Please turn on location services and allow this site to access your location to place an order.';
+      distancePill.textContent = '';
+      if (closeBtn){
+        closeBtn.style.display = '';
+        closeBtn.textContent = lang === 'km' ? 'យល់ព្រម' : 'OK';
+      }
+    } else {
+      // pending
+      titleEl.textContent = lang === 'km' ? 'កំពុងពិនិត្យទីតាំង...' : 'Checking Your Location...';
+      msgEl.textContent = lang === 'km'
+        ? 'សូមរង់ចាំមួយភ្លែត ខណៈយើងកំពុងផ្ទៀងផ្ទាត់ថាអ្នកនៅជិតហាង។'
+        : 'Please wait while we confirm you\'re near the café.';
+      distancePill.textContent = '';
+      if (closeBtn) closeBtn.style.display = 'none';
+    }
+  }
+
+  // Shows the overlay (content must already be current via updateGeoOverlay).
+  // Only ever called when the customer actively tries to order while out of
+  // range/denied/unavailable — never automatically in the background.
+  function showGeoOverlay(){
+    if (geoState === 'in-range') return;
+    document.getElementById('geoOverlay').classList.add('show');
+  }
+
+  function startWatchingLocation(){
+    navigator.geolocation.watchPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        geoDistanceMeters = haversineDistanceMeters(latitude, longitude, CAFE_LOCATION.lat, CAFE_LOCATION.lng);
+        geoState = geoDistanceMeters <= GEOFENCE_RADIUS_METERS ? 'in-range' : 'out-of-range';
+        updateGeoOverlay();
+        renderGrid();
+      },
+      () => {
+        // Denied, timed out, or otherwise unavailable — fail closed. No location, no ordering.
+        geoState = 'unavailable';
+        updateGeoOverlay();
+        renderGrid();
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 }
+    );
+  }
+
+  function checkGeofence(){
+    if (!('geolocation' in navigator)){
+      geoState = 'unavailable';
+      renderGrid();
+      return;
+    }
+
+    // No custom "asking for location" popup here — just quietly start
+    // watching position in the background. The browser's own native
+    // permission prompt will appear automatically only if it actually needs
+    // to ask (first time, or if permission isn't granted yet); if it's
+    // already granted from before, this just works silently. Ordering stays
+    // blocked (with a reason shown only if they try to order) whenever
+    // they're out of range, denied, or location is off.
+    startWatchingLocation();
+  }
+
+  /* ================= DATA ================= */
+  const CATEGORIES = [
+    { id:'all',     km:'ទាំងអស់',        en:'All',          icon:'ic-flame' },
+    { id:'grilled', km:'អាំង',            en:'Grilled',      icon:'ic-flame' },
+    { id:'soft',    km:'ភេសជ្ជៈ',      en:'Soft Drinks',  icon:'ic-droplet' },
+    { id:'beer',    km:'ស្រាបៀរ',         en:'Beer',         icon:'ic-bottle' },
+    { id:'alcohol', km:'ស្រា',       en:'Alcohol',      icon:'ic-glass' },
+    { id:'hot',     km:'ភេសជ្ជៈក្ដៅ',        en:'Hot Drink',    icon:'ic-glass' },
+    { id:'frappe',  km:'ភេសជ្ជៈក្រឡុក',    en:'Frappe',       icon:'ic-can' },
+    { id:'iced',    km:'ភេសជ្ជៈត្រជាក់',      en:'Iced Drink',   icon:'ic-droplet' },
+    { id:'cream',   km:'ភេសជ្ជៈគ្រីម',      en:'Cream',        icon:'ic-glass' },
+  ];
+
+  /* Updated with correct beverage images */
+  const ITEMS = [
+    { num:1,  km:'ត្រីសាបាក់អាំង',        en:'Grilled Sabak Fish',            price:'15,000៛', cat:'grilled', icon:'ic-fish',    popular:true,  img:'asset/fish_1.png' },
+    { num:2,  km:'សាច់ជ្រូកអាំង គីមឈី',    en:'Grilled Pork with Kimchi',      price:'12,000៛', cat:'grilled', icon:'ic-skewer',  popular:true,  img:'asset/pork_2.png' },
+    { num:3,  km:'ត្រប់អាំងពិសេស',        en:'Grilled Eggplant',      price:'6,000៛',  cat:'grilled', icon:'ic-leaf',     popular:false, img:'asset/eggplant_3.png' },
+    { num:4,  km:'គោងៀតអាំង',             en:'Grilled​ Dried Beef',             price:'10,000៛', cat:'grilled', icon:'ic-skewer',  popular:false, img:'asset/beef_4.png' },
+    { num:5,  km:'ព្រុយត្រីអាំង',          en:'Grilled Fish Fins',              price:'10,000៛', cat:'grilled', icon:'ic-fish',    popular:false, img:'asset/fin_5.png' },
+    { num:6,  km:'ងាវអាំង អំបិលម្ទេស',     en:'Grilled Blood Cockles, Chili-Salt',price:'10,000៛', cat:'grilled', icon:'ic-shell',   popular:false, img:'asset/cockles_5.png' },
+    { num:7,  km:'យឺហ៊ឺងអាំង',            en:'Grilled Dried Squid',         price:'10,000៛', cat:'grilled', icon:'ic-fish',    popular:false, img:'asset/dried_squid_6.png' },
+    { num:8,  km:'ហៃប៊ីក្រឡុក',           en:'Tossed Dried Shrimp Salad',     price:'10,000៛', cat:'grilled', icon:'ic-shrimp',  popular:false, img:'asset/shrimp_7.png' },
+    { num:9,  km:'មឹកអាំង',               en:'Grilled Squid',                 price:'10,000៛', cat:'grilled', icon:'ic-fish',    popular:true,  img:'asset/squid_8.png' },
+    { num:10, km:'កង្កែបអាំងអំបិលម្ទេស',    en:'Grilled Frog, Chili-Salt',   price:'12,000៛', cat:'grilled', icon:'ic-frog',    popular:false, img:'asset/frog_9.png' },
+    { num:11, km:'បាយស',                  en:'Steamed Rice',                  price:'1,000៛',  cat:'grilled', icon:'ic-bowl',    popular:false, img:'asset/rice_9.png' },
+
+    { num:1,  km:'ទឹកបរិសុទ្ធ',            en:'Mineral Water',                price:'1,000៛',  cat:'soft', icon:'ic-droplet', popular:false, img:'asset/water_10.png' },
+    { num:2,  km:'កូកា-កូឡា',              en:'Coca-Cola',                     price:'3,000៛',  cat:'soft', icon:'ic-can',     popular:false, img:'asset/coca_11.png' },
+    { num:3,  km:'ស្ទីង',                  en:'Sting Energy Drink',            price:'3,000៛',  cat:'soft', icon:'ic-can',     popular:false, img:'asset/sting_12.png' },
+    { num:4,  km:'ដូរង្វាន់ ១កំប៉ុង',       en:'Redeem Can-tab (1 can)',        price:'1,000៛',  cat:'beer', icon:'ic-can',     popular:false, img:'asset/can_tab_13.png' },
+
+    { num:5,  km:'ស្រាបៀរកម្ពុជា',          en:'Cambodia Beer',                 price:'3,000៛',  cat:'beer', icon:'ic-bottle',  popular:true, img:'asset/cambodia_beer_14.png' },
+    { num:6,  km:'ស្រាបៀរអាន់ឆ័រ',          en:'Anchor Beer',                   price:'3,000៛',  cat:'beer', icon:'ic-bottle',  popular:false, img:'asset/anchor_beer_15.png' },
+    { num:7,  km:'ស្រាបៀរថៃហ្គឺ',           en:'Tiger Beer',                    price:'3,000៛',  cat:'beer', icon:'ic-bottle',  popular:false, img:'asset/tiger_beer_16.png' },
+    { num:8,  km:'ស្រាបៀរហ្គៃស្បើក',        en:'Ganzberg Beer',                 price:'3,000៛',  cat:'beer', icon:'ic-bottle',  popular:false, img:'asset/ganbergz_beer_17.png' },
+    { num:9,  km:'ស្រាបៀរហនុមានស',          en:'Hanuman Beer (White)',          price:'3,000៛',  cat:'beer', icon:'ic-bottle',  popular:true, img:'asset/hanuman_white_16.png' },
+    { num:10, km:'ស្រាបៀរហនុមានខ្មៅ',        en:'Hanuman Beer (Dark)',           price:'4,000៛',  cat:'beer', icon:'ic-bottle',  popular:true, img:'asset/hanuman_black_17.png' },
+    { num:11, km:'ស្រាបៀរអង្គរ ដបតូច',       en:'Angkor Beer (Small Bottle)',    price:'4,000៛',  cat:'beer', icon:'ic-bottle',  popular:false, img:'asset/angkor_beer_small_18.png' },
+    { num:12, km:'ស្រាបៀរអង្គរ ដបធំ',        en:'Angkor Beer (Large Bottle)',    price:'7,000៛',  cat:'beer', icon:'ic-bottle',  popular:false, img:'asset/angkor_beer_small_19.png' },
+    
+    /* Updated path to point to abc_beer_20.png */
+    { num:13, km:'ស្រាបៀរ ABC',             en:'ABC Beer',                      price:'6,000៛',  cat:'beer', icon:'ic-bottle',  popular:false, img:'asset/abc_beer_20.png' },
+
+    /* Updated path to point to jinro_21.png */
+    { num:14, km:'ស្រាកូរ៉េ ជីនរ៉ូ',         en:'Korean Soju (Jinro)',           price:'8,000៛',  cat:'alcohol', icon:'ic-glass', popular:false, img:'asset/jinro_21.png' },
+
+    /* ================= HOT DRINK ================= */
+    { num:1,  km:'កាហ្វេអេសប្រេសូ',          en:'Hot Espresso',                  price:'5,000៛',  cat:'hot', icon:'ic-glass', popular:false, img:'asset/drink_1.png' },
+    { num:2,  km:'កាហ្វេអាមេរិកាណូ',        en:'Hot Americano',                 price:'5,000៛',  cat:'hot', icon:'ic-glass', popular:false, img:'asset/drink_2.png' },
+    { num:3,  km:'កាហ្វេទឹកដោះគោខាប់', en:'Hot Cappuccino with Milk Coffee', price:'6,000៛',  cat:'hot', icon:'ic-glass', popular:false, img:'asset/drink_3.png' },
+    { num:4,  km:'វ៉ានីឡាឡាតេ',         en:'Hot Vanilla Latte',             price:'6,000៛',  cat:'hot', icon:'ic-glass', popular:false, img:'asset/drink_4.png' },
+    { num:5,  km:'សូកូឡាក្តៅ',             en:'Hot Chocolate',                 price:'6,000៛',  cat:'hot', icon:'ic-glass', popular:false, img:'asset/drink_5.png' },
+    { num:6,  km:'ម៉ូកាក្តៅ',              en:'Hot Mocha',                     price:'6,000៛',  cat:'hot', icon:'ic-glass', popular:false, img:'asset/drink_6.png' },
+    { num:7,  km:'ឡាតេក្តៅ',                en:'Hot Latte',                     price:'6,000៛',  cat:'hot', icon:'ic-glass', popular:false, img:'asset/drink_7.png' },
+    { num:8,  km:'កាពូឈីណូក្តៅ',           en:'Hot Cappuccino',                price:'6,000៛',  cat:'hot', icon:'ic-glass', popular:false, img:'asset/drink_7.png' },
+    { num:9,  km:'តែបៃតងក្តៅ',            en:'Hot Green Tea',                 price:'5,000៛',  cat:'hot', icon:'ic-glass', popular:false, img:'asset/drink_8.png' },
+
+    /* ================= FRAPPE ================= */
+    { num:1,  km:'ឡាតេក្រឡុក',              en:'Latte Frappe',                  price:'7,000៛',  cat:'frappe', icon:'ic-can', popular:false, img:'asset/drink_9.png' },
+    { num:2,  km:'តែបៃតងក្រឡុក',           en:'Green Tea Frappe',              price:'7,000៛',  cat:'frappe', icon:'ic-can', popular:false, img:'asset/drink_10.png' },
+    { num:3,  km:'សូកូឡាក្រឡុក',            en:'Chocolate Frappe',              price:'7,000៛',  cat:'frappe', icon:'ic-can', popular:false, img:'asset/drink_11.png' },
+    { num:4,  km:'កាពូឈីណូក្រឡុក',          en:'Cappuccino Frappe',             price:'7,000៛',  cat:'frappe', icon:'ic-can', popular:false, img:'asset/drink_12.png' },
+    { num:5,  km:'ស្វាយក្រឡុក',            en:'Mango Frappe',                  price:'7,000៛',  cat:'frappe', icon:'ic-can', popular:false, img:'asset/drink_13.png' },
+    { num:6,  km:'ផាសិនក្រឡុក',            en:'Passion Frappe',                price:'7,000៛',  cat:'frappe', icon:'ic-can', popular:false, img:'asset/drink_14.png' },
+    { num:7,  km:'ម៉ាឆាក្រឡុក',             en:'Matcha Frappe',                 price:'7,000៛',  cat:'frappe', icon:'ic-can', popular:false, img:'asset/drink_15.png' },
+    { num:8,  km:'ស្ត្របេរីក្រឡុក',         en:'Strawberry Frappe',             price:'7,000៛',  cat:'frappe', icon:'ic-can', popular:false, img:'asset/drink_16.png' },
+
+    /* ================= ICED DRINK ================= */
+    { num:1,  km:'កាហ្វេអាមេរិកាណូ',       en:'Iced Americano',                price:'5,000៛',  cat:'iced', icon:'ic-droplet', popular:false, img:'asset/drink_ice_1.png' },
+    { num:2,  km:'វ៉ានីឡាឡាតេ',      en:'Iced Vanilla Latte',            price:'6,000៛',  cat:'iced', icon:'ic-droplet', popular:false, img:'asset/drink_ice_2.png' },
+    { num:3,  km:'កាហ្វេទឹកដោះគោខាប់', en:'Iced Condensed Milk Coffee',  price:'6,000៛',  cat:'iced', icon:'ic-droplet', popular:false, img:'asset/drink_ice_3.png' },
+    { num:4,  km:'ឡាតេត្រជាក់',            en:'Iced Latte',                    price:'6,000៛',  cat:'iced', icon:'ic-droplet', popular:false, img:'asset/drink_ice_4.png' },
+    { num:5,  km:'កាពូឈីណូត្រជាក់',        en:'Iced Cappuccino',               price:'6,000៛',  cat:'iced', icon:'ic-droplet', popular:false, img:'asset/drink_ice_5.png' },
+    { num:6,  km:'ទឹកដោះគោផាសិន',         en:'Passion Milk',                  price:'5,000៛',  cat:'iced', icon:'ic-droplet', popular:false, img:'asset/drink_ice_6.png' },
+    { num:7,  km:'ម៉ាឆាឡាតេ',           en:'Matcha Latte',                  price:'5,000៛',  cat:'iced', icon:'ic-droplet', popular:false, img:'asset/drink_ice_7.png' },
+    { num:8,  km:'តែបៃតង',         en:'Iced Green Tea',                price:'5,000៛',  cat:'iced', icon:'ic-droplet', popular:false, img:'asset/drink_ice_8.png' },
+    { num:9,  km:'តែក្រូចឆ្មាបៃតង',     en:'Iced Lemon Green Tea',          price:'4,000៛',  cat:'iced', icon:'ic-droplet', popular:false, img:'asset/drink_ice_10.png' },
+    { num:10, km:'តែក្រូចឆ្មាក្រហម',    en:'Iced Lemon Red Tea',            price:'4,000៛',  cat:'iced', icon:'ic-droplet', popular:false, img:'asset/drink_ice_9.png' },
+
+    /* ================= CREAM ================= */
+    { num:1,  km:'ផាសិនគ្រីម',           en:'Passion Cream',                 price:'6,000៛',  cat:'cream', icon:'ic-glass', popular:false, img:'asset/drink_cream_1.png' },
+    { num:2,  km:'កាហ្វេគ្រីម',            en:'Coffee Cream',                  price:'6,000៛',  cat:'cream', icon:'ic-glass', popular:false, img:'asset/drink_cream_2.png' },
+    { num:3,  km:'កាហ្វេពងមាន់គ្រីម',        en:'Coffee Egg Cream',              price:'6,000៛',  cat:'cream', icon:'ic-glass', popular:false, img:'asset/drink_cream_3.png' },
+    { num:4,  km:'ម៉ាឆាដូងគ្រីម',   en:'Matcha Coconut Cream',          price:'6,000៛',  cat:'cream', icon:'ic-glass', popular:false, img:'asset/drink_cream_4.png' },
+    { num:5,  km:'ម៉ាឆាគ្រីម',            en:'Matcha Cream',                  price:'6,000៛',  cat:'cream', icon:'ic-glass', popular:false, img:'asset/drink_cream_5.png' },
+  ];
+
+  let lang = 'km';
+  let activeCat = 'all';
+  let searchTerm = '';
+  let cart = [];
+  let customerName = '';
+  let telegramContact = '';
+
+  // approximate exchange rate used for the USD line under each Riel price
+  const USD_RATE = 4000;
+  function toUSD(priceStr){
+    const riel = parseInt(priceStr.replace(/[^0-9]/g, ''), 10);
+    if (!riel) return '';
+    const usd = riel / USD_RATE;
+    return '$' + usd.toFixed(usd < 1 ? 2 : (usd % 1 === 0 ? 0 : 2));
+  }
+
+  function parseRielValue(priceStr){
+    return parseInt(priceStr.replace(/[^0-9]/g, ''), 10) || 0;
+  }
+
+  function formatRiel(value){
+    return value.toLocaleString('en-US') + '៛';
+  }
+
+  function normalizeTelegramContact(value){
+    const text = (value || '').trim();
+    if (!text) return '';
+    return text.startsWith('@') ? text.slice(1) : text;
+  }
+
+  /* ================= RENDER: SIDEBAR NAV & TABS ================= */
+  function catCount(id){
+    return id === 'all' ? ITEMS.length : ITEMS.filter(i => i.cat === id).length;
+  }
+
+  function renderNavAndTabs(){
+    const sideNav = document.getElementById('sideNav');
+    const tabs = document.getElementById('tabs');
+    sideNav.innerHTML = '';
+    tabs.innerHTML = '';
+
+    CATEGORIES.forEach(c => {
+      const label = lang === 'km' ? c.km : c.en;
+      const isActive = c.id === activeCat;
+
+      const sideEl = document.createElement('div');
+      sideEl.className = 'side-item' + (isActive ? ' active' : '');
+      sideEl.innerHTML = `<svg><use href="#${c.icon}"/></svg><span class="lbl">${label}</span><span class="count">${catCount(c.id)}</span>`;
+      sideEl.addEventListener('click', () => { activeCat = c.id; renderNavAndTabs(); renderGrid(); });
+      sideNav.appendChild(sideEl);
+
+      const tabEl = document.createElement('div');
+      tabEl.className = 'tab' + (isActive ? ' active' : '');
+      tabEl.innerHTML = `<svg><use href="#${c.icon}"/></svg><span>${label}</span>`;
+      tabEl.addEventListener('click', () => { activeCat = c.id; renderNavAndTabs(); renderGrid(); });
+      tabs.appendChild(tabEl);
+    });
+  }
+
+  /* ================= ORDER -> TELEGRAM INVOICE ================= */
+  // Check if an item can be ordered based on current time
+  function canOrderItem(item){
+    const now = new Date();
+    const hour24 = now.getHours();
+
+    // Café drinks: hot, frappe, iced, cream (7 AM - 5 PM)
+    const cafeOnlyCats = ['hot', 'frappe', 'iced', 'cream'];
+    // Grill foods: grilled, beer, alcohol (5 PM - 1 AM)
+    const foodsCats = ['grilled', 'beer', 'alcohol'];
+    // Soft drinks: available whenever either the café or the grill is open (7 AM - 1 AM, spanning both windows)
+    const alwaysOpenDrinkCats = ['soft'];
+
+    const cafeOpen = hour24 >= 7 && hour24 < 17;   // 7 AM to 5 PM
+    const grillOpen = hour24 >= 17 || hour24 < 1;  // 5 PM to 1 AM
+
+    if (alwaysOpenDrinkCats.includes(item.cat)){
+      return cafeOpen || grillOpen; // open across the combined hours of both
+    } else if (cafeOnlyCats.includes(item.cat)){
+      return cafeOpen;
+    } else if (foodsCats.includes(item.cat)){
+      return grillOpen;
+    }
+    return false; // Unknown category
+  }
+  
+  function getItemAvailabilityText(item){
+    const cafeOnlyCats = ['hot', 'frappe', 'iced', 'cream'];
+    const alwaysOpenDrinkCats = ['soft'];
+    if (alwaysOpenDrinkCats.includes(item.cat)){
+      return lang === 'km' ? '7ព្រឹក-1យប់' : '7 AM - 1 AM';
+    }
+    if (cafeOnlyCats.includes(item.cat)){
+      return lang === 'km' ? '7ព្រឹក-5ល្ងាច' : '7 AM - 5 PM';
+    }
+    return lang === 'km' ? '5ល្ងាច-1យប់' : '5 PM - 1 AM';
+  }
+
+  // Quick-tap special-request presets, shown per category group.
+  const DRINK_OPTION_CATS = ['hot', 'frappe', 'iced', 'cream', 'soft'];
+  const FOOD_OPTION_CATS = ['grilled'];
+
+  const OPTION_PRESETS = {
+    drink: [
+      { km: 'ខ្លាំង', en: 'Strong' },
+      { km: 'ផ្អែមតិច', en: 'Less Sweet' },
+      { km: 'ទឹកកកតិច', en: 'Less Ice' }
+    ],
+    food: [
+      { km: 'ហឹរ', en: 'Spicy' },
+      { km: 'ហឹរតិច', en: 'Less Spicy' },
+      { km: 'មិនហឹរ', en: 'No Spicy' }
+    ]
+  };
+
+  function getOptionPresetsForItem(item){
+    if (DRINK_OPTION_CATS.includes(item.cat)) return OPTION_PRESETS.drink;
+    if (FOOD_OPTION_CATS.includes(item.cat)) return OPTION_PRESETS.food;
+    return [];
+  }
+
+  function addToCart(item){
+    if (!isWithinGeofence()){
+      updateGeoOverlay();
+      showGeoOverlay();
+      return;
+    }
+    if (!canOrderItem(item)){
+      alert(lang === 'km' ? `ទស្សនៈបានបិទ។ ម្ហូបនេះលក់បានពេល ${getItemAvailabilityText(item)}` : `Store is closed. This item is available ${getItemAvailabilityText(item)}`);
+      return;
+    }
+    
+    const key = `${item.km}|${item.en}|${item.cat}`;
+    const existing = cart.find(entry => entry.key === key);
+
+    if (existing){
+      existing.qty += 1;
+    } else {
+      cart.push({
+        key,
+        item,
+        qty: 1,
+        note: '',
+        priceNumber: parseRielValue(item.price)
+      });
+    }
+
+    renderOrderPanel();
+  }
+
+  function updateCartQty(key, delta){
+    const entry = cart.find(item => item.key === key);
+    if (!entry) return;
+
+    entry.qty += delta;
+    if (entry.qty <= 0){
+      cart = cart.filter(item => item.key !== key);
+    }
+
+    renderOrderPanel();
+  }
+
+  function clearCart(){
+    cart = [];
+    renderOrderPanel();
+  }
+
+  function getCartTotal(){
+    return cart.reduce((sum, entry) => sum + (entry.priceNumber * entry.qty), 0);
+  }
+
+  function buildInvoiceText(){
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('en-GB');
+    const timeStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    const customerLabel = (customerName || (lang === 'km' ? 'មិនបានបញ្ជាក់' : 'Not provided')).trim();
+    const contactLabel = normalizeTelegramContact(telegramContact) || (lang === 'km' ? 'មិនបានបញ្ជាក់' : 'Not provided');
+    const lines = [
+      lang === 'km' ? '🧾 វិក័យប័ត្រកម្ម៉ង់' : '🧾 Order Receipt',
+      lang === 'km' ? 'ស្ទឹងកាហ្វេ (Steung Cafe)' : 'Steung Cafe',
+      '——————————————',
+      `${lang === 'km' ? 'អតិថិជន' : 'Customer'}: ${customerLabel}`,
+      `${lang === 'km' ? 'ទំនាក់ទំនង Telegram' : 'Telegram contact'}: ${contactLabel}`,
+      '——————————————',
+      ...(cart.length ? cart.map(entry => {
+        const name = lang === 'km' ? entry.item.km : entry.item.en;
+        const lineTotal = entry.priceNumber * entry.qty;
+        const noteSuffix = entry.note && entry.note.trim() ? ` (${entry.note.trim()})` : '';
+        return `${name} × ${entry.qty} = ${formatRiel(lineTotal)}${noteSuffix}`;
+      }) : [lang === 'km' ? 'មិនទាន់មានម្ហូបនៅក្នុងការកម្ម៉ង់' : 'No items in the order yet']),
+      '——————————————',
+      `${lang === 'km' ? 'សរុប' : 'Total'}: ${formatRiel(getCartTotal())}`,
+      `${lang === 'km' ? 'កាលបរិច្ឆេទ' : 'Date'}: ${dateStr} ${timeStr}`,
+      lang === 'km' ? 'សូមអរគុណ! 🙏' : 'Thank you! 🙏'
+    ];
+    return lines.join('\n');
+  }
+
+  function showOrderStatus(type, title, message){
+    const overlay = document.getElementById('orderStatusOverlay');
+    const icon = document.getElementById('orderStatusIcon');
+    const titleEl = document.getElementById('orderStatusTitle');
+    const msgEl = document.getElementById('orderStatusMsg');
+    const closeBtn = document.getElementById('orderStatusCloseBtn');
+
+    icon.className = 'icon-ring ' + type;
+    icon.innerHTML = type === 'success'
+      ? '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>'
+      : '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><line x1="12" y1="8" x2="12" y2="13"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>';
+    titleEl.textContent = title;
+    msgEl.textContent = message;
+    closeBtn.textContent = lang === 'km' ? 'យល់ព្រម' : 'OK';
+
+    overlay.classList.add('show');
+  }
+
+  function hideOrderStatus(){
+    document.getElementById('orderStatusOverlay').classList.remove('show');
+  }
+
+  /* ================= ORDER CONFIRM MODAL ================= */
+  function closeOrderConfirm(){
+    document.getElementById('orderConfirmOverlay').classList.remove('show');
+  }
+
+  function renderOrderConfirm(){
+    document.getElementById('orderConfirmTitle').textContent = lang === 'km' ? 'បញ្ជាក់ការកម្ម៉ង់' : 'Confirm Your Order';
+
+    const trimmedName = (customerName || '').trim();
+    const contactLabel = normalizeTelegramContact(telegramContact) || '';
+    const nameLabel = trimmedName || (lang === 'km' ? 'មិនបានបញ្ជាក់' : 'Not provided');
+
+    const metaRows = [
+      `<div class="row"><span>${lang === 'km' ? 'អតិថិជន' : 'Customer'}</span><span>${nameLabel}</span></div>`
+    ];
+    if (contactLabel){
+      metaRows.push(`<div class="row"><span>${lang === 'km' ? 'Telegram' : 'Telegram'}</span><span>${contactLabel}</span></div>`);
+    }
+    document.getElementById('orderConfirmMeta').innerHTML = metaRows.join('');
+
+    const list = document.getElementById('orderConfirmList');
+    list.innerHTML = cart.map(entry => {
+      const name = lang === 'km' ? entry.item.km : entry.item.en;
+      const lineTotal = entry.priceNumber * entry.qty;
+      const noteHtml = entry.note ? `<div class="confirm-item-note">${entry.note}</div>` : '';
+      return `
+        <div class="confirm-item">
+          <div class="confirm-item-info">
+            <div class="confirm-item-name">${name}</div>
+            <div class="confirm-item-qty">${entry.item.price} × ${entry.qty}</div>
+            ${noteHtml}
+          </div>
+          <div class="confirm-item-price">${formatRiel(lineTotal)}</div>
+        </div>
+      `;
+    }).join('');
+
+    document.getElementById('orderConfirmTotalLabel').textContent = lang === 'km' ? 'សរុប' : 'Total';
+    document.getElementById('orderConfirmTotalValue').textContent = formatRiel(getCartTotal());
+
+    document.getElementById('orderConfirmCancelBtn').textContent = lang === 'km' ? 'កែសម្រួល' : 'Edit Order';
+    document.getElementById('orderConfirmSendBtn').textContent = lang === 'km' ? 'ផ្ញើទៅ Telegram' : 'Send to Telegram';
+  }
+
+  function openOrderConfirm(){
+    if (cart.length === 0) return;
+
+    if (!isWithinGeofence()){
+      updateGeoOverlay();
+      showGeoOverlay();
+      return;
+    }
+
+    renderOrderConfirm();
+    document.getElementById('orderConfirmOverlay').classList.add('show');
+  }
+
+  async function sendOrderToTelegram(){
+    if (cart.length === 0) return;
+
+    if (!isWithinGeofence()){
+      updateGeoOverlay();
+      showGeoOverlay();
+      return;
+    }
+
+    const trimmedName = (customerName || '').trim();
+    const nameInput = document.getElementById('customerNameInput');
+    if (nameInput) nameInput.classList.remove('invalid');
+
+    const text = buildInvoiceText();
+    const orderPayload = {
+      customerName: trimmedName,
+      contact: normalizeTelegramContact(telegramContact) || '',
+      total: getCartTotal(),
+      items: cart.map(entry => ({
+        km: entry.item.km,
+        en: entry.item.en,
+        cat: entry.item.cat,
+        qty: entry.qty,
+        price: entry.priceNumber,
+        note: entry.note || ''
+      }))
+    };
+    const confirmSendBtn = document.getElementById('orderConfirmSendBtn');
+    const confirmCancelBtn = document.getElementById('orderConfirmCancelBtn');
+    const originalLabel = confirmSendBtn ? confirmSendBtn.textContent : '';
+
+    if (confirmSendBtn){
+      confirmSendBtn.disabled = true;
+      confirmSendBtn.textContent = lang === 'km' ? 'កំពុងផ្ញើ...' : 'Sending...';
+    }
+    if (confirmCancelBtn) confirmCancelBtn.disabled = true;
+
+    try {
+      const res = await fetch('/.netlify/functions/send-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, order: orderPayload })
+      });
+      const data = await res.json();
+
+      if (!res.ok || !data.ok){
+        throw new Error(data.error || 'Failed to send order');
+      }
+
+      closeOrderConfirm();
+      showOrderStatus(
+        'success',
+        lang === 'km' ? 'ការកម្ម៉ង់បានជោគជ័យ!' : 'Order Sent!',
+        lang === 'km' ? 'ការកម្ម៉ង់របស់អ្នកបានផ្ញើដោយជោគជ័យ។ សូមអរគុណ! 🙏' : 'Your order was sent successfully. Thank you! 🙏'
+      );
+      clearCart();
+    } catch (err) {
+      // Show the real reason so the customer knows what went wrong, not a generic message.
+      const reason = (err && err.message) ? err.message : (lang === 'km' ? 'មិនស្គាល់មូលហេតុ' : 'Unknown error');
+      closeOrderConfirm();
+      showOrderStatus(
+        'error',
+        lang === 'km' ? 'មិនអាចផ្ញើការកម្ម៉ង់បានទេ' : 'Could Not Send Order',
+        (lang === 'km' ? 'មូលហេតុ: ' : 'Reason: ') + reason
+      );
+      console.error('sendOrderToTelegram error:', err);
+    } finally {
+      if (confirmSendBtn){
+        confirmSendBtn.disabled = false;
+        confirmSendBtn.textContent = originalLabel;
+      }
+      if (confirmCancelBtn) confirmCancelBtn.disabled = false;
+    }
+  }
+
+  function renderOrderPanel(){
+    const panel = document.getElementById('orderPanel');
+    if (!panel) return;
+
+    if (cart.length === 0){
+      panel.innerHTML = `
+        <div class="order-panel-head">
+          <h3>${lang === 'km' ? 'ការកម្ម៉ង់' : 'Order'}</h3>
+          <span class="pill">0</span>
+        </div>
+        <div class="order-empty">${lang === 'km' ? 'ចុចលើម្ហូបដើម្បីបន្ថែមមុខម្ហូបទៅក្នុងការកម្ម៉ង់' : 'Tap an item to add it to the order'}</div>
+      `;
+      return;
+    }
+
+    panel.innerHTML = `
+      <div class="order-panel-head">
+        <h3>${lang === 'km' ? 'ការកម្ម៉ង់' : 'Order'}</h3>
+        <span class="pill">${cart.length} ${lang === 'km' ? 'មុខ' : 'items'}</span>
+      </div>
+      <div class="customer-field">
+        <label for="customerNameInput">${lang === 'km' ? 'ឈ្មោះអតិថិជន' : 'Customer name'} <span class="optional-mark">(${lang === 'km' ? 'មិនចាំបាច់' : 'optional'})</span></label>
+        <input id="customerNameInput" type="text" value="${customerName}" placeholder="${lang === 'km' ? 'បញ្ចូលឈ្មោះ...' : 'Enter customer name...'}">
+      </div>
+      <div class="customer-field">
+        <label for="telegramContactInput">${lang === 'km' ? 'លេខ / ឈ្មោះ Telegram' : 'Telegram contact'}</label>
+        <input id="telegramContactInput" type="text" value="${telegramContact}" placeholder="${lang === 'km' ? 'ឧ. @username ឬ +855...' : 'e.g. @username or +855...'}">
+      </div>
+      <div class="contact-note">${lang === 'km' ? 'ផ្ញើទៅ Telegram របស់ ស្ទឹងកាហ្វេ' : 'Send to the Steung Cafe Telegram account'}</div>
+      <div class="order-items">
+        ${cart.map(entry => {
+          const presets = getOptionPresetsForItem(entry.item);
+          const noteVal = entry.note || '';
+          return `
+          <div class="order-item">
+            <div class="order-item-top">
+              <div class="order-item-info">
+                <div class="order-item-name">${lang === 'km' ? entry.item.km : entry.item.en}</div>
+                <div class="order-item-price">${entry.item.price} × ${entry.qty}</div>
+              </div>
+              <div class="order-item-controls">
+                <button class="qty-btn" type="button" data-action="dec" data-key="${entry.key}">−</button>
+                <span class="qty-value">${entry.qty}</span>
+                <button class="qty-btn" type="button" data-action="inc" data-key="${entry.key}">+</button>
+              </div>
+            </div>
+            ${presets.length ? `
+            <div class="order-item-options">
+              ${presets.map(opt => {
+                const label = lang === 'km' ? opt.km : opt.en;
+                const isActive = noteVal.trim() === label;
+                return `<button class="option-chip${isActive ? ' active' : ''}" type="button" data-key="${entry.key}" data-label="${label}">${label}</button>`;
+              }).join('')}
+            </div>` : ''}
+            <input class="order-item-note" type="text" data-key="${entry.key}" value="${noteVal}" placeholder="${lang === 'km' ? 'សំណើពិសេស (ស្រេចចិត្ត)...' : 'Special request (optional)...'}">
+          </div>
+        `;
+        }).join('')}
+      </div>
+      <div class="order-summary">
+        <span>${lang === 'km' ? 'សរុប' : 'Total'}</span>
+        <span class="value">${formatRiel(getCartTotal())}</span>
+      </div>
+      <div class="order-actions">
+        <button class="order-clear-btn" type="button">${lang === 'km' ? 'ជម្រះ' : 'Clear'}</button>
+        <button class="order-send-btn" type="button">${lang === 'km' ? 'កម្ម៉ង់' : 'Order'}</button>
+      </div>
+    `;
+
+    const customerInput = panel.querySelector('#customerNameInput');
+    if (customerInput){
+      customerInput.addEventListener('input', (e) => {
+        customerName = e.target.value;
+        if (e.target.value.trim()) e.target.classList.remove('invalid');
+      });
+    }
+
+    const telegramInput = panel.querySelector('#telegramContactInput');
+    if (telegramInput){
+      telegramInput.addEventListener('input', (e) => {
+        telegramContact = e.target.value;
+      });
+    }
+
+    panel.querySelector('.order-clear-btn').addEventListener('click', clearCart);
+    panel.querySelector('.order-send-btn').addEventListener('click', openOrderConfirm);
+
+    panel.querySelectorAll('.qty-btn').forEach(button => {
+      button.addEventListener('click', () => {
+        const key = button.getAttribute('data-key');
+        const action = button.getAttribute('data-action');
+        updateCartQty(key, action === 'inc' ? 1 : -1);
+      });
+    });
+
+    panel.querySelectorAll('.option-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        const key = chip.getAttribute('data-key');
+        const label = chip.getAttribute('data-label');
+        const entry = cart.find(e => e.key === key);
+        if (!entry) return;
+        // Toggle: tapping the active chip again clears the note, otherwise select it
+        entry.note = (entry.note && entry.note.trim() === label) ? '' : label;
+        renderOrderPanel();
+      });
+    });
+
+    panel.querySelectorAll('.order-item-note').forEach(input => {
+      input.addEventListener('input', (e) => {
+        const key = input.getAttribute('data-key');
+        const entry = cart.find(en => en.key === key);
+        if (entry) entry.note = e.target.value;
+      });
+    });
+  }
+
+  function renderGrid(){
+    const grid = document.getElementById('grid');
+    grid.innerHTML = '';
+    let list = activeCat === 'all' ? ITEMS : ITEMS.filter(i => i.cat === activeCat);
+
+    const term = searchTerm.trim().toLowerCase();
+    if (term){
+      list = list.filter(i => i.km.toLowerCase().includes(term) || i.en.toLowerCase().includes(term));
+    }
+
+    // Show items that are currently open for order first, closed items after.
+    // Uses a stable sort so items keep their original relative order within each group.
+    list = list
+      .map((item, originalIndex) => ({ item, originalIndex }))
+      .sort((a, b) => {
+        const aOpen = (canOrderItem(a.item) && isWithinGeofence()) ? 0 : 1;
+        const bOpen = (canOrderItem(b.item) && isWithinGeofence()) ? 0 : 1;
+        if (aOpen !== bOpen) return aOpen - bOpen;
+        return a.originalIndex - b.originalIndex;
+      })
+      .map(entry => entry.item);
+
+    if (list.length === 0){
+      const empty = document.createElement('div');
+      empty.className = 'empty-state';
+      empty.textContent = lang === 'km' ? 'រកមិនឃើញម្ហូបដែលត្រូវនឹងការស្វែងរក' : 'No items match your search';
+      grid.appendChild(empty);
+      return;
+    }
+
+    list.forEach((item, idx) => {
+      const catMeta = CATEGORIES.find(c => c.id === item.cat);
+      const catLabel = lang === 'km' ? catMeta.km : catMeta.en;
+      const name = lang === 'km' ? item.km : item.en;
+      const isAvailable = canOrderItem(item) && isWithinGeofence();
+      const availText = !isWithinGeofence()
+        ? (lang === 'km' ? 'ក្រៅតំបន់' : 'Out of range')
+        : getItemAvailabilityText(item);
+
+      const card = document.createElement('div');
+      card.className = `card ${isAvailable ? '' : 'card-unavailable'}`;
+      card.style.animationDelay = (Math.min(idx, 14) * 0.035) + 's';
+      const closedTagHtml = !isAvailable ? `<span class="closed-tag">${lang === 'km' ? 'បិទ' : 'CLOSED'}</span>` : '';
+      const btnHtml = isAvailable ? `<button class="order-btn" type="button"><svg viewBox="0 0 24 24"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/></svg><span>${lang === 'km' ? 'បន្ថែម' : 'Add'}</span></button>` : `<div class="order-btn disabled" title="${availText}"><svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><circle cx="12" cy="12" r="10"/></svg><span>${lang === 'km' ? 'មិនលក់' : 'Closed'}</span></div>`;
+      const overlayStyle = !isAvailable ? 'style="background: rgba(0,0,0,0.6);"' : '';
+      card.innerHTML = `
+        <div class="card-img-wrapper">
+          <div class="card-tags-overlay">
+            ${item.popular ? '' : `<span class="num-tag">#${item.num}</span>`}
+            ${item.popular ? `<span class="popular-tag"><svg viewBox="0 0 24 24"><use href="#ic-flame"/></svg>${lang==='km' ? 'ពេញនិយម' : 'Popular'}</span>` : ''}
+            ${closedTagHtml}
+          </div>
+          <img src="${item.img}" alt="${name}" loading="lazy" />
+          <div class="card-img-overlay" ${overlayStyle}></div>
+        </div>
+        <div class="card-name">${name}</div>
+        <div class="card-bottom">
+          <span class="card-cat">${catLabel}</span>
+          <div class="price-block">
+            <span class="card-price">${item.price}</span>
+            <span class="card-price-usd">${toUSD(item.price)}</span>
+          </div>
+        </div>
+        ${btnHtml}
+      `;
+      if (isAvailable){
+        card.querySelector('.order-btn').addEventListener('click', () => addToCart(item));
+      }
+      grid.appendChild(card);
+    });
+  }
+
+  /* ================= LANGUAGE TOGGLE ================= */
+  const langToggle = document.getElementById('langToggle');
+  const optKm = document.getElementById('optKm');
+  const optEn = document.getElementById('optEn');
+
+  function applyStaticLang(){
+    document.querySelectorAll('[data-km][data-en]').forEach(el => {
+      el.textContent = lang === 'km' ? el.getAttribute('data-km') : el.getAttribute('data-en');
+    });
+    document.body.classList.toggle('lang-en', lang === 'en');
+    optKm.classList.toggle('active', lang === 'km');
+    optEn.classList.toggle('active', lang === 'en');
+    document.documentElement.lang = lang;
+
+    const searchInput = document.getElementById('searchInput');
+    searchInput.placeholder = lang === 'km'
+      ? searchInput.getAttribute('data-km-ph')
+      : searchInput.getAttribute('data-en-ph');
+  }
+
+  function toggleLang(){
+    lang = lang === 'km' ? 'en' : 'km';
+    applyStaticLang();
+    renderNavAndTabs();
+    renderOrderPanel();
+    renderGrid();
+    updateGeoOverlay();
+    if (document.getElementById('orderConfirmOverlay').classList.contains('show')){
+      renderOrderConfirm();
+    }
+    tick();
+  }
+
+  langToggle.addEventListener('click', toggleLang);
+
+  /* ================= SEARCH / FILTER ================= */
+  const searchInput = document.getElementById('searchInput');
+  const searchClear = document.getElementById('searchClear');
+
+  searchInput.addEventListener('input', () => {
+    searchTerm = searchInput.value;
+    searchClear.classList.toggle('show', searchTerm.length > 0);
+    renderGrid();
+  });
+
+  searchClear.addEventListener('click', () => {
+    searchInput.value = '';
+    searchTerm = '';
+    searchClear.classList.remove('show');
+    searchInput.focus();
+    renderGrid();
+  });
+
+  /* ================= CLOCK ================= */
+  const monthsKm = ['មករា','កុម្ភៈ','មីនា','មេសា','ឧសភា','មិថុនា','កក្កដា','សីហា','កញ្ញា','តុលា','វិច្ឆិកា','ធ្នូ'];
+  const monthsEn = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  let hasShownClosedPopup = false;
+  const closedOverlay = document.getElementById('closedOverlay');
+
+  function showClosedPopup(){
+    closedOverlay.classList.add('show');
+  }
+  function hideClosedPopup(){
+    closedOverlay.classList.remove('show');
+  }
+  closedOverlay.addEventListener('click', (e) => {
+    if (e.target === closedOverlay) hideClosedPopup();
+  });
+
+  const geoOverlay = document.getElementById('geoOverlay');
+  geoOverlay.addEventListener('click', (e) => {
+    if (e.target === geoOverlay) geoOverlay.classList.remove('show');
+  });
+  document.getElementById('geoOverlayCloseBtn').addEventListener('click', () => {
+    geoOverlay.classList.remove('show');
+  });
+
+  const orderStatusOverlay = document.getElementById('orderStatusOverlay');
+  document.getElementById('orderStatusCloseBtn').addEventListener('click', hideOrderStatus);
+  orderStatusOverlay.addEventListener('click', (e) => {
+    if (e.target === orderStatusOverlay) hideOrderStatus();
+  });
+
+  const orderConfirmOverlay = document.getElementById('orderConfirmOverlay');
+  document.getElementById('orderConfirmCancelBtn').addEventListener('click', closeOrderConfirm);
+  document.getElementById('orderConfirmSendBtn').addEventListener('click', sendOrderToTelegram);
+  orderConfirmOverlay.addEventListener('click', (e) => {
+    if (e.target === orderConfirmOverlay) closeOrderConfirm();
+  });
+
+  function tick(){
+    const now = new Date();
+    const hour24 = now.getHours();
+    let h = hour24;
+    const m = String(now.getMinutes()).padStart(2,'0');
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    h = h % 12; if (h === 0) h = 12;
+    document.getElementById('clockTime').textContent = `${h}:${m} ${ampm}`;
+    const months = lang === 'km' ? monthsKm : monthsEn;
+    document.getElementById('clockDate').textContent = `${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
+
+    // shop hours: drinks 7 AM - 5 PM, foods 5 PM - 1 AM
+    // Check if either drinks or foods are open
+    const drinksOpen = hour24 >= 7 && hour24 < 17;  // 7 AM to 5 PM
+    const foodsOpen = hour24 >= 17 || hour24 < 1;   // 5 PM to 1 AM
+    const hoursOpen = drinksOpen || foodsOpen;
+    // manual switch (CAFE_CLOSED_TODAY) always wins over the normal hours
+    const isOpen = hoursOpen && !CAFE_CLOSED_TODAY;
+    const livePill = document.getElementById('livePill');
+    const liveLabel = document.getElementById('liveLabel');
+    livePill.classList.toggle('closed', !isOpen);
+    liveLabel.textContent = isOpen
+      ? (lang === 'km' ? 'កំពុងបើក' : 'OPEN')
+      : (lang === 'km' ? 'បិទ' : 'CLOSED');
+
+    if (CAFE_CLOSED_TODAY){
+      // manually forced closed: keep the popup up regardless of the clock
+      if (!hasShownClosedPopup){
+        showClosedPopup();
+        hasShownClosedPopup = true;
+      }
+    } else if (!isOpen && !hasShownClosedPopup){
+      // only pop up the closed notice while actually closed; never during opening hours
+      showClosedPopup();
+      hasShownClosedPopup = true;
+    } else if (isOpen){
+      hasShownClosedPopup = false;
+      hideClosedPopup();
+    }
+  }
+  tick();
+  setInterval(tick, 1000 * 15);
+  checkGeofence();
+
+  /* ================= MOBILE SLIDABLE SIDEBAR ================= */
+  const sidebarEl = document.querySelector('.sidebar');
+  const menuTrigger = document.getElementById('menuTrigger');
+  const sidebarBackdrop = document.getElementById('sidebarBackdrop');
+
+  function openSidebar(){
+    sidebarEl.classList.add('open');
+    sidebarBackdrop.classList.add('open');
+  }
+  function closeSidebar(){
+    sidebarEl.classList.remove('open');
+    sidebarBackdrop.classList.remove('open');
+  }
+  function toggleSidebar(){
+    sidebarEl.classList.contains('open') ? closeSidebar() : openSidebar();
+  }
+
+  menuTrigger.addEventListener('click', toggleSidebar);
+  sidebarBackdrop.addEventListener('click', closeSidebar);
+
+  // close the drawer after picking a category on mobile
+  sidebarEl.addEventListener('click', (e) => {
+    if (e.target.closest('.side-item') && window.matchMedia('(max-width:980px)').matches){
+      closeSidebar();
+    }
+  });
+
+  // swipe gestures: swipe right from the left edge to open, swipe left to close
+  let touchStartX = null;
+  let touchStartY = null;
+
+  document.addEventListener('touchstart', (e) => {
+    const t = e.touches[0];
+    touchStartX = t.clientX;
+    touchStartY = t.clientY;
+  }, { passive:true });
+
+  document.addEventListener('touchend', (e) => {
+    if (touchStartX === null) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - touchStartX;
+    const dy = t.clientY - touchStartY;
+
+    if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5){
+      const isMobile = window.matchMedia('(max-width:980px)').matches;
+      if (isMobile){
+        if (dx > 0 && touchStartX < 30 && !sidebarEl.classList.contains('open')){
+          openSidebar();
+        } else if (dx < 0 && sidebarEl.classList.contains('open')){
+          closeSidebar();
+        }
+      }
+    }
+    touchStartX = null;
+    touchStartY = null;
+  }, { passive:true });
+
+  window.addEventListener('resize', () => {
+    if (!window.matchMedia('(max-width:980px)').matches){
+      closeSidebar();
+    }
+  });
+
+  /* ================= EMBER PARTICLES ================= */
+  const emberWrap = document.getElementById('embers');
+  for (let i = 0; i < 24; i++){
+    const s = document.createElement('span');
+    s.style.left = Math.random() * 100 + 'vw';
+    s.style.animationDuration = (6 + Math.random() * 8) + 's';
+    s.style.animationDelay = (Math.random() * 10) + 's';
+    emberWrap.appendChild(s);
+  }
+
+  /* ================= INIT ================= */
+  applyStaticLang();
+  renderNavAndTabs();
+  renderOrderPanel();
+  renderGrid();
+</script>
+
+
+</body></html>
