@@ -39,6 +39,13 @@
     pointer-events:none;
     z-index:0;
     overflow:hidden;
+    /* Promote to its own GPU compositing layer so mobile browsers don't
+       repaint this whole-screen animated layer (and everything else)
+       on every pinch-zoom/viewport-scale step — that repaint was
+       showing up as a full-screen flicker while zooming. */
+    transform:translateZ(0);
+    will-change:transform;
+    contain:strict;
   }
   .embers span{
     position:absolute;
@@ -49,12 +56,13 @@
     box-shadow:0 0 6px 2px rgba(240,169,58,0.6);
     animation:rise linear infinite;
     opacity:0;
+    transform:translateZ(0);
   }
   @keyframes rise{
-    0%{ transform:translateY(0) translateX(0); opacity:0; }
+    0%{ transform:translate3d(0,0,0); opacity:0; }
     10%{ opacity:.8; }
     90%{ opacity:.3; }
-    100%{ transform:translateY(-100vh) translateX(20px); opacity:0; }
+    100%{ transform:translate3d(20px,-100vh,0); opacity:0; }
   }
   @media (prefers-reduced-motion:reduce){
     .embers{display:none;}
@@ -525,6 +533,8 @@
     justify-content:center;
     padding:20px;
     backdrop-filter:blur(3px);
+    transform:translateZ(0);
+    will-change:transform;
   }
   .closed-overlay.show{ display:flex; }
 
@@ -1351,15 +1361,23 @@
       (position) => {
         const { latitude, longitude } = position.coords;
         geoDistanceMeters = haversineDistanceMeters(latitude, longitude, CAFE_LOCATION.lat, CAFE_LOCATION.lng);
-        geoState = geoDistanceMeters <= GEOFENCE_RADIUS_METERS ? 'in-range' : 'out-of-range';
+        const nextGeoState = geoDistanceMeters <= GEOFENCE_RADIUS_METERS ? 'in-range' : 'out-of-range';
+        // watchPosition fires repeatedly as the GPS fix is refined (very common
+        // right after opening the page, e.g. from a QR scan, while location is
+        // still acquiring). Only re-render when the in/out-of-range state
+        // actually changes, otherwise every fix update wipes and rebuilds the
+        // whole grid (replaying card animations) and the menu visibly flickers.
+        const changed = nextGeoState !== geoState;
+        geoState = nextGeoState;
         updateGeoOverlay();
-        renderGrid();
+        if (changed) renderGrid();
       },
       () => {
         // Denied, timed out, or otherwise unavailable — fail closed. No location, no ordering.
+        const changed = geoState !== 'unavailable';
         geoState = 'unavailable';
         updateGeoOverlay();
-        renderGrid();
+        if (changed) renderGrid();
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 }
     );
@@ -1937,9 +1955,14 @@
     });
   }
 
+  // Persistent map of item-key -> already-built card element, so re-renders
+  // can reuse existing DOM nodes (and their already-loaded <img>) instead of
+  // destroying and recreating every card/image on each render, which was
+  // causing the whole grid (images included) to flicker/refade.
+  const gridCardEls = new Map();
+
   function renderGrid(){
     const grid = document.getElementById('grid');
-    grid.innerHTML = '';
     let list = activeCat === 'all' ? ITEMS : ITEMS.filter(i => i.cat === activeCat);
 
     const term = searchTerm.trim().toLowerCase();
@@ -1960,6 +1983,8 @@
       .map(entry => entry.item);
 
     if (list.length === 0){
+      grid.innerHTML = '';
+      gridCardEls.clear();
       const empty = document.createElement('div');
       empty.className = 'empty-state';
       empty.textContent = lang === 'km' ? 'រកមិនឃើញម្ហូបដែលត្រូវនឹងការស្វែងរក' : 'No items match your search';
@@ -1967,7 +1992,11 @@
       return;
     }
 
+    const seenKeys = new Set();
+
     list.forEach((item, idx) => {
+      const key = `${item.cat}-${item.num}`;
+      seenKeys.add(key);
       const catMeta = CATEGORIES.find(c => c.id === item.cat);
       const catLabel = lang === 'km' ? catMeta.km : catMeta.en;
       const name = lang === 'km' ? item.km : item.en;
@@ -1976,13 +2005,10 @@
         ? (lang === 'km' ? 'ក្រៅតំបន់' : 'Out of range')
         : getItemAvailabilityText(item);
 
-      const card = document.createElement('div');
-      card.className = `card ${isAvailable ? '' : 'card-unavailable'}`;
-      card.style.animationDelay = (Math.min(idx, 14) * 0.035) + 's';
       const closedTagHtml = !isAvailable ? `<span class="closed-tag">${lang === 'km' ? 'បិទ' : 'CLOSED'}</span>` : '';
       const btnHtml = isAvailable ? `<button class="order-btn" type="button"><svg viewBox="0 0 24 24"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/></svg><span>${lang === 'km' ? 'បន្ថែម' : 'Add'}</span></button>` : `<div class="order-btn disabled" title="${availText}"><svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><circle cx="12" cy="12" r="10"/></svg><span>${lang === 'km' ? 'មិនលក់' : 'Closed'}</span></div>`;
       const overlayStyle = !isAvailable ? 'style="background: rgba(0,0,0,0.6);"' : '';
-      card.innerHTML = `
+      const innerHtml = `
         <div class="card-img-wrapper">
           <div class="card-tags-overlay">
             ${item.popular ? '' : `<span class="num-tag">#${item.num}</span>`}
@@ -2002,11 +2028,46 @@
         </div>
         ${btnHtml}
       `;
-      if (isAvailable){
-        card.querySelector('.order-btn').addEventListener('click', () => addToCart(item));
+
+      let card = gridCardEls.get(key);
+      const isNew = !card;
+      if (isNew){
+        card = document.createElement('div');
+        gridCardEls.set(key, card);
       }
-      grid.appendChild(card);
+
+      // Only touch markup/animation when something about this card actually
+      // changed (availability, language, price, etc.) or it's brand new —
+      // otherwise leave the existing node (and its already-loaded <img>)
+      // completely alone so it never re-flashes.
+      const stateSig = `${isAvailable}|${lang}|${name}|${item.price}|${availText}`;
+      if (isNew || card.dataset.sig !== stateSig){
+        card.dataset.sig = stateSig;
+        card.className = `card ${isAvailable ? '' : 'card-unavailable'}`;
+        card.innerHTML = innerHtml;
+        if (isAvailable){
+          card.querySelector('.order-btn').addEventListener('click', () => addToCart(item));
+        }
+      }
+      if (isNew){
+        card.style.animationDelay = (Math.min(idx, 14) * 0.035) + 's';
+      } else {
+        // Already on the page — never replay the entrance animation for it.
+        card.style.animation = 'none';
+      }
+
+      if (grid.children[idx] !== card){
+        grid.insertBefore(card, grid.children[idx] || null);
+      }
     });
+
+    // Remove cards for items no longer in the filtered/sorted list.
+    for (const [key, el] of gridCardEls){
+      if (!seenKeys.has(key)){
+        el.remove();
+        gridCardEls.delete(key);
+      }
+    }
   }
 
   /* ================= LANGUAGE TOGGLE ================= */
