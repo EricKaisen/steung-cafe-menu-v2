@@ -6,20 +6,20 @@
 <link href="https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root{
-    --char:        #F3F4F6;
-    --char-2:      #FFFFFF;
-    --char-3:      #FFFFFF;
-    --char-4:      #F3F4F6;
+    --char:        #17110D;
+    --char-2:      #1F1610;
+    --char-3:      #241A13;
+    --char-4:      #2C2117;
     --ember:       #E8592A;
-    --ember-deep:  #C8441C;
-    --amber:       #E8592A;
-    --rice:        #1F2430;
-    --smoke:       #8A8F9C;
-    --line:        #E7E8EC;
-    --good:        #22A06B;
-    --bad:         #E5484D;
-    --sidebar:     #1B1F2A;
-    --sidebar-2:   #262C3B;
+    --ember-deep:  #B23A24;
+    --amber:       #F0A93A;
+    --rice:        #F5ECD9;
+    --smoke:       #8C7E6E;
+    --line:        #3a2c20;
+    --good:        #4FAE6B;
+    --bad:         #E24C4C;
+    --sidebar:     #150F0A;
+    --sidebar-2:   #1F1610;
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;min-height:100%;}
@@ -308,20 +308,71 @@
     font-family:'Kantumruy Pro', sans-serif; width:280px; margin:0 auto; color:#111; background:#fff; padding:16px;
   }
 
+  /* ================= MOBILE DRAWER ================= */
+  .menu-toggle{
+    display:none; background:none; border:1px solid var(--line); color:var(--rice);
+    width:36px; height:36px; border-radius:9px; align-items:center; justify-content:center;
+    flex-shrink:0;
+  }
+  .sidebar-backdrop{
+    display:none; position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:19;
+  }
+  .sidebar-backdrop.show{ display:block; }
+
+  /* ================= POS ORDER PANEL ================= */
+  .pos-layout{ display:flex; gap:16px; align-items:flex-start; }
+  .pos-items{ flex:1; min-width:0; }
+  .pos-cart{
+    width:290px; flex-shrink:0; background:var(--char-3); border:1px solid var(--line);
+    border-radius:14px; padding:14px; position:sticky; top:20px; display:flex; flex-direction:column; gap:10px;
+  }
+  .pos-cart h3{ margin:0; font-size:14px; }
+  .pos-cart-list{ display:flex; flex-direction:column; gap:8px; max-height:280px; overflow-y:auto; }
+  .pos-cart-row{ display:flex; align-items:center; gap:8px; font-size:12.5px; }
+  .pos-cart-row .nm{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .pos-cart-row .qtybox{ display:flex; align-items:center; gap:4px; }
+  .pos-cart-row .qtybox button{
+    width:22px; height:22px; border-radius:6px; background:var(--char-4); border:1px solid var(--line); color:var(--rice); font-size:13px; line-height:1;
+  }
+  .pos-item-btn{
+    background:var(--char-3); border:1px solid var(--line); border-radius:14px;
+    overflow:hidden; text-align:left; display:flex; flex-direction:column; width:100%;
+  }
+  .pos-item-btn .thumb{ aspect-ratio:1/1; background:var(--char-4); display:flex; align-items:center; justify-content:center; overflow:hidden; }
+  .pos-item-btn .thumb img{ width:100%; height:100%; object-fit:cover; }
+  .pos-item-btn .thumb svg{ width:34%; height:34%; opacity:.35; }
+  .pos-item-btn .info{ padding:8px 10px 10px; }
+  .pos-item-btn .info .n{ font-size:12.5px; font-weight:700; line-height:1.25; }
+  .pos-item-btn .info .p{ color:var(--amber); font-size:12px; font-weight:700; margin-top:2px; }
+  .pos-item-btn:active{ transform:scale(.97); }
+  .pos-total-row{ display:flex; justify-content:space-between; font-weight:800; font-size:15px; border-top:1px solid var(--line); padding-top:10px; }
+  .pos-cart-empty{ color:var(--smoke); font-size:12.5px; text-align:center; padding:14px 0; }
+  .chip-row{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px; }
+  .chip{
+    background:var(--char-3); border:1px solid var(--line); color:var(--smoke);
+    padding:6px 12px; border-radius:999px; font-size:12px; font-weight:700;
+  }
+  .chip.active{ background:var(--ember); color:#fff; border-color:var(--ember); }
+
+  .app.staff-mode [data-admin-only]{ display:none !important; }
   @media(max-width:820px){
-    .app.show{ flex-direction:column; }
-    .sidebar{ width:100%; height:auto; position:static; flex-direction:row; align-items:center; }
-    .sidebar .brand{ border-bottom:none; border-right:1px solid rgba(255,255,255,.08); }
-    .sidebar-scroll{ padding:8px; overflow-x:auto; }
-    .tabs{ flex-direction:row; }
-    .sidebar-foot{ border-top:none; flex-direction:row; padding:8px; }
+    .menu-toggle{ display:inline-flex; }
+    .sidebar{
+      position:fixed; left:0; top:0; width:250px; z-index:20;
+      transform:translateX(-100%); transition:transform .2s ease;
+    }
+    .sidebar.open{ transform:translateX(0); }
+    .pos-layout{ flex-direction:column; }
+    .pos-cart{ width:100%; position:static; }
   }
   @media(max-width:600px){
     .topbar{ padding:14px 16px; }
     .content{ padding:16px 16px 50px; }
+    .item-grid, .pos-items .item-grid{ grid-template-columns:repeat(auto-fill, minmax(140px, 1fr)); }
   }
 </style>
 </head><body>
+<div class="sidebar-backdrop" id="sidebarBackdrop"></div>
 
 <div class="login-wrap" id="loginWrap">
   <div class="login-card">
@@ -330,7 +381,11 @@
       <button data-lang="km">ខ្មែរ</button>
     </div>
     <h1 data-i18n="loginTitle">Steung Cafe Admin</h1>
-    <p class="sub" data-i18n="loginSub">Enter the admin password to continue</p>
+    <p class="sub" id="loginSubText" data-i18n="loginSub">Enter the admin password to continue</p>
+    <div class="lang-toggle" id="loginModeToggle" style="margin:0 auto 16px; width:fit-content;">
+      <button data-mode="admin" class="active" data-i18n="adminModeBtn">Admin</button>
+      <button data-mode="staff" data-i18n="staffModeBtn">Staff</button>
+    </div>
     <input type="password" id="passwordInput" data-i18n-placeholder="passwordPh" placeholder="Password" autofocus>
     <div class="err" id="loginErr"></div>
     <button class="btn" id="loginBtn" data-i18n="loginBtn">Log in</button>
@@ -338,13 +393,34 @@
 </div>
 
 <div class="app" id="app">
-  <div class="sidebar">
-    <div class="brand"><span class="dot"></span><h1 data-i18n="appTitle">Steung Cafe Admin</h1></div>
+  <div class="sidebar" id="sidebar">
+    <div class="brand">
+      <span class="dot"></span>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F0A93A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4Z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+      <h1 data-i18n="appTitle">Steung Cafe Admin</h1>
+    </div>
     <div class="sidebar-scroll">
       <div class="tabs">
-        <button class="tab active" data-panel="itemsPanel" data-i18n="tabItems">Menu Items</button>
-        <button class="tab" data-panel="ordersPanel" data-i18n="tabOrders">Orders &amp; Report</button>
-        <button class="tab" data-panel="tablesPanel" data-i18n="tabTables">Tables</button>
+        <button class="tab" data-panel="posPanel">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+          <span data-i18n="tabPos">New Order</span>
+        </button>
+        <button class="tab active" data-panel="itemsPanel" data-admin-only>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          <span data-i18n="tabItems">Menu Items</span>
+        </button>
+        <button class="tab" data-panel="ordersPanel" data-admin-only>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>
+          <span data-i18n="tabOrders">Orders &amp; Report</span>
+        </button>
+        <button class="tab" data-panel="tablesPanel" data-admin-only>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="9" y1="10" x2="9" y2="20"/></svg>
+          <span data-i18n="tabTables">Tables</span>
+        </button>
+        <button class="tab" data-panel="staffPanel" data-admin-only>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M20 8v6"/><path d="M23 11h-6"/></svg>
+          <span data-i18n="tabStaff">Staff</span>
+        </button>
       </div>
     </div>
     <div class="sidebar-foot">
@@ -358,20 +434,43 @@
 
   <div class="main-wrap">
   <div class="topbar">
-    <div class="brand"></div>
+    <div class="brand">
+      <button class="menu-toggle" id="menuToggleBtn" aria-label="Menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+    </div>
     <div class="right">
-      <div class="status-pill" id="statusPill">
+      <div class="status-pill" id="statusPill" data-admin-only>
         <span class="dot2"></span>
         <span class="label" id="statusLabel" data-i18n="loadingText">Loading…</span>
       </div>
-      <button class="btn small" id="statusToggleBtn" disabled>…</button>
+      <button class="btn small" id="statusToggleBtn" disabled data-admin-only>…</button>
     </div>
   </div>
 
   <div class="content">
 
+    <!-- ============ NEW ORDER (POS) PANEL ============ -->
+    <div class="panel active" id="posPanel">
+      <div class="chip-row" id="posCatChips"></div>
+      <div class="pos-layout">
+        <div class="pos-items">
+          <div id="posItemsArea"><div class="loading" data-i18n="loadingItems">Loading items…</div></div>
+        </div>
+        <div class="pos-cart">
+          <h3 data-i18n="cartTitle">Current Order</h3>
+          <div class="field"><input type="text" id="posCustomerName" data-i18n-placeholder="customerNamePh" placeholder="Customer name (optional)"></div>
+          <div class="field"><input type="text" id="posContact" data-i18n-placeholder="contactPh" placeholder="Contact (optional)"></div>
+          <div class="pos-cart-list" id="posCartList"><div class="pos-cart-empty" data-i18n="cartEmpty">No items yet — tap a menu item to add it.</div></div>
+          <div class="pos-total-row"><span data-i18n="totalCol">Total</span><span id="posCartTotal">0៛</span></div>
+          <div class="modal-msg" id="posMsg"></div>
+          <button class="btn" id="posSubmitBtn" data-i18n="placeOrderBtn">Place order</button>
+        </div>
+      </div>
+    </div>
+
     <!-- ============ ITEMS PANEL ============ -->
-    <div class="panel active" id="itemsPanel">
+    <div class="panel" id="itemsPanel">
       <div class="toolbar">
         <select id="catFilter" class="cat-select-filter"></select>
         <input type="search" id="itemSearch" data-i18n-placeholder="searchPh" placeholder="Search items…">
@@ -403,6 +502,20 @@
         <button class="btn small" id="addTableBtn" data-i18n="addTableBtn">+ Add table</button>
       </div>
       <div id="tablesArea"></div>
+    </div>
+
+    <!-- ============ STAFF PANEL ============ -->
+    <div class="panel" id="staffPanel">
+      <div class="table-card" style="max-width:420px;">
+        <div class="tname" data-i18n="staffPinTitle">Staff order-only PIN</div>
+        <div class="tnote" data-i18n="staffPinDesc" style="margin-bottom:10px;">Set a PIN for staff. They enter it on this device's login screen to open an order-only view — no menu editing, reports, or settings.</div>
+        <div class="field"><label data-i18n="staffPinLabel">PIN</label><input type="text" id="staffPinInput" inputmode="numeric" placeholder="1234"></div>
+        <div class="row" style="margin-top:6px;">
+          <button class="btn" id="saveStaffPinBtn" data-i18n="saveBtn">Save</button>
+          <button class="btn ghost" id="clearStaffPinBtn" data-i18n="clearBtn">Clear</button>
+        </div>
+        <div class="modal-msg" id="staffPinMsg" style="margin-top:8px;"></div>
+      </div>
     </div>
 
   </div>
@@ -523,7 +636,18 @@
       couldNotLoadItems:"Couldn't load items:", couldNotLoadOrders:"Couldn't load orders:",
       confirmDeleteItem:'Delete', cantUndo:"? This can't be undone.", failedDelete:'Failed to delete:',
       couldNotUpdateStatus:'Could not update menu status:', noTablesYet:'No tables yet — click "+ Add table" to create one.',
-      qtyCol:'Qty', receiptTo:'Steung Cafe', receiptThanks:'Thank you!'
+      qtyCol:'Qty', receiptTo:'Steung Cafe', receiptThanks:'Thank you!',
+      tabPos:'New Order', tabStaff:'Staff', cartTitle:'Current Order',
+      customerNamePh:'Customer name (optional)', contactPh:'Contact (optional)',
+      cartEmpty:'No items yet — tap a menu item to add it.', placeOrderBtn:'Place order',
+      placingOrderBtn:'Placing…', orderPlaced:'Order placed ✓', orderFailed:'Could not place order:',
+      adminModeBtn:'Admin', staffModeBtn:'Staff', staffLoginSub:'Enter the staff order PIN',
+      staffPinPh:'Staff PIN', staffPinNotSet:'No staff PIN has been set on this device yet.',
+      staffPinWrong:'Incorrect PIN.', staffLoginNeedsAdmin:'An admin needs to log in on this device once before staff PIN login works here.',
+      loggingInBtn:'Logging in…', staffPinTitle:'Staff order-only PIN',
+      staffPinDesc:'Set a PIN for staff. They enter it on this device\u2019s login screen to open an order-only view — no menu editing, reports, or settings.',
+      staffPinLabel:'PIN', clearBtn:'Clear', staffPinRequired:'Enter a PIN first.',
+      staffPinSaved:'Staff PIN saved on this device ✓', staffPinCleared:'Staff PIN cleared.'
     },
     km: {
       loginTitle:'ស្ទឹងកាហ្វេ អ្នកគ្រប់គ្រង', loginSub:'បញ្ចូលពាក្យសម្ងាត់អ្នកគ្រប់គ្រងដើម្បីបន្ត',
@@ -553,7 +677,18 @@
       couldNotLoadItems:'មិនអាចផ្ទុកមុខម្ហូបបានទេ៖', couldNotLoadOrders:'មិនអាចផ្ទុកការបញ្ជាទិញបានទេ៖',
       confirmDeleteItem:'លុប', cantUndo:'? សកម្មភាពនេះមិនអាចមកវិញបានទេ។', failedDelete:'បរាជ័យក្នុងការលុប៖',
       couldNotUpdateStatus:'មិនអាចធ្វើបច្ចុប្បន្នភាពស្ថានភាពម៉ឺនុយបានទេ៖', noTablesYet:'មិនទាន់មានតុទេ — ចុច "+ បន្ថែមតុ" ដើម្បីបង្កើតមួយ។',
-      qtyCol:'ចំនួន', receiptTo:'ស្ទឹងកាហ្វេ', receiptThanks:'អរគុណ!'
+      qtyCol:'ចំនួន', receiptTo:'ស្ទឹងកាហ្វេ', receiptThanks:'អរគុណ!',
+      tabPos:'ការបញ្ជាទិញថ្មី', tabStaff:'បុគ្គលិក', cartTitle:'ការបញ្ជាទិញបច្ចុប្បន្ន',
+      customerNamePh:'ឈ្មោះអតិថិជន (មិនចាំបាច់)', contactPh:'ទំនាក់ទំនង (មិនចាំបាច់)',
+      cartEmpty:'មិនទាន់មានទេ — ចុចលើមុខម្ហូបដើម្បីបន្ថែម។', placeOrderBtn:'បញ្ជូនការបញ្ជាទិញ',
+      placingOrderBtn:'កំពុងបញ្ជូន…', orderPlaced:'បានបញ្ជូនការបញ្ជាទិញ ✓', orderFailed:'មិនអាចបញ្ជូនការបញ្ជាទិញបានទេ៖',
+      adminModeBtn:'អ្នកគ្រប់គ្រង', staffModeBtn:'បុគ្គលិក', staffLoginSub:'បញ្ចូលលេខកូដសម្ងាត់បុគ្គលិក',
+      staffPinPh:'លេខកូដបុគ្គលិក', staffPinNotSet:'មិនទាន់មានលេខកូដបុគ្គលិកទេនៅលើឧបករណ៍នេះ។',
+      staffPinWrong:'លេខកូដមិនត្រឹមត្រូវ។', staffLoginNeedsAdmin:'អ្នកគ្រប់គ្រងត្រូវតែចូលនៅលើឧបករណ៍នេះម្តងសិន មុននឹងបុគ្គលិកអាចប្រើលេខកូដបាន។',
+      loggingInBtn:'កំពុងចូល…', staffPinTitle:'លេខកូដសម្ងាត់សម្រាប់បញ្ជាទិញតែប៉ុណ្ណោះ',
+      staffPinDesc:'កំណត់លេខកូដសម្រាប់បុគ្គលិក។ ពួកគេបញ្ចូលវានៅអេក្រង់ចូលរបស់ឧបករណ៍នេះ ដើម្បីបើកទិដ្ឋភាពបញ្ជាទិញតែប៉ុណ្ណោះ — មិនអាចកែសម្រួលម៉ឺនុយ របាយការណ៍ ឬការកំណត់ទេ។',
+      staffPinLabel:'លេខកូដ', clearBtn:'សម្អាត', staffPinRequired:'សូមបញ្ចូលលេខកូដសិន។',
+      staffPinSaved:'បានរក្សាទុកលេខកូដបុគ្គលិកលើឧបករណ៍នេះ ✓', staffPinCleared:'បានលុបលេខកូដបុគ្គលិក។'
     }
   };
 
@@ -571,6 +706,7 @@
     populateCategorySelects();
     if (typeof renderItems === 'function' && items) renderItems();
     if (typeof renderTables === 'function' && tables) renderTables();
+    if (typeof renderPosPanel === 'function' && items) renderPosPanel();
     renderStoreStatus(storeClosed);
   }
 
@@ -625,21 +761,50 @@
     return data;
   }
 
+  let staffMode = false;
+  let loginMode = 'admin';
+
   function showApp(){
     document.getElementById('loginWrap').style.display = 'none';
-    document.getElementById('app').classList.add('show');
+    const appEl = document.getElementById('app');
+    appEl.classList.add('show');
+    appEl.classList.toggle('staff-mode', staffMode);
     applyLang();
+    if (staffMode){
+      document.querySelectorAll('.tab').forEach(tb => tb.classList.remove('active'));
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      document.querySelector('.tab[data-panel="posPanel"]').classList.add('active');
+      document.getElementById('posPanel').classList.add('active');
+    }
     loadItems();
-    loadStoreStatus();
-    loadTables();
+    if (!staffMode){
+      loadStoreStatus();
+      loadTables();
+    }
   }
 
   function logout(){
     token = '';
+    staffMode = false;
     sessionStorage.removeItem('scm_admin_token');
+    sessionStorage.removeItem('scm_staff_mode');
     document.getElementById('app').classList.remove('show');
+    document.getElementById('app').classList.remove('staff-mode');
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('sidebarBackdrop').classList.remove('show');
     document.getElementById('loginWrap').style.display = 'flex';
   }
+
+  document.querySelectorAll('#loginModeToggle button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      loginMode = btn.dataset.mode;
+      document.querySelectorAll('#loginModeToggle button').forEach(b => b.classList.toggle('active', b === btn));
+      document.getElementById('loginSubText').textContent = loginMode === 'staff' ? t('staffLoginSub') : t('loginSub');
+      document.getElementById('passwordInput').placeholder = loginMode === 'staff' ? t('staffPinPh') : t('passwordPh');
+      document.getElementById('passwordInput').value = '';
+      document.getElementById('loginErr').textContent = '';
+    });
+  });
 
   document.getElementById('loginBtn').addEventListener('click', doLogin);
   document.getElementById('passwordInput').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
@@ -649,7 +814,31 @@
     const errEl = document.getElementById('loginErr');
     const btn = document.getElementById('loginBtn');
     errEl.textContent = '';
-    btn.disabled = true; btn.textContent = 'Logging in…';
+
+    if (loginMode === 'staff'){
+      const storedPin = localStorage.getItem('scm_staff_pin') || '';
+      const cachedToken = localStorage.getItem('scm_admin_token_cache') || '';
+      if (!storedPin){
+        errEl.textContent = t('staffPinNotSet');
+        return;
+      }
+      if (pw !== storedPin){
+        errEl.textContent = t('staffPinWrong');
+        return;
+      }
+      if (!cachedToken){
+        errEl.textContent = t('staffLoginNeedsAdmin');
+        return;
+      }
+      token = cachedToken;
+      staffMode = true;
+      sessionStorage.setItem('scm_admin_token', token);
+      sessionStorage.setItem('scm_staff_mode', '1');
+      showApp();
+      return;
+    }
+
+    btn.disabled = true; btn.textContent = t('loggingInBtn');
     try {
       const res = await fetch(FN + '/admin-login', {
         method: 'POST',
@@ -659,16 +848,34 @@
       const data = await res.json();
       if (!res.ok || !data.ok) throw new Error(data.error || 'Login failed');
       token = data.token;
+      staffMode = false;
       sessionStorage.setItem('scm_admin_token', token);
+      sessionStorage.removeItem('scm_staff_mode');
+      localStorage.setItem('scm_admin_token_cache', token); // lets this device unlock staff PIN mode later
       showApp();
     } catch (err) {
       errEl.textContent = err.message;
     } finally {
-      btn.disabled = false; btn.textContent = 'Log in';
+      btn.disabled = false; btn.textContent = t('loginBtn');
     }
   }
 
   document.getElementById('logoutBtn').addEventListener('click', logout);
+
+  /* ---------------- mobile sidebar drawer ---------------- */
+
+  document.getElementById('menuToggleBtn').addEventListener('click', () => {
+    document.getElementById('sidebar').classList.add('open');
+    document.getElementById('sidebarBackdrop').classList.add('show');
+  });
+  document.getElementById('sidebarBackdrop').addEventListener('click', () => {
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('sidebarBackdrop').classList.remove('show');
+  });
+  document.querySelectorAll('.tab').forEach(tb => tb.addEventListener('click', () => {
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('sidebarBackdrop').classList.remove('show');
+  }));
 
   /* ---------------- menu open/closed status ---------------- */
 
@@ -737,8 +944,11 @@
       const data = await apiFetch('/admin-items');
       items = data.items || [];
       renderItems();
+      renderPosPanel();
     } catch (err) {
       area.innerHTML = `<div class="empty">${t('couldNotLoadItems')} ${escapeHtml(err.message)}</div>`;
+      const posArea = document.getElementById('posItemsArea');
+      if (posArea) posArea.innerHTML = `<div class="empty">${t('couldNotLoadItems')} ${escapeHtml(err.message)}</div>`;
     }
   }
 
@@ -808,6 +1018,172 @@
   }
 
   /* ---------------- items: add/edit modal ---------------- */
+
+  /* ---------------- New Order (POS) ---------------- */
+
+  // Point this at your existing customer-facing order-placement Netlify
+  // function so staff-placed orders land in the same order log as the
+  // live menu. Adjust the path/payload shape to match that function.
+  const ORDER_ENDPOINT = '/place-order';
+
+  let posCat = 'all';
+  let cart = []; // { id, name, price, qty }
+
+  function parsePrice(priceStr){
+    const n = parseFloat(String(priceStr || '0').replace(/[^\d.]/g, ''));
+    return isNaN(n) ? 0 : n;
+  }
+
+  function renderPosPanel(){
+    renderPosChips();
+    renderPosItems();
+    renderCart();
+  }
+
+  function renderPosChips(){
+    const wrap = document.getElementById('posCatChips');
+    if (!wrap) return;
+    const cats = ['all', ...new Set(items.map(it => it.cat))];
+    wrap.innerHTML = cats.map(c => `<button class="chip ${c === posCat ? 'active' : ''}" data-chip="${c}">${c === 'all' ? CAT_LABELS[lang].all : (CAT_LABELS[lang][c] || c)}</button>`).join('');
+    wrap.querySelectorAll('[data-chip]').forEach(btn => {
+      btn.addEventListener('click', () => { posCat = btn.dataset.chip; renderPosPanel(); });
+    });
+  }
+
+  function renderPosItems(){
+    const area = document.getElementById('posItemsArea');
+    if (!area) return;
+    let list = items.filter(it => it.active !== false);
+    if (posCat !== 'all') list = list.filter(it => it.cat === posCat);
+    if (!list.length){
+      area.innerHTML = `<div class="empty">${t('noItemsMatch')}</div>`;
+      return;
+    }
+    area.innerHTML = `<div class="item-grid">${list.map(posItemBtnHtml).join('')}</div>`;
+    area.querySelectorAll('[data-add]').forEach(btn => {
+      btn.addEventListener('click', () => addToCart(btn.dataset.add));
+    });
+  }
+
+  function posItemBtnHtml(it){
+    const name = it.km || it.en || '(untitled)';
+    const thumb = it.img
+      ? `<img src="${escapeAttr(it.img)}" alt="">`
+      : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/></svg>`;
+    return `
+      <button class="pos-item-btn" data-add="${it.id}">
+        <div class="thumb">${thumb}</div>
+        <div class="info">
+          <div class="n">${escapeHtml(name)}</div>
+          <div class="p">${escapeHtml(it.price || '')}</div>
+        </div>
+      </button>`;
+  }
+
+  function addToCart(id){
+    const it = items.find(i => i.id === id);
+    if (!it) return;
+    const existing = cart.find(c => c.id === id);
+    if (existing) existing.qty += 1;
+    else cart.push({ id: it.id, name: it.km || it.en || '(untitled)', price: parsePrice(it.price), qty: 1 });
+    renderCart();
+  }
+
+  function changeQty(id, delta){
+    const row = cart.find(c => c.id === id);
+    if (!row) return;
+    row.qty += delta;
+    if (row.qty <= 0) cart = cart.filter(c => c.id !== id);
+    renderCart();
+  }
+
+  function fmtRielPos(n){ return Math.round(n || 0).toLocaleString('en-US') + '\u17DB'; }
+
+  function renderCart(){
+    const list = document.getElementById('posCartList');
+    const totalEl = document.getElementById('posCartTotal');
+    if (!list) return;
+    if (!cart.length){
+      list.innerHTML = `<div class="pos-cart-empty">${t('cartEmpty')}</div>`;
+      totalEl.textContent = fmtRielPos(0);
+      return;
+    }
+    list.innerHTML = cart.map(c => `
+      <div class="pos-cart-row">
+        <span class="nm">${escapeHtml(c.name)}</span>
+        <div class="qtybox">
+          <button data-dec="${c.id}">−</button>
+          <span>${c.qty}</span>
+          <button data-inc="${c.id}">+</button>
+        </div>
+        <span>${fmtRielPos(c.price * c.qty)}</span>
+      </div>`).join('');
+    list.querySelectorAll('[data-inc]').forEach(b => b.addEventListener('click', () => changeQty(b.dataset.inc, 1)));
+    list.querySelectorAll('[data-dec]').forEach(b => b.addEventListener('click', () => changeQty(b.dataset.dec, -1)));
+    const total = cart.reduce((s, c) => s + c.price * c.qty, 0);
+    totalEl.textContent = fmtRielPos(total);
+  }
+
+  document.getElementById('posSubmitBtn').addEventListener('click', submitPosOrder);
+
+  async function submitPosOrder(){
+    const msgEl = document.getElementById('posMsg');
+    const btn = document.getElementById('posSubmitBtn');
+    msgEl.textContent = ''; msgEl.className = 'modal-msg';
+    if (!cart.length){
+      msgEl.textContent = t('cartEmpty');
+      msgEl.className = 'modal-msg error';
+      return;
+    }
+    const payload = {
+      customerName: document.getElementById('posCustomerName').value.trim(),
+      contact: document.getElementById('posContact').value.trim(),
+      items: cart.map(c => ({ id: c.id, name: c.name, qty: c.qty, price: c.price, total: c.price * c.qty })),
+      total: cart.reduce((s, c) => s + c.price * c.qty, 0),
+      source: 'staff-admin'
+    };
+    btn.disabled = true; btn.textContent = t('placingOrderBtn');
+    try {
+      await apiFetch(ORDER_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      cart = [];
+      document.getElementById('posCustomerName').value = '';
+      document.getElementById('posContact').value = '';
+      renderCart();
+      msgEl.textContent = t('orderPlaced');
+      msgEl.className = 'modal-msg ok';
+    } catch (err) {
+      msgEl.textContent = t('orderFailed') + ' ' + err.message;
+      msgEl.className = 'modal-msg error';
+    } finally {
+      btn.disabled = false; btn.textContent = t('placeOrderBtn');
+    }
+  }
+
+  /* ---------------- staff PIN settings ---------------- */
+
+  const staffPinInputEl = document.getElementById('staffPinInput');
+  if (staffPinInputEl) staffPinInputEl.value = localStorage.getItem('scm_staff_pin') || '';
+
+  document.getElementById('saveStaffPinBtn').addEventListener('click', () => {
+    const val = document.getElementById('staffPinInput').value.trim();
+    const msgEl = document.getElementById('staffPinMsg');
+    if (!val){
+      msgEl.textContent = t('staffPinRequired');
+      msgEl.className = 'modal-msg error';
+      return;
+    }
+    localStorage.setItem('scm_staff_pin', val);
+    msgEl.textContent = t('staffPinSaved');
+    msgEl.className = 'modal-msg ok';
+  });
+
+  document.getElementById('clearStaffPinBtn').addEventListener('click', () => {
+    localStorage.removeItem('scm_staff_pin');
+    document.getElementById('staffPinInput').value = '';
+    const msgEl = document.getElementById('staffPinMsg');
+    msgEl.textContent = t('staffPinCleared');
+    msgEl.className = 'modal-msg ok';
+  });
 
   document.getElementById('addItemBtn').addEventListener('click', () => openItemModal(null));
   document.getElementById('cancelItemBtn').addEventListener('click', closeItemModal);
@@ -1159,6 +1535,7 @@
   /* ---------------- init ---------------- */
 
   applyLang();
+  staffMode = sessionStorage.getItem('scm_staff_mode') === '1';
   if (token) showApp();
 })();
 </script>
