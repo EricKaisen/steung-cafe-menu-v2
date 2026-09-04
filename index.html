@@ -1255,16 +1255,34 @@
   /* ======================================================================
      MANUAL "CLOSED TODAY" POPUP SWITCH
      ----------------------------------------------------------------------
-     Set this to true whenever you want the "We're Closed" popup to show
-     right away for visitors (holiday, event, unexpected closure, etc.),
-     no matter what time it is or what the normal opening hours are.
-
-     Set it back to false to turn the popup off and return to normal.
+     Controlled from the admin dashboard's "Close Menu" / "Open Menu"
+     button (see admin.html + netlify/functions/admin-status.js) rather
+     than being hand-edited here. Starts false (open) on every page load
+     and gets corrected by loadStoreStatus() below moments later if the
+     admin has switched it on — and is re-checked periodically so a board
+     left open on a TV picks up the change without a manual refresh.
 
          true  -> popup shows
          false -> popup hidden (normal hours logic still applies)
      ====================================================================== */
-  const CAFE_CLOSED_TODAY = false;
+  let CAFE_CLOSED_TODAY = false;
+
+  // Pulls the admin-set open/closed flag. Fails soft: any error leaves
+  // CAFE_CLOSED_TODAY as-is (defaulting to false/open) so a status-store
+  // hiccup never accidentally closes the live menu.
+  function loadStoreStatus(){
+    fetch('/.netlify/functions/get-status')
+      .then(res => res.ok ? res.json() : Promise.reject(new Error('bad status ' + res.status)))
+      .then(data => {
+        if (data && data.ok && typeof data.closed === 'boolean'){
+          CAFE_CLOSED_TODAY = data.closed;
+          tick();
+        }
+      })
+      .catch(err => {
+        console.warn('Could not load menu open/closed status:', err.message);
+      });
+  }
 
   // ================= GPS GEOFENCING =================
   // Café's real-world coordinates (from the shared Google Maps location).
@@ -1361,23 +1379,16 @@
       (position) => {
         const { latitude, longitude } = position.coords;
         geoDistanceMeters = haversineDistanceMeters(latitude, longitude, CAFE_LOCATION.lat, CAFE_LOCATION.lng);
-        const nextGeoState = geoDistanceMeters <= GEOFENCE_RADIUS_METERS ? 'in-range' : 'out-of-range';
-        // watchPosition fires repeatedly as the GPS fix is refined (very common
-        // right after opening the page, e.g. from a QR scan, while location is
-        // still acquiring). Only re-render when the in/out-of-range state
-        // actually changes, otherwise every fix update wipes and rebuilds the
-        // whole grid (replaying card animations) and the menu visibly flickers.
-        const changed = nextGeoState !== geoState;
-        geoState = nextGeoState;
+        // The grid itself (sort order, Closed tags) no longer depends on
+        // geoState — only the on-tap "Add" gate and the geoOverlay dialog do —
+        // so refining GPS fixes here never reorders or re-tags the menu.
+        geoState = geoDistanceMeters <= GEOFENCE_RADIUS_METERS ? 'in-range' : 'out-of-range';
         updateGeoOverlay();
-        if (changed) renderGrid();
       },
       () => {
         // Denied, timed out, or otherwise unavailable — fail closed. No location, no ordering.
-        const changed = geoState !== 'unavailable';
         geoState = 'unavailable';
         updateGeoOverlay();
-        if (changed) renderGrid();
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 }
     );
@@ -1386,7 +1397,6 @@
   function checkGeofence(){
     if (!('geolocation' in navigator)){
       geoState = 'unavailable';
-      renderGrid();
       return;
     }
 
@@ -1413,79 +1423,81 @@
     { id:'cream',   km:'ភេសជ្ជៈគ្រីម',      en:'Cream',        icon:'ic-glass' },
   ];
 
-  /* Updated with correct beverage images */
-  const ITEMS = [
-    { num:1,  km:'ត្រីសាបាក់អាំង',        en:'Grilled Sabak Fish',            price:'15,000៛', cat:'grilled', icon:'ic-fish',    popular:true,  img:'asset/fish_1.png' },
-    { num:2,  km:'សាច់ជ្រូកអាំង គីមឈី',    en:'Grilled Pork with Kimchi',      price:'12,000៛', cat:'grilled', icon:'ic-skewer',  popular:true,  img:'asset/pork_2.png' },
-    { num:3,  km:'ត្រប់អាំងពិសេស',        en:'Grilled Eggplant',      price:'6,000៛',  cat:'grilled', icon:'ic-leaf',     popular:false, img:'asset/eggplant_3.png' },
-    { num:4,  km:'គោងៀតអាំង',             en:'Grilled​ Dried Beef',             price:'10,000៛', cat:'grilled', icon:'ic-skewer',  popular:false, img:'asset/beef_4.png' },
-    { num:5,  km:'ព្រុយត្រីអាំង',          en:'Grilled Fish Fins',              price:'10,000៛', cat:'grilled', icon:'ic-fish',    popular:false, img:'asset/fin_5.png' },
-    { num:6,  km:'ងាវអាំង អំបិលម្ទេស',     en:'Grilled Blood Cockles, Chili-Salt',price:'10,000៛', cat:'grilled', icon:'ic-shell',   popular:false, img:'asset/cockles_5.png' },
-    { num:7,  km:'យឺហ៊ឺងអាំង',            en:'Grilled Dried Squid',         price:'10,000៛', cat:'grilled', icon:'ic-fish',    popular:false, img:'asset/dried_squid_6.png' },
-    { num:8,  km:'ហៃប៊ីក្រឡុក',           en:'Tossed Dried Shrimp Salad',     price:'10,000៛', cat:'grilled', icon:'ic-shrimp',  popular:false, img:'asset/shrimp_7.png' },
-    { num:9,  km:'មឹកអាំង',               en:'Grilled Squid',                 price:'10,000៛', cat:'grilled', icon:'ic-fish',    popular:true,  img:'asset/squid_8.png' },
-    { num:10, km:'កង្កែបអាំងអំបិលម្ទេស',    en:'Grilled Frog, Chili-Salt',   price:'12,000៛', cat:'grilled', icon:'ic-frog',    popular:false, img:'asset/frog_9.png' },
-    { num:11, km:'បាយស',                  en:'Steamed Rice',                  price:'1,000៛',  cat:'grilled', icon:'ic-bowl',    popular:false, img:'asset/rice_9.png' },
+  /* Built-in fallback menu, used until (and unless) the admin-managed
+     items load successfully from the Items sheet tab via get-items.js.
+     Kept as-is so the live menu never breaks if that fetch fails. */
+  let ITEMS = [
+    { num:1,  km:'ត្រីសាបាក់អាំង',        en:'Grilled Sabak Fish',            price:'15,000៛', cat:'grilled', icon:'ic-fish',    popular:true,  img:'asset/fish_1.webp' },
+    { num:2,  km:'សាច់ជ្រូកអាំង គីមឈី',    en:'Grilled Pork with Kimchi',      price:'12,000៛', cat:'grilled', icon:'ic-skewer',  popular:true,  img:'asset/pork_2.webp' },
+    { num:3,  km:'ត្រប់អាំងពិសេស',        en:'Grilled Eggplant',      price:'6,000៛',  cat:'grilled', icon:'ic-leaf',     popular:false, img:'asset/eggplant_3.webp' },
+    { num:4,  km:'គោងៀតអាំង',             en:'Grilled​ Dried Beef',             price:'10,000៛', cat:'grilled', icon:'ic-skewer',  popular:false, img:'asset/beef_4.webp' },
+    { num:5,  km:'ព្រុយត្រីអាំង',          en:'Grilled Fish Fins',              price:'10,000៛', cat:'grilled', icon:'ic-fish',    popular:false, img:'asset/fin_5.webp' },
+    { num:6,  km:'ងាវអាំង អំបិលម្ទេស',     en:'Grilled Blood Cockles, Chili-Salt',price:'10,000៛', cat:'grilled', icon:'ic-shell',   popular:false, img:'asset/cockles_5.webp' },
+    { num:7,  km:'យឺហ៊ឺងអាំង',            en:'Grilled Dried Squid',         price:'10,000៛', cat:'grilled', icon:'ic-fish',    popular:false, img:'asset/dried_squid_6.webp' },
+    { num:8,  km:'ហៃប៊ីក្រឡុក',           en:'Tossed Dried Shrimp Salad',     price:'10,000៛', cat:'grilled', icon:'ic-shrimp',  popular:false, img:'asset/shrimp_7.webp' },
+    { num:9,  km:'មឹកអាំង',               en:'Grilled Squid',                 price:'10,000៛', cat:'grilled', icon:'ic-fish',    popular:true,  img:'asset/squid_8.webp' },
+    { num:10, km:'កង្កែបអាំងអំបិលម្ទេស',    en:'Grilled Frog, Chili-Salt',   price:'12,000៛', cat:'grilled', icon:'ic-frog',    popular:false, img:'asset/frog_9.webp' },
+    { num:11, km:'បាយស',                  en:'Steamed Rice',                  price:'1,000៛',  cat:'grilled', icon:'ic-bowl',    popular:false, img:'asset/rice_9.webp' },
 
-    { num:1,  km:'ទឹកបរិសុទ្ធ',            en:'Mineral Water',                price:'1,000៛',  cat:'soft', icon:'ic-droplet', popular:false, img:'asset/water_10.png' },
-    { num:2,  km:'កូកា-កូឡា',              en:'Coca-Cola',                     price:'3,000៛',  cat:'soft', icon:'ic-can',     popular:false, img:'asset/coca_11.png' },
-    { num:3,  km:'ស្ទីង',                  en:'Sting Energy Drink',            price:'3,000៛',  cat:'soft', icon:'ic-can',     popular:false, img:'asset/sting_12.png' },
-    { num:4,  km:'ដូរង្វាន់ ១កំប៉ុង',       en:'Redeem Can-tab (1 can)',        price:'1,000៛',  cat:'beer', icon:'ic-can',     popular:false, img:'asset/can_tab_13.png' },
+    { num:1,  km:'ទឹកបរិសុទ្ធ',            en:'Mineral Water',                price:'1,000៛',  cat:'soft', icon:'ic-droplet', popular:false, img:'asset/water_10.webp' },
+    { num:2,  km:'កូកា-កូឡា',              en:'Coca-Cola',                     price:'3,000៛',  cat:'soft', icon:'ic-can',     popular:false, img:'asset/coca_11.webp' },
+    { num:3,  km:'ស្ទីង',                  en:'Sting Energy Drink',            price:'3,000៛',  cat:'soft', icon:'ic-can',     popular:false, img:'asset/sting_12.webp' },
+    { num:4,  km:'ដូរង្វាន់ ១កំប៉ុង',       en:'Redeem Can-tab (1 can)',        price:'1,000៛',  cat:'beer', icon:'ic-can',     popular:false, img:'asset/can_tab_13.webp' },
 
-    { num:5,  km:'ស្រាបៀរកម្ពុជា',          en:'Cambodia Beer',                 price:'3,000៛',  cat:'beer', icon:'ic-bottle',  popular:true, img:'asset/cambodia_beer_14.png' },
-    { num:6,  km:'ស្រាបៀរអាន់ឆ័រ',          en:'Anchor Beer',                   price:'3,000៛',  cat:'beer', icon:'ic-bottle',  popular:false, img:'asset/anchor_beer_15.png' },
-    { num:7,  km:'ស្រាបៀរថៃហ្គឺ',           en:'Tiger Beer',                    price:'3,000៛',  cat:'beer', icon:'ic-bottle',  popular:false, img:'asset/tiger_beer_16.png' },
-    { num:8,  km:'ស្រាបៀរហ្គៃស្បើក',        en:'Ganzberg Beer',                 price:'3,000៛',  cat:'beer', icon:'ic-bottle',  popular:false, img:'asset/ganbergz_beer_17.png' },
-    { num:9,  km:'ស្រាបៀរហនុមានស',          en:'Hanuman Beer (White)',          price:'3,000៛',  cat:'beer', icon:'ic-bottle',  popular:true, img:'asset/hanuman_white_16.png' },
-    { num:10, km:'ស្រាបៀរហនុមានខ្មៅ',        en:'Hanuman Beer (Dark)',           price:'4,000៛',  cat:'beer', icon:'ic-bottle',  popular:true, img:'asset/hanuman_black_17.png' },
-    { num:11, km:'ស្រាបៀរអង្គរ ដបតូច',       en:'Angkor Beer (Small Bottle)',    price:'4,000៛',  cat:'beer', icon:'ic-bottle',  popular:false, img:'asset/angkor_beer_small_18.png' },
-    { num:12, km:'ស្រាបៀរអង្គរ ដបធំ',        en:'Angkor Beer (Large Bottle)',    price:'7,000៛',  cat:'beer', icon:'ic-bottle',  popular:false, img:'asset/angkor_beer_small_19.png' },
+    { num:5,  km:'ស្រាបៀរកម្ពុជា',          en:'Cambodia Beer',                 price:'3,000៛',  cat:'beer', icon:'ic-bottle',  popular:true, img:'asset/cambodia_beer_14.webp' },
+    { num:6,  km:'ស្រាបៀរអាន់ឆ័រ',          en:'Anchor Beer',                   price:'3,000៛',  cat:'beer', icon:'ic-bottle',  popular:false, img:'asset/anchor_beer_15.webp' },
+    { num:7,  km:'ស្រាបៀរថៃហ្គឺ',           en:'Tiger Beer',                    price:'3,000៛',  cat:'beer', icon:'ic-bottle',  popular:false, img:'asset/tiger_beer_16.webp' },
+    { num:8,  km:'ស្រាបៀរហ្គៃស្បើក',        en:'Ganzberg Beer',                 price:'3,000៛',  cat:'beer', icon:'ic-bottle',  popular:false, img:'asset/ganbergz_beer_17.webp' },
+    { num:9,  km:'ស្រាបៀរហនុមានស',          en:'Hanuman Beer (White)',          price:'3,000៛',  cat:'beer', icon:'ic-bottle',  popular:true, img:'asset/hanuman_white_16.webp' },
+    { num:10, km:'ស្រាបៀរហនុមានខ្មៅ',        en:'Hanuman Beer (Dark)',           price:'4,000៛',  cat:'beer', icon:'ic-bottle',  popular:true, img:'asset/hanuman_black_17.webp' },
+    { num:11, km:'ស្រាបៀរអង្គរ ដបតូច',       en:'Angkor Beer (Small Bottle)',    price:'4,000៛',  cat:'beer', icon:'ic-bottle',  popular:false, img:'asset/angkor_beer_small_18.webp' },
+    { num:12, km:'ស្រាបៀរអង្គរ ដបធំ',        en:'Angkor Beer (Large Bottle)',    price:'7,000៛',  cat:'beer', icon:'ic-bottle',  popular:false, img:'asset/angkor_beer_small_19.webp' },
     
     /* Updated path to point to abc_beer_20.png */
-    { num:13, km:'ស្រាបៀរ ABC',             en:'ABC Beer',                      price:'6,000៛',  cat:'beer', icon:'ic-bottle',  popular:false, img:'asset/abc_beer_20.png' },
+    { num:13, km:'ស្រាបៀរ ABC',             en:'ABC Beer',                      price:'6,000៛',  cat:'beer', icon:'ic-bottle',  popular:false, img:'asset/abc_beer_20.webp' },
 
     /* Updated path to point to jinro_21.png */
-    { num:14, km:'ស្រាកូរ៉េ ជីនរ៉ូ',         en:'Korean Soju (Jinro)',           price:'8,000៛',  cat:'alcohol', icon:'ic-glass', popular:false, img:'asset/jinro_21.png' },
+    { num:14, km:'ស្រាកូរ៉េ ជីនរ៉ូ',         en:'Korean Soju (Jinro)',           price:'8,000៛',  cat:'alcohol', icon:'ic-glass', popular:false, img:'asset/jinro_21.webp' },
 
     /* ================= HOT DRINK ================= */
-    { num:1,  km:'កាហ្វេអេសប្រេសូ',          en:'Hot Espresso',                  price:'5,000៛',  cat:'hot', icon:'ic-glass', popular:false, img:'asset/drink_1.png' },
-    { num:2,  km:'កាហ្វេអាមេរិកាណូ',        en:'Hot Americano',                 price:'5,000៛',  cat:'hot', icon:'ic-glass', popular:false, img:'asset/drink_2.png' },
-    { num:3,  km:'កាហ្វេទឹកដោះគោខាប់', en:'Hot Cappuccino with Milk Coffee', price:'6,000៛',  cat:'hot', icon:'ic-glass', popular:false, img:'asset/drink_3.png' },
-    { num:4,  km:'វ៉ានីឡាឡាតេ',         en:'Hot Vanilla Latte',             price:'6,000៛',  cat:'hot', icon:'ic-glass', popular:false, img:'asset/drink_4.png' },
-    { num:5,  km:'សូកូឡាក្តៅ',             en:'Hot Chocolate',                 price:'6,000៛',  cat:'hot', icon:'ic-glass', popular:false, img:'asset/drink_5.png' },
-    { num:6,  km:'ម៉ូកាក្តៅ',              en:'Hot Mocha',                     price:'6,000៛',  cat:'hot', icon:'ic-glass', popular:false, img:'asset/drink_6.png' },
-    { num:7,  km:'ឡាតេក្តៅ',                en:'Hot Latte',                     price:'6,000៛',  cat:'hot', icon:'ic-glass', popular:false, img:'asset/drink_7.png' },
-    { num:8,  km:'កាពូឈីណូក្តៅ',           en:'Hot Cappuccino',                price:'6,000៛',  cat:'hot', icon:'ic-glass', popular:false, img:'asset/drink_7.png' },
-    { num:9,  km:'តែបៃតងក្តៅ',            en:'Hot Green Tea',                 price:'5,000៛',  cat:'hot', icon:'ic-glass', popular:false, img:'asset/drink_8.png' },
+    { num:1,  km:'កាហ្វេអេសប្រេសូ',          en:'Hot Espresso',                  price:'5,000៛',  cat:'hot', icon:'ic-glass', popular:false, img:'asset/drink_1.webp' },
+    { num:2,  km:'កាហ្វេអាមេរិកាណូ',        en:'Hot Americano',                 price:'5,000៛',  cat:'hot', icon:'ic-glass', popular:false, img:'asset/drink_2.webp' },
+    { num:3,  km:'កាហ្វេទឹកដោះគោខាប់', en:'Hot Cappuccino with Milk Coffee', price:'6,000៛',  cat:'hot', icon:'ic-glass', popular:false, img:'asset/drink_3.webp' },
+    { num:4,  km:'វ៉ានីឡាឡាតេ',         en:'Hot Vanilla Latte',             price:'6,000៛',  cat:'hot', icon:'ic-glass', popular:false, img:'asset/drink_4.webp' },
+    { num:5,  km:'សូកូឡាក្តៅ',             en:'Hot Chocolate',                 price:'6,000៛',  cat:'hot', icon:'ic-glass', popular:false, img:'asset/drink_5.webp' },
+    { num:6,  km:'ម៉ូកាក្តៅ',              en:'Hot Mocha',                     price:'6,000៛',  cat:'hot', icon:'ic-glass', popular:false, img:'asset/drink_6.webp' },
+    { num:7,  km:'ឡាតេក្តៅ',                en:'Hot Latte',                     price:'6,000៛',  cat:'hot', icon:'ic-glass', popular:false, img:'asset/drink_7.webp' },
+    { num:8,  km:'កាពូឈីណូក្តៅ',           en:'Hot Cappuccino',                price:'6,000៛',  cat:'hot', icon:'ic-glass', popular:false, img:'asset/drink_7.webp' },
+    { num:9,  km:'តែបៃតងក្តៅ',            en:'Hot Green Tea',                 price:'5,000៛',  cat:'hot', icon:'ic-glass', popular:false, img:'asset/drink_8.webp' },
 
     /* ================= FRAPPE ================= */
-    { num:1,  km:'ឡាតេក្រឡុក',              en:'Latte Frappe',                  price:'7,000៛',  cat:'frappe', icon:'ic-can', popular:false, img:'asset/drink_9.png' },
-    { num:2,  km:'តែបៃតងក្រឡុក',           en:'Green Tea Frappe',              price:'7,000៛',  cat:'frappe', icon:'ic-can', popular:false, img:'asset/drink_10.png' },
-    { num:3,  km:'សូកូឡាក្រឡុក',            en:'Chocolate Frappe',              price:'7,000៛',  cat:'frappe', icon:'ic-can', popular:false, img:'asset/drink_11.png' },
-    { num:4,  km:'កាពូឈីណូក្រឡុក',          en:'Cappuccino Frappe',             price:'7,000៛',  cat:'frappe', icon:'ic-can', popular:false, img:'asset/drink_12.png' },
-    { num:5,  km:'ស្វាយក្រឡុក',            en:'Mango Frappe',                  price:'7,000៛',  cat:'frappe', icon:'ic-can', popular:false, img:'asset/drink_13.png' },
-    { num:6,  km:'ផាសិនក្រឡុក',            en:'Passion Frappe',                price:'7,000៛',  cat:'frappe', icon:'ic-can', popular:false, img:'asset/drink_14.png' },
-    { num:7,  km:'ម៉ាឆាក្រឡុក',             en:'Matcha Frappe',                 price:'7,000៛',  cat:'frappe', icon:'ic-can', popular:false, img:'asset/drink_15.png' },
-    { num:8,  km:'ស្ត្របេរីក្រឡុក',         en:'Strawberry Frappe',             price:'7,000៛',  cat:'frappe', icon:'ic-can', popular:false, img:'asset/drink_16.png' },
+    { num:1,  km:'ឡាតេក្រឡុក',              en:'Latte Frappe',                  price:'7,000៛',  cat:'frappe', icon:'ic-can', popular:false, img:'asset/drink_9.webp' },
+    { num:2,  km:'តែបៃតងក្រឡុក',           en:'Green Tea Frappe',              price:'7,000៛',  cat:'frappe', icon:'ic-can', popular:false, img:'asset/drink_10.webp' },
+    { num:3,  km:'សូកូឡាក្រឡុក',            en:'Chocolate Frappe',              price:'7,000៛',  cat:'frappe', icon:'ic-can', popular:false, img:'asset/drink_11.webp' },
+    { num:4,  km:'កាពូឈីណូក្រឡុក',          en:'Cappuccino Frappe',             price:'7,000៛',  cat:'frappe', icon:'ic-can', popular:false, img:'asset/drink_12.webp' },
+    { num:5,  km:'ស្វាយក្រឡុក',            en:'Mango Frappe',                  price:'7,000៛',  cat:'frappe', icon:'ic-can', popular:false, img:'asset/drink_13.webp' },
+    { num:6,  km:'ផាសិនក្រឡុក',            en:'Passion Frappe',                price:'7,000៛',  cat:'frappe', icon:'ic-can', popular:false, img:'asset/drink_14.webp' },
+    { num:7,  km:'ម៉ាឆាក្រឡុក',             en:'Matcha Frappe',                 price:'7,000៛',  cat:'frappe', icon:'ic-can', popular:false, img:'asset/drink_15.webp' },
+    { num:8,  km:'ស្ត្របេរីក្រឡុក',         en:'Strawberry Frappe',             price:'7,000៛',  cat:'frappe', icon:'ic-can', popular:false, img:'asset/drink_16.webp' },
 
     /* ================= ICED DRINK ================= */
-    { num:1,  km:'កាហ្វេអាមេរិកាណូ',       en:'Iced Americano',                price:'5,000៛',  cat:'iced', icon:'ic-droplet', popular:false, img:'asset/drink_ice_1.png' },
-    { num:2,  km:'វ៉ានីឡាឡាតេ',      en:'Iced Vanilla Latte',            price:'6,000៛',  cat:'iced', icon:'ic-droplet', popular:false, img:'asset/drink_ice_2.png' },
-    { num:3,  km:'កាហ្វេទឹកដោះគោខាប់', en:'Iced Condensed Milk Coffee',  price:'6,000៛',  cat:'iced', icon:'ic-droplet', popular:false, img:'asset/drink_ice_3.png' },
-    { num:4,  km:'ឡាតេត្រជាក់',            en:'Iced Latte',                    price:'6,000៛',  cat:'iced', icon:'ic-droplet', popular:false, img:'asset/drink_ice_4.png' },
-    { num:5,  km:'កាពូឈីណូត្រជាក់',        en:'Iced Cappuccino',               price:'6,000៛',  cat:'iced', icon:'ic-droplet', popular:false, img:'asset/drink_ice_5.png' },
-    { num:6,  km:'ទឹកដោះគោផាសិន',         en:'Passion Milk',                  price:'5,000៛',  cat:'iced', icon:'ic-droplet', popular:false, img:'asset/drink_ice_6.png' },
-    { num:7,  km:'ម៉ាឆាឡាតេ',           en:'Matcha Latte',                  price:'5,000៛',  cat:'iced', icon:'ic-droplet', popular:false, img:'asset/drink_ice_7.png' },
-    { num:8,  km:'តែបៃតង',         en:'Iced Green Tea',                price:'5,000៛',  cat:'iced', icon:'ic-droplet', popular:false, img:'asset/drink_ice_8.png' },
-    { num:9,  km:'តែក្រូចឆ្មាបៃតង',     en:'Iced Lemon Green Tea',          price:'4,000៛',  cat:'iced', icon:'ic-droplet', popular:false, img:'asset/drink_ice_10.png' },
-    { num:10, km:'តែក្រូចឆ្មាក្រហម',    en:'Iced Lemon Red Tea',            price:'4,000៛',  cat:'iced', icon:'ic-droplet', popular:false, img:'asset/drink_ice_9.png' },
+    { num:1,  km:'កាហ្វេអាមេរិកាណូ',       en:'Iced Americano',                price:'5,000៛',  cat:'iced', icon:'ic-droplet', popular:false, img:'asset/drink_ice_1.webp' },
+    { num:2,  km:'វ៉ានីឡាឡាតេ',      en:'Iced Vanilla Latte',            price:'6,000៛',  cat:'iced', icon:'ic-droplet', popular:false, img:'asset/drink_ice_2.webp' },
+    { num:3,  km:'កាហ្វេទឹកដោះគោខាប់', en:'Iced Condensed Milk Coffee',  price:'6,000៛',  cat:'iced', icon:'ic-droplet', popular:false, img:'asset/drink_ice_3.webp' },
+    { num:4,  km:'ឡាតេត្រជាក់',            en:'Iced Latte',                    price:'6,000៛',  cat:'iced', icon:'ic-droplet', popular:false, img:'asset/drink_ice_4.webp' },
+    { num:5,  km:'កាពូឈីណូត្រជាក់',        en:'Iced Cappuccino',               price:'6,000៛',  cat:'iced', icon:'ic-droplet', popular:false, img:'asset/drink_ice_5.webp' },
+    { num:6,  km:'ទឹកដោះគោផាសិន',         en:'Passion Milk',                  price:'5,000៛',  cat:'iced', icon:'ic-droplet', popular:false, img:'asset/drink_ice_6.webp' },
+    { num:7,  km:'ម៉ាឆាឡាតេ',           en:'Matcha Latte',                  price:'5,000៛',  cat:'iced', icon:'ic-droplet', popular:false, img:'asset/drink_ice_7.webp' },
+    { num:8,  km:'តែបៃតង',         en:'Iced Green Tea',                price:'5,000៛',  cat:'iced', icon:'ic-droplet', popular:false, img:'asset/drink_ice_8.webp' },
+    { num:9,  km:'តែក្រូចឆ្មាបៃតង',     en:'Iced Lemon Green Tea',          price:'4,000៛',  cat:'iced', icon:'ic-droplet', popular:false, img:'asset/drink_ice_10.webp' },
+    { num:10, km:'តែក្រូចឆ្មាក្រហម',    en:'Iced Lemon Red Tea',            price:'4,000៛',  cat:'iced', icon:'ic-droplet', popular:false, img:'asset/drink_ice_9.webp' },
 
     /* ================= CREAM ================= */
-    { num:1,  km:'ផាសិនគ្រីម',           en:'Passion Cream',                 price:'6,000៛',  cat:'cream', icon:'ic-glass', popular:false, img:'asset/drink_cream_1.png' },
-    { num:2,  km:'កាហ្វេគ្រីម',            en:'Coffee Cream',                  price:'6,000៛',  cat:'cream', icon:'ic-glass', popular:false, img:'asset/drink_cream_2.png' },
-    { num:3,  km:'កាហ្វេពងមាន់គ្រីម',        en:'Coffee Egg Cream',              price:'6,000៛',  cat:'cream', icon:'ic-glass', popular:false, img:'asset/drink_cream_3.png' },
-    { num:4,  km:'ម៉ាឆាដូងគ្រីម',   en:'Matcha Coconut Cream',          price:'6,000៛',  cat:'cream', icon:'ic-glass', popular:false, img:'asset/drink_cream_4.png' },
-    { num:5,  km:'ម៉ាឆាគ្រីម',            en:'Matcha Cream',                  price:'6,000៛',  cat:'cream', icon:'ic-glass', popular:false, img:'asset/drink_cream_5.png' },
+    { num:1,  km:'ផាសិនគ្រីម',           en:'Passion Cream',                 price:'6,000៛',  cat:'cream', icon:'ic-glass', popular:false, img:'asset/drink_cream_1.webp' },
+    { num:2,  km:'កាហ្វេគ្រីម',            en:'Coffee Cream',                  price:'6,000៛',  cat:'cream', icon:'ic-glass', popular:false, img:'asset/drink_cream_2.webp' },
+    { num:3,  km:'កាហ្វេពងមាន់គ្រីម',        en:'Coffee Egg Cream',              price:'6,000៛',  cat:'cream', icon:'ic-glass', popular:false, img:'asset/drink_cream_3.webp' },
+    { num:4,  km:'ម៉ាឆាដូងគ្រីម',   en:'Matcha Coconut Cream',          price:'6,000៛',  cat:'cream', icon:'ic-glass', popular:false, img:'asset/drink_cream_4.webp' },
+    { num:5,  km:'ម៉ាឆាគ្រីម',            en:'Matcha Cream',                  price:'6,000៛',  cat:'cream', icon:'ic-glass', popular:false, img:'asset/drink_cream_5.webp' },
   ];
 
   let lang = 'km';
@@ -1975,8 +1987,8 @@
     list = list
       .map((item, originalIndex) => ({ item, originalIndex }))
       .sort((a, b) => {
-        const aOpen = (canOrderItem(a.item) && isWithinGeofence()) ? 0 : 1;
-        const bOpen = (canOrderItem(b.item) && isWithinGeofence()) ? 0 : 1;
+        const aOpen = canOrderItem(a.item) ? 0 : 1;
+        const bOpen = canOrderItem(b.item) ? 0 : 1;
         if (aOpen !== bOpen) return aOpen - bOpen;
         return a.originalIndex - b.originalIndex;
       })
@@ -2000,10 +2012,12 @@
       const catMeta = CATEGORIES.find(c => c.id === item.cat);
       const catLabel = lang === 'km' ? catMeta.km : catMeta.en;
       const name = lang === 'km' ? item.km : item.en;
-      const isAvailable = canOrderItem(item) && isWithinGeofence();
-      const availText = !isWithinGeofence()
-        ? (lang === 'km' ? 'ក្រៅតំបន់' : 'Out of range')
-        : getItemAvailabilityText(item);
+      // Card display (sort position, Closed tag, hours tooltip) is based purely
+      // on store hours — never on geolocation. Geofencing only gates the actual
+      // "Add" tap (see addToCart), so GPS resolving after page load never
+      // reorders the grid or flips tags/colors on the customer.
+      const isAvailable = canOrderItem(item);
+      const availText = getItemAvailabilityText(item);
 
       const closedTagHtml = !isAvailable ? `<span class="closed-tag">${lang === 'km' ? 'បិទ' : 'CLOSED'}</span>` : '';
       const btnHtml = isAvailable ? `<button class="order-btn" type="button"><svg viewBox="0 0 24 24"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/></svg><span>${lang === 'km' ? 'បន្ថែម' : 'Add'}</span></button>` : `<div class="order-btn disabled" title="${availText}"><svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><circle cx="12" cy="12" r="10"/></svg><span>${lang === 'km' ? 'មិនលក់' : 'Closed'}</span></div>`;
@@ -2015,7 +2029,7 @@
             ${item.popular ? `<span class="popular-tag"><svg viewBox="0 0 24 24"><use href="#ic-flame"/></svg>${lang==='km' ? 'ពេញនិយម' : 'Popular'}</span>` : ''}
             ${closedTagHtml}
           </div>
-          <img src="${item.img}" alt="${name}" loading="lazy" />
+          <img src="${item.img}" alt="${name}" ${idx < 8 ? 'loading="eager" fetchpriority="high"' : 'loading="lazy"'} />
           <div class="card-img-overlay" ${overlayStyle}></div>
         </div>
         <div class="card-name">${name}</div>
@@ -2203,6 +2217,8 @@
   }
   tick();
   setInterval(tick, 1000 * 15);
+  loadStoreStatus();
+  setInterval(loadStoreStatus, 1000 * 30);
   checkGeofence();
 
   /* ================= MOBILE SLIDABLE SIDEBAR ================= */
@@ -2283,6 +2299,28 @@
   renderNavAndTabs();
   renderOrderPanel();
   renderGrid();
+
+  // Pull admin-managed items from the Items sheet tab (via the admin
+  // dashboard). If the fetch fails, is empty, or the tab hasn't been
+  // populated yet, the built-in ITEMS list above stays as-is — the menu
+  // never breaks because of this.
+  (function loadItemsFromAdmin(){
+    fetch('/.netlify/functions/get-items')
+      .then(res => res.ok ? res.json() : Promise.reject(new Error('bad status ' + res.status)))
+      .then(data => {
+        if (data && data.ok && Array.isArray(data.items) && data.items.length){
+          ITEMS = data.items.map(it => ({
+            num: it.num, km: it.km, en: it.en, price: it.price,
+            cat: it.cat, popular: !!it.popular, img: it.img || ''
+          }));
+          renderNavAndTabs();
+          renderGrid();
+        }
+      })
+      .catch(err => {
+        console.warn('Using built-in menu — could not load admin items:', err.message);
+      });
+  })();
 </script>
 
 

@@ -1,0 +1,792 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8">
+<title>Steung Cafe — Admin</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --char:        #17110D;
+    --char-2:      #1F1610;
+    --char-3:      #241A13;
+    --char-4:      #2C2117;
+    --ember:       #E8592A;
+    --ember-deep:  #B23A24;
+    --amber:       #F0A93A;
+    --rice:        #F5ECD9;
+    --smoke:       #8C7E6E;
+    --line:        #3a2c20;
+    --good:        #4FAE6B;
+    --bad:         #E24C4C;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;min-height:100%;}
+  body{
+    background:var(--char);
+    font-family:'Kantumruy Pro', sans-serif;
+    color:var(--rice);
+  }
+  ::selection{ background:var(--ember); color:var(--rice); }
+  a{ color:var(--amber); }
+  button{ font-family:inherit; cursor:pointer; }
+  input,select{ font-family:inherit; }
+
+  /* ================= LOGIN ================= */
+  .login-wrap{
+    min-height:100vh;
+    display:flex; align-items:center; justify-content:center;
+    padding:20px;
+  }
+  .login-card{
+    width:100%; max-width:340px;
+    background:linear-gradient(180deg, var(--char-3), var(--char-2));
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:32px 28px;
+    text-align:center;
+  }
+  .login-card h1{
+    font-size:18px; margin:0 0 4px;
+    letter-spacing:.02em;
+  }
+  .login-card .sub{ color:var(--smoke); font-size:13px; margin:0 0 22px; }
+  .login-card input{
+    width:100%;
+    background:var(--char);
+    border:1px solid var(--line);
+    color:var(--rice);
+    padding:12px 14px;
+    border-radius:10px;
+    font-size:15px;
+    margin-bottom:12px;
+    outline:none;
+  }
+  .login-card input:focus{ border-color:var(--ember); }
+  .login-card .err{ color:var(--bad); font-size:13px; min-height:18px; margin:-2px 0 10px; }
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:8px;
+    background:linear-gradient(135deg, var(--ember), var(--ember-deep));
+    color:var(--rice);
+    border:none; border-radius:10px;
+    padding:12px 18px;
+    font-size:14px; font-weight:700;
+    width:100%;
+  }
+  .btn:disabled{ opacity:.55; cursor:default; }
+  .btn.ghost{ background:rgba(255,255,255,.06); border:1px solid var(--line); }
+  .btn.danger{ background:var(--bad); }
+  .btn.small{ padding:7px 12px; font-size:12.5px; width:auto; }
+
+  /* ================= APP SHELL ================= */
+  .app{ display:none; min-height:100vh; }
+  .app.show{ display:flex; flex-direction:column; }
+  .topbar{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:16px 24px;
+    border-bottom:1px solid var(--line);
+    background:var(--char-2);
+    position:sticky; top:0; z-index:5;
+  }
+  .topbar h1{ font-size:16px; margin:0; letter-spacing:.02em; }
+  .topbar .brand{ display:flex; align-items:center; gap:10px; }
+  .topbar .brand .dot{ width:8px; height:8px; border-radius:50%; background:var(--ember); }
+  .topbar .right{ display:flex; align-items:center; gap:12px; }
+
+  /* ================= MENU STATUS TOGGLE ================= */
+  .status-pill{
+    display:flex; align-items:center; gap:8px;
+    padding:6px 12px;
+    border-radius:999px;
+    border:1px solid var(--line);
+    background:rgba(255,255,255,.04);
+    font-size:12.5px; font-weight:700;
+    letter-spacing:.02em;
+  }
+  .status-pill .dot2{ width:8px; height:8px; border-radius:50%; background:var(--good); }
+  .status-pill.is-closed .dot2{ background:var(--bad); }
+  .status-pill .label{ color:var(--smoke); }
+  .status-pill.is-closed .label{ color:var(--rice); }
+  #statusToggleBtn.close-action{ background:var(--bad); }
+  #statusToggleBtn.open-action{ background:var(--good); }
+  #statusToggleBtn:disabled{ opacity:.6; }
+
+  .tabs{
+    display:flex; gap:6px;
+    padding:12px 24px 0;
+    border-bottom:1px solid var(--line);
+    background:var(--char-2);
+    overflow-x:auto;
+  }
+  .tab{
+    background:none; border:none; color:var(--smoke);
+    padding:10px 14px; font-size:14px; font-weight:600;
+    border-bottom:2px solid transparent;
+    white-space:nowrap;
+  }
+  .tab.active{ color:var(--rice); border-color:var(--ember); }
+
+  .content{ flex:1; padding:20px 24px 60px; max-width:1100px; width:100%; margin:0 auto; }
+  .panel{ display:none; }
+  .panel.active{ display:block; }
+
+  /* ================= ITEMS ================= */
+  .toolbar{ display:flex; gap:10px; align-items:center; margin-bottom:16px; flex-wrap:wrap; }
+  .toolbar select, .toolbar input[type=search]{
+    background:var(--char-3); border:1px solid var(--line); color:var(--rice);
+    padding:9px 12px; border-radius:9px; font-size:13.5px; outline:none;
+  }
+  .toolbar input[type=search]{ flex:1; min-width:160px; }
+  .toolbar .spacer{ flex:1; }
+
+  .item-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(190px, 1fr));
+    gap:14px;
+  }
+  .item-card{
+    background:var(--char-3);
+    border:1px solid var(--line);
+    border-radius:14px;
+    overflow:hidden;
+    display:flex; flex-direction:column;
+  }
+  .item-card.inactive{ opacity:.45; }
+  .item-card .thumb{
+    aspect-ratio:1/1; background:var(--char-4);
+    display:flex; align-items:center; justify-content:center;
+    overflow:hidden;
+  }
+  .item-card .thumb img{ width:100%; height:100%; object-fit:cover; }
+  .item-card .thumb .ph{ color:var(--smoke); font-size:11px; }
+  .item-card .body{ padding:10px 12px 12px; display:flex; flex-direction:column; gap:4px; flex:1; }
+  .item-card .name{ font-size:13.5px; font-weight:700; line-height:1.3; }
+  .item-card .meta{ color:var(--smoke); font-size:11.5px; }
+  .item-card .price{ color:var(--amber); font-weight:700; font-size:13px; margin-top:2px; }
+  .item-card .row{ display:flex; gap:6px; margin-top:8px; }
+  .item-card .row .btn{ flex:1; padding:7px 8px; font-size:12px; }
+
+  .empty{ color:var(--smoke); text-align:center; padding:60px 20px; font-size:14px; }
+
+  /* ================= MODAL ================= */
+  .modal-backdrop{
+    display:none; position:fixed; inset:0; z-index:40;
+    background:rgba(0,0,0,.6);
+    align-items:center; justify-content:center; padding:16px;
+  }
+  .modal-backdrop.show{ display:flex; }
+  .modal{
+    width:100%; max-width:440px; max-height:90vh; overflow:auto;
+    background:var(--char-2); border:1px solid var(--line); border-radius:16px;
+    padding:22px;
+  }
+  .modal h2{ font-size:16px; margin:0 0 16px; }
+  .field{ margin-bottom:12px; }
+  .field label{ display:block; font-size:12px; color:var(--smoke); margin-bottom:5px; }
+  .field input[type=text], .field select{
+    width:100%; background:var(--char-3); border:1px solid var(--line); color:var(--rice);
+    padding:10px 12px; border-radius:9px; font-size:14px; outline:none;
+  }
+  .field input:focus, .field select:focus{ border-color:var(--ember); }
+  .field-row{ display:flex; gap:10px; }
+  .field-row .field{ flex:1; }
+  .check-row{ display:flex; align-items:center; gap:8px; font-size:13px; margin-bottom:14px; }
+  .check-row input{ width:16px; height:16px; }
+
+  .img-upload{
+    display:flex; align-items:center; gap:12px; margin-bottom:14px;
+  }
+  .img-upload .preview{
+    width:64px; height:64px; border-radius:10px; overflow:hidden;
+    background:var(--char-3); border:1px solid var(--line);
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  }
+  .img-upload .preview img{ width:100%; height:100%; object-fit:cover; }
+  .img-upload .preview .ph{ color:var(--smoke); font-size:9px; text-align:center; }
+  .img-upload input[type=file]{ font-size:12px; color:var(--smoke); flex:1; }
+  .upload-status{ font-size:11.5px; color:var(--smoke); margin-top:-8px; margin-bottom:12px; min-height:14px; }
+
+  .modal-actions{ display:flex; gap:10px; margin-top:6px; }
+  .modal-msg{ font-size:12.5px; margin-bottom:10px; min-height:14px; }
+  .modal-msg.error{ color:var(--bad); }
+  .modal-msg.ok{ color:var(--good); }
+
+  /* ================= ORDERS / REPORT ================= */
+  .stat-row{ display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:12px; margin-bottom:20px; }
+  .stat-card{
+    background:var(--char-3); border:1px solid var(--line); border-radius:12px; padding:14px 16px;
+  }
+  .stat-card .label{ color:var(--smoke); font-size:11.5px; margin-bottom:4px; }
+  .stat-card .value{ font-size:20px; font-weight:800; color:var(--amber); }
+
+  .section-title{ font-size:13px; font-weight:700; color:var(--smoke); text-transform:uppercase; letter-spacing:.06em; margin:20px 0 10px; }
+
+  table{ width:100%; border-collapse:collapse; font-size:13px; }
+  th,td{ text-align:left; padding:9px 10px; border-bottom:1px solid var(--line); }
+  th{ color:var(--smoke); font-weight:600; font-size:11.5px; text-transform:uppercase; letter-spacing:.04em; }
+  tr:last-child td{ border-bottom:none; }
+  .table-wrap{ overflow-x:auto; border:1px solid var(--line); border-radius:12px; background:var(--char-3); }
+  .table-wrap table{ min-width:480px; }
+
+  .date-filter{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .date-filter input[type=date]{
+    background:var(--char-3); border:1px solid var(--line); color:var(--rice);
+    padding:8px 10px; border-radius:9px; font-size:13px; outline:none;
+  }
+
+  .loading{ color:var(--smoke); font-size:13px; padding:30px; text-align:center; }
+
+  @media(max-width:600px){
+    .topbar{ padding:14px 16px; }
+    .tabs{ padding:10px 16px 0; }
+    .content{ padding:16px 16px 50px; }
+  }
+</style>
+</head><body>
+
+<div class="login-wrap" id="loginWrap">
+  <div class="login-card">
+    <h1>Steung Cafe Admin</h1>
+    <p class="sub">Enter the admin password to continue</p>
+    <input type="password" id="passwordInput" placeholder="Password" autofocus>
+    <div class="err" id="loginErr"></div>
+    <button class="btn" id="loginBtn">Log in</button>
+  </div>
+</div>
+
+<div class="app" id="app">
+  <div class="topbar">
+    <div class="brand"><span class="dot"></span><h1>Steung Cafe Admin</h1></div>
+    <div class="right">
+      <div class="status-pill" id="statusPill">
+        <span class="dot2"></span>
+        <span class="label" id="statusLabel">Loading…</span>
+      </div>
+      <button class="btn small" id="statusToggleBtn" disabled>…</button>
+      <button class="btn ghost small" id="logoutBtn">Log out</button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-panel="itemsPanel">Menu Items</button>
+    <button class="tab" data-panel="ordersPanel">Orders &amp; Report</button>
+  </div>
+
+  <div class="content">
+
+    <!-- ============ ITEMS PANEL ============ -->
+    <div class="panel active" id="itemsPanel">
+      <div class="toolbar">
+        <select id="catFilter">
+          <option value="all">All categories</option>
+          <option value="grilled">Grilled</option>
+          <option value="soft">Soft Drinks</option>
+          <option value="beer">Beer</option>
+          <option value="alcohol">Alcohol</option>
+          <option value="hot">Hot Drink</option>
+          <option value="frappe">Frappe</option>
+          <option value="iced">Iced Drink</option>
+          <option value="cream">Cream</option>
+        </select>
+        <input type="search" id="itemSearch" placeholder="Search items…">
+        <div class="spacer"></div>
+        <button class="btn small" id="addItemBtn">+ Add item</button>
+      </div>
+      <div id="itemsArea"><div class="loading">Loading items…</div></div>
+    </div>
+
+    <!-- ============ ORDERS PANEL ============ -->
+    <div class="panel" id="ordersPanel">
+      <div class="toolbar">
+        <div class="date-filter">
+          <input type="date" id="fromDate">
+          <span style="color:var(--smoke);font-size:12px;">to</span>
+          <input type="date" id="toDate">
+          <button class="btn small ghost" id="applyDateBtn">Apply</button>
+          <button class="btn small ghost" id="last7Btn">Last 7 days</button>
+          <button class="btn small ghost" id="last30Btn">Last 30 days</button>
+        </div>
+      </div>
+      <div id="ordersArea"><div class="loading">Loading orders…</div></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ============ ITEM EDIT MODAL ============ -->
+<div class="modal-backdrop" id="itemModalBackdrop">
+  <div class="modal">
+    <h2 id="itemModalTitle">Add item</h2>
+    <div class="modal-msg" id="itemModalMsg"></div>
+
+    <div class="img-upload">
+      <div class="preview" id="imgPreviewWrap"><span class="ph">No photo</span></div>
+      <div style="flex:1;">
+        <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" id="imgFileInput">
+        <div class="upload-status" id="uploadStatus"></div>
+      </div>
+    </div>
+
+    <div class="field-row">
+      <div class="field"><label>Khmer name</label><input type="text" id="fieldKm"></div>
+      <div class="field"><label>English name</label><input type="text" id="fieldEn"></div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Category</label>
+        <select id="fieldCat">
+          <option value="grilled">Grilled</option>
+          <option value="soft">Soft Drinks</option>
+          <option value="beer">Beer</option>
+          <option value="alcohol">Alcohol</option>
+          <option value="hot">Hot Drink</option>
+          <option value="frappe">Frappe</option>
+          <option value="iced">Iced Drink</option>
+          <option value="cream">Cream</option>
+        </select>
+      </div>
+      <div class="field"><label>Menu #</label><input type="text" id="fieldNum" inputmode="numeric"></div>
+    </div>
+    <div class="field">
+      <label>Price (Riel, e.g. 6,000៛)</label>
+      <input type="text" id="fieldPrice" placeholder="6,000៛">
+    </div>
+    <div class="check-row"><input type="checkbox" id="fieldPopular"><label for="fieldPopular">Mark as popular</label></div>
+    <div class="check-row"><input type="checkbox" id="fieldActive" checked><label for="fieldActive">Active (visible on the live menu)</label></div>
+
+    <div class="modal-actions">
+      <button class="btn ghost" id="cancelItemBtn">Cancel</button>
+      <button class="btn" id="saveItemBtn">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  const FN = '/.netlify/functions';
+  const CAT_LABELS = {
+    grilled:'Grilled', soft:'Soft Drinks', beer:'Beer', alcohol:'Alcohol',
+    hot:'Hot Drink', frappe:'Frappe', iced:'Iced Drink', cream:'Cream'
+  };
+
+  let token = sessionStorage.getItem('scm_admin_token') || '';
+  let items = [];
+  let pendingUploadUrl = ''; // set after a successful image upload, used on save
+  let editingId = null;      // null = creating new
+
+  /* ---------------- auth ---------------- */
+
+  function authHeaders(){ return { 'x-admin-token': token }; }
+
+  async function apiFetch(path, opts){
+    opts = opts || {};
+    opts.headers = Object.assign({}, opts.headers, authHeaders());
+    const res = await fetch(FN + path, opts);
+    if (res.status === 401){
+      logout();
+      throw new Error('Session expired — please log in again');
+    }
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`);
+    return data;
+  }
+
+  function showApp(){
+    document.getElementById('loginWrap').style.display = 'none';
+    document.getElementById('app').classList.add('show');
+    loadItems();
+    loadStoreStatus();
+  }
+
+  function logout(){
+    token = '';
+    sessionStorage.removeItem('scm_admin_token');
+    document.getElementById('app').classList.remove('show');
+    document.getElementById('loginWrap').style.display = 'flex';
+  }
+
+  document.getElementById('loginBtn').addEventListener('click', doLogin);
+  document.getElementById('passwordInput').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+
+  async function doLogin(){
+    const pw = document.getElementById('passwordInput').value;
+    const errEl = document.getElementById('loginErr');
+    const btn = document.getElementById('loginBtn');
+    errEl.textContent = '';
+    btn.disabled = true; btn.textContent = 'Logging in…';
+    try {
+      const res = await fetch(FN + '/admin-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: pw })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error || 'Login failed');
+      token = data.token;
+      sessionStorage.setItem('scm_admin_token', token);
+      showApp();
+    } catch (err) {
+      errEl.textContent = err.message;
+    } finally {
+      btn.disabled = false; btn.textContent = 'Log in';
+    }
+  }
+
+  document.getElementById('logoutBtn').addEventListener('click', logout);
+
+  /* ---------------- menu open/closed status ---------------- */
+
+  let storeClosed = false; // last-known state, used to compute the toggle target
+
+  function renderStoreStatus(closed){
+    storeClosed = closed;
+    const pill = document.getElementById('statusPill');
+    const label = document.getElementById('statusLabel');
+    const btn = document.getElementById('statusToggleBtn');
+    pill.classList.toggle('is-closed', closed);
+    label.textContent = closed ? 'Menu is CLOSED' : 'Menu is OPEN';
+    btn.textContent = closed ? 'Open Menu' : 'Close Menu';
+    btn.className = `btn small ${closed ? 'open-action' : 'close-action'}`;
+    btn.disabled = false;
+  }
+
+  async function loadStoreStatus(){
+    try {
+      const data = await apiFetch('/admin-status', { method: 'GET' });
+      renderStoreStatus(!!data.closed);
+    } catch (err) {
+      document.getElementById('statusLabel').textContent = 'Status unavailable';
+    }
+  }
+
+  async function toggleStoreStatus(){
+    const btn = document.getElementById('statusToggleBtn');
+    const next = !storeClosed;
+    if (next && !confirm('Close the live menu now? Customers won\u2019t be able to order until you reopen it.')) return;
+    btn.disabled = true;
+    btn.textContent = '\u2026';
+    try {
+      const data = await apiFetch('/admin-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ closed: next })
+      });
+      renderStoreStatus(!!data.closed);
+    } catch (err) {
+      alert('Could not update menu status: ' + err.message);
+      renderStoreStatus(storeClosed); // restore the button from the known-good state
+    }
+  }
+
+  document.getElementById('statusToggleBtn').addEventListener('click', toggleStoreStatus);
+
+  /* ---------------- tabs ---------------- */
+
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById(tab.dataset.panel).classList.add('active');
+      if (tab.dataset.panel === 'ordersPanel' && !ordersLoadedOnce) loadOrders();
+    });
+  });
+
+  /* ---------------- items: list ---------------- */
+
+  async function loadItems(){
+    const area = document.getElementById('itemsArea');
+    area.innerHTML = '<div class="loading">Loading items…</div>';
+    try {
+      const data = await apiFetch('/admin-items');
+      items = data.items || [];
+      renderItems();
+    } catch (err) {
+      area.innerHTML = `<div class="empty">Couldn't load items: ${escapeHtml(err.message)}</div>`;
+    }
+  }
+
+  function renderItems(){
+    const area = document.getElementById('itemsArea');
+    const cat = document.getElementById('catFilter').value;
+    const q = document.getElementById('itemSearch').value.trim().toLowerCase();
+
+    let list = items.slice();
+    if (cat !== 'all') list = list.filter(it => it.cat === cat);
+    if (q) list = list.filter(it => (it.km + ' ' + it.en).toLowerCase().includes(q));
+    list.sort((a,b) => (a.cat === b.cat ? a.num - b.num : a.cat.localeCompare(b.cat)));
+
+    if (!items.length){
+      area.innerHTML = `<div class="empty">No items yet — the Items sheet tab is empty.<br>Click "+ Add item" to create your first one, or the live menu will keep using its built-in default list until you do.</div>`;
+      return;
+    }
+    if (!list.length){
+      area.innerHTML = '<div class="empty">No items match this filter.</div>';
+      return;
+    }
+
+    area.innerHTML = `<div class="item-grid">${list.map(itemCardHtml).join('')}</div>`;
+
+    area.querySelectorAll('[data-edit]').forEach(btn => {
+      btn.addEventListener('click', () => openItemModal(items.find(it => it.id === btn.dataset.edit)));
+    });
+    area.querySelectorAll('[data-del]').forEach(btn => {
+      btn.addEventListener('click', () => deleteItem(btn.dataset.del));
+    });
+  }
+
+  function itemCardHtml(it){
+    const name = it.km || it.en || '(untitled)';
+    const thumb = it.img
+      ? `<img src="${escapeAttr(it.img)}" alt="">`
+      : `<span class="ph">No photo</span>`;
+    return `
+      <div class="item-card ${it.active === false ? 'inactive' : ''}">
+        <div class="thumb">${thumb}</div>
+        <div class="body">
+          <div class="name">${escapeHtml(name)}</div>
+          <div class="meta">${CAT_LABELS[it.cat] || it.cat}${it.popular ? ' · ★ popular' : ''}${it.active === false ? ' · inactive' : ''}</div>
+          <div class="price">${escapeHtml(it.price || '')}</div>
+          <div class="row">
+            <button class="btn ghost small" data-edit="${it.id}">Edit</button>
+            <button class="btn danger small" data-del="${it.id}">Delete</button>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  document.getElementById('catFilter').addEventListener('change', renderItems);
+  document.getElementById('itemSearch').addEventListener('input', renderItems);
+
+  async function deleteItem(id){
+    const it = items.find(i => i.id === id);
+    if (!it) return;
+    if (!confirm(`Delete "${it.km || it.en}"? This can't be undone.`)) return;
+    try {
+      await apiFetch('/admin-items?id=' + encodeURIComponent(id), { method: 'DELETE' });
+      items = items.filter(i => i.id !== id);
+      renderItems();
+    } catch (err) {
+      alert('Failed to delete: ' + err.message);
+    }
+  }
+
+  /* ---------------- items: add/edit modal ---------------- */
+
+  document.getElementById('addItemBtn').addEventListener('click', () => openItemModal(null));
+  document.getElementById('cancelItemBtn').addEventListener('click', closeItemModal);
+  document.getElementById('itemModalBackdrop').addEventListener('click', e => {
+    if (e.target.id === 'itemModalBackdrop') closeItemModal();
+  });
+
+  function openItemModal(it){
+    editingId = it ? it.id : null;
+    pendingUploadUrl = it ? (it.img || '') : '';
+    document.getElementById('itemModalTitle').textContent = it ? 'Edit item' : 'Add item';
+    document.getElementById('itemModalMsg').textContent = '';
+    document.getElementById('itemModalMsg').className = 'modal-msg';
+    document.getElementById('fieldKm').value = it ? it.km || '' : '';
+    document.getElementById('fieldEn').value = it ? it.en || '' : '';
+    document.getElementById('fieldCat').value = it ? it.cat || 'grilled' : (document.getElementById('catFilter').value !== 'all' ? document.getElementById('catFilter').value : 'grilled');
+    document.getElementById('fieldNum').value = it ? it.num || '' : '';
+    document.getElementById('fieldPrice').value = it ? it.price || '' : '';
+    document.getElementById('fieldPopular').checked = !!(it && it.popular);
+    document.getElementById('fieldActive').checked = it ? it.active !== false : true;
+    document.getElementById('imgFileInput').value = '';
+    document.getElementById('uploadStatus').textContent = '';
+    updateImgPreview(pendingUploadUrl);
+    document.getElementById('itemModalBackdrop').classList.add('show');
+  }
+
+  function closeItemModal(){
+    document.getElementById('itemModalBackdrop').classList.remove('show');
+  }
+
+  function updateImgPreview(url){
+    const wrap = document.getElementById('imgPreviewWrap');
+    wrap.innerHTML = url ? `<img src="${escapeAttr(url)}" alt="">` : `<span class="ph">No photo</span>`;
+  }
+
+  document.getElementById('imgFileInput').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const statusEl = document.getElementById('uploadStatus');
+
+    if (file.size > 5 * 1024 * 1024){
+      statusEl.textContent = 'Image too large — max 5MB.';
+      statusEl.style.color = 'var(--bad)';
+      return;
+    }
+
+    statusEl.textContent = 'Uploading…';
+    statusEl.style.color = 'var(--smoke)';
+
+    try {
+      const dataUrl = await fileToDataUrl(file);
+      const data = await apiFetch('/upload-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filename: file.name, dataUrl })
+      });
+      pendingUploadUrl = data.url;
+      updateImgPreview(pendingUploadUrl);
+      statusEl.textContent = 'Uploaded ✓';
+      statusEl.style.color = 'var(--good)';
+    } catch (err) {
+      statusEl.textContent = 'Upload failed: ' + err.message;
+      statusEl.style.color = 'var(--bad)';
+    }
+  });
+
+  function fileToDataUrl(file){
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(new Error('Could not read file'));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  document.getElementById('saveItemBtn').addEventListener('click', saveItem);
+
+  async function saveItem(){
+    const msgEl = document.getElementById('itemModalMsg');
+    const btn = document.getElementById('saveItemBtn');
+    msgEl.textContent = ''; msgEl.className = 'modal-msg';
+
+    const payload = {
+      km: document.getElementById('fieldKm').value.trim(),
+      en: document.getElementById('fieldEn').value.trim(),
+      cat: document.getElementById('fieldCat').value,
+      num: parseInt(document.getElementById('fieldNum').value, 10) || 0,
+      price: document.getElementById('fieldPrice').value.trim(),
+      popular: document.getElementById('fieldPopular').checked,
+      active: document.getElementById('fieldActive').checked,
+      img: pendingUploadUrl
+    };
+
+    if (!payload.km && !payload.en){
+      msgEl.textContent = 'Enter at least a Khmer or English name.';
+      msgEl.className = 'modal-msg error';
+      return;
+    }
+    if (!payload.price){
+      msgEl.textContent = 'Enter a price.';
+      msgEl.className = 'modal-msg error';
+      return;
+    }
+
+    btn.disabled = true; btn.textContent = 'Saving…';
+    try {
+      if (editingId){
+        payload.id = editingId;
+        const data = await apiFetch('/admin-items', {
+          method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+        });
+        const idx = items.findIndex(i => i.id === editingId);
+        if (idx !== -1) items[idx] = data.item;
+      } else {
+        const data = await apiFetch('/admin-items', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+        });
+        items.push(data.item);
+      }
+      closeItemModal();
+      renderItems();
+    } catch (err) {
+      msgEl.textContent = err.message;
+      msgEl.className = 'modal-msg error';
+    } finally {
+      btn.disabled = false; btn.textContent = 'Save';
+    }
+  }
+
+  /* ---------------- orders / report ---------------- */
+
+  let ordersLoadedOnce = false;
+
+  function fmtRiel(n){ return Math.round(n||0).toLocaleString('en-US') + '\u17DB'; }
+  function todayKey(){ return new Date().toISOString().slice(0,10); }
+  function daysAgoKey(n){ const d = new Date(); d.setDate(d.getDate()-n); return d.toISOString().slice(0,10); }
+
+  document.getElementById('applyDateBtn').addEventListener('click', () => loadOrders());
+  document.getElementById('last7Btn').addEventListener('click', () => {
+    document.getElementById('fromDate').value = daysAgoKey(6);
+    document.getElementById('toDate').value = todayKey();
+    loadOrders();
+  });
+  document.getElementById('last30Btn').addEventListener('click', () => {
+    document.getElementById('fromDate').value = daysAgoKey(29);
+    document.getElementById('toDate').value = todayKey();
+    loadOrders();
+  });
+
+  async function loadOrders(){
+    ordersLoadedOnce = true;
+    const area = document.getElementById('ordersArea');
+    area.innerHTML = '<div class="loading">Loading orders…</div>';
+
+    const from = document.getElementById('fromDate').value;
+    const to = document.getElementById('toDate').value;
+    const qs = [];
+    if (from) qs.push('from=' + encodeURIComponent(from));
+    if (to) qs.push('to=' + encodeURIComponent(to));
+
+    try {
+      const data = await apiFetch('/admin-orders' + (qs.length ? '?' + qs.join('&') : ''));
+      renderOrders(data.orders || [], data.summary || {});
+    } catch (err) {
+      area.innerHTML = `<div class="empty">Couldn't load orders: ${escapeHtml(err.message)}</div>`;
+    }
+  }
+
+  function renderOrders(orders, summary){
+    const area = document.getElementById('ordersArea');
+    const byCategory = summary.byCategory || [];
+    const topItems = summary.topItems || [];
+
+    let html = `
+      <div class="stat-row">
+        <div class="stat-card"><div class="label">Orders</div><div class="value">${summary.orderCount || 0}</div></div>
+        <div class="stat-card"><div class="label">Revenue</div><div class="value">${fmtRiel(summary.totalRevenue)}</div></div>
+        <div class="stat-card"><div class="label">Avg order</div><div class="value">${fmtRiel(summary.orderCount ? summary.totalRevenue / summary.orderCount : 0)}</div></div>
+      </div>`;
+
+    html += '<div class="section-title">Revenue by category</div>';
+    html += byCategory.length
+      ? `<div class="table-wrap"><table><thead><tr><th>Category</th><th>Revenue</th></tr></thead><tbody>${
+          byCategory.map(c => `<tr><td>${escapeHtml(c.label)}</td><td>${fmtRiel(c.revenue)}</td></tr>`).join('')
+        }</tbody></table></div>`
+      : '<div class="empty">No sales in this range.</div>';
+
+    html += '<div class="section-title">Top items</div>';
+    html += topItems.length
+      ? `<div class="table-wrap"><table><thead><tr><th>Item</th><th>Qty</th><th>Revenue</th></tr></thead><tbody>${
+          topItems.map(it => `<tr><td>${escapeHtml(it.label)}</td><td>${it.qty}</td><td>${fmtRiel(it.revenue)}</td></tr>`).join('')
+        }</tbody></table></div>`
+      : '<div class="empty">No sales in this range.</div>';
+
+    html += '<div class="section-title">Orders</div>';
+    html += orders.length
+      ? `<div class="table-wrap"><table><thead><tr><th>Time</th><th>Customer</th><th>Contact</th><th>Total</th></tr></thead><tbody>${
+          orders.map(o => `<tr><td>${escapeHtml(new Date(o.dateISO).toLocaleString())}</td><td>${escapeHtml(o.customerName || '—')}</td><td>${escapeHtml(o.contact || '—')}</td><td>${fmtRiel(o.total)}</td></tr>`).join('')
+        }</tbody></table></div>`
+      : '<div class="empty">No orders in this range.</div>';
+
+    area.innerHTML = html;
+  }
+
+  /* ---------------- utils ---------------- */
+
+  function escapeHtml(s){
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+  function escapeAttr(s){ return escapeHtml(s); }
+
+  /* ---------------- init ---------------- */
+
+  if (token) showApp();
+})();
+</script>
+</body></html>

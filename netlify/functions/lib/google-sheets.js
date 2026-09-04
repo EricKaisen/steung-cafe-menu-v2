@@ -19,14 +19,20 @@
 //      Copy `private_key`  -> GOOGLE_PRIVATE_KEY
 //   5. Create a Google Sheet, add a tab named exactly "Orders" with header
 //      row: id | dateISO | customerName | contact | total | items
-//   6. Share that Sheet with the service account email as Editor
-//   7. Copy the Sheet ID from its URL -> GOOGLE_SHEET_ID
+//   6. Also add a tab named exactly "Items" with header row:
+//      id | num | cat | km | en | price | popular | img | active
+//      (the admin dashboard reads/writes this tab; it's fine to leave it
+//      empty besides the header — the admin page can populate it, and the
+//      public menu falls back to its built-in item list until it does)
+//   7. Share that Sheet with the service account email as Editor
+//   8. Copy the Sheet ID from its URL -> GOOGLE_SHEET_ID
 
 const crypto = require('crypto');
 
 const SCOPE = 'https://www.googleapis.com/auth/spreadsheets';
 const TOKEN_URL = 'https://oauth2.googleapis.com/token';
 const SHEET_TAB = 'Orders';
+const ITEMS_TAB = 'Items';
 
 function base64url(input) {
   const buf = Buffer.isBuffer(input) ? input : Buffer.from(input);
@@ -179,4 +185,102 @@ async function rewriteOrders(orders) {
   if (!appendRes.ok) throw new Error('Sheets rewrite-append failed: ' + JSON.stringify(await appendRes.json()));
 }
 
-module.exports = { appendOrderRow, getAllOrders, rewriteOrders };
+/* ================= ITEMS (menu) — used by the admin dashboard ================= */
+
+function rowToItem(r) {
+  return {
+    id: r[0] || '',
+    num: Number(r[1]) || 0,
+    cat: r[2] || '',
+    km: r[3] || '',
+    en: r[4] || '',
+    price: r[5] || '',
+    popular: String(r[6]).toLowerCase() === 'true',
+    img: r[7] || '',
+    active: r[8] === '' || r[8] === undefined ? true : String(r[8]).toLowerCase() !== 'false'
+  };
+}
+
+function itemToRow(it) {
+  return [
+    it.id,
+    it.num || 0,
+    it.cat || '',
+    it.km || '',
+    it.en || '',
+    it.price || '',
+    it.popular ? 'true' : 'false',
+    it.img || '',
+    it.active === false ? 'false' : 'true'
+  ];
+}
+
+// Returns every item row from the Items tab, in sheet order. Returns an
+// empty array (not an error) if the tab doesn't exist yet or is empty —
+// callers should fall back to a built-in default list in that case.
+async function getAllItems() {
+  const sheetId = requireSheetId();
+  const token = await getAccessToken();
+
+  const range = encodeURIComponent(`${ITEMS_TAB}!A2:I`); // skip header row
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}`;
+
+  const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+  const data = await res.json();
+  if (!res.ok) {
+    // Tab missing is a common first-run state — treat like "no items yet".
+    if (data && data.error && /Unable to parse range/i.test(data.error.message || '')) return [];
+    throw new Error('Sheets read failed: ' + JSON.stringify(data));
+  }
+
+  const rows = data.values || [];
+  return rows.filter(r => r && r[0]).map(rowToItem);
+}
+
+async function appendItem(item) {
+  const sheetId = requireSheetId();
+  const token = await getAccessToken();
+
+  const range = encodeURIComponent(`${ITEMS_TAB}!A:I`);
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
+
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ values: [itemToRow(item)] })
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error('Sheets append failed: ' + JSON.stringify(data));
+  return data;
+}
+
+// Replaces every row in the Items tab (keeps the header) with the given
+// list. Used for update/delete, both of which are implemented as
+// "read all, modify in memory, rewrite all" since Sheets rows aren't
+// addressable by a stable row number once items get reordered/deleted.
+async function rewriteItems(items) {
+  const sheetId = requireSheetId();
+  const token = await getAccessToken();
+
+  const clearRange = encodeURIComponent(`${ITEMS_TAB}!A2:I`);
+  const clearUrl = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${clearRange}:clear`;
+  const clearRes = await fetch(clearUrl, { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
+  if (!clearRes.ok) throw new Error('Sheets clear failed: ' + JSON.stringify(await clearRes.json()));
+
+  if (!items.length) return;
+
+  const values = items.map(itemToRow);
+  const appendRange = encodeURIComponent(`${ITEMS_TAB}!A2`);
+  const appendUrl = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${appendRange}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
+  const appendRes = await fetch(appendUrl, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ values })
+  });
+  if (!appendRes.ok) throw new Error('Sheets rewrite-append failed: ' + JSON.stringify(await appendRes.json()));
+}
+
+module.exports = {
+  appendOrderRow, getAllOrders, rewriteOrders,
+  getAllItems, appendItem, rewriteItems
+};
