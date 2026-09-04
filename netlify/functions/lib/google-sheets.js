@@ -24,8 +24,14 @@
 //      (the admin dashboard reads/writes this tab; it's fine to leave it
 //      empty besides the header — the admin page can populate it, and the
 //      public menu falls back to its built-in item list until it does)
-//   7. Share that Sheet with the service account email as Editor
-//   8. Copy the Sheet ID from its URL -> GOOGLE_SHEET_ID
+//   7. Also add a tab named exactly "Categories" with header row:
+//      id | km | en | active
+//      (same idea as Items — the admin dashboard's Categories panel
+//      reads/writes this tab; leave it empty besides the header and both
+//      the admin page and the public menu fall back to their built-in
+//      default categories until it's populated)
+//   8. Share that Sheet with the service account email as Editor
+//   9. Copy the Sheet ID from its URL -> GOOGLE_SHEET_ID
 
 const crypto = require('crypto');
 
@@ -33,6 +39,7 @@ const SCOPE = 'https://www.googleapis.com/auth/spreadsheets';
 const TOKEN_URL = 'https://oauth2.googleapis.com/token';
 const SHEET_TAB = 'Orders';
 const ITEMS_TAB = 'Items';
+const CATEGORIES_TAB = 'Categories';
 
 function base64url(input) {
   const buf = Buffer.isBuffer(input) ? input : Buffer.from(input);
@@ -280,7 +287,93 @@ async function rewriteItems(items) {
   if (!appendRes.ok) throw new Error('Sheets rewrite-append failed: ' + JSON.stringify(await appendRes.json()));
 }
 
+/* ================= CATEGORIES (menu) — used by the admin dashboard ================= */
+
+function rowToCategory(r) {
+  return {
+    id: r[0] || '',
+    km: r[1] || '',
+    en: r[2] || '',
+    active: r[3] === '' || r[3] === undefined ? true : String(r[3]).toLowerCase() !== 'false'
+  };
+}
+
+function categoryToRow(c) {
+  return [
+    c.id,
+    c.km || '',
+    c.en || '',
+    c.active === false ? 'false' : 'true'
+  ];
+}
+
+// Returns every category row from the Categories tab, in sheet order.
+// Returns an empty array (not an error) if the tab doesn't exist yet or is
+// empty — callers should fall back to a built-in default list in that case.
+async function getAllCategories() {
+  const sheetId = requireSheetId();
+  const token = await getAccessToken();
+
+  const range = encodeURIComponent(`${CATEGORIES_TAB}!A2:D`); // skip header row
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}`;
+
+  const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+  const data = await res.json();
+  if (!res.ok) {
+    // Tab missing is a common first-run state — treat like "no categories yet".
+    if (data && data.error && /Unable to parse range/i.test(data.error.message || '')) return [];
+    throw new Error('Sheets read failed: ' + JSON.stringify(data));
+  }
+
+  const rows = data.values || [];
+  return rows.filter(r => r && r[0]).map(rowToCategory);
+}
+
+async function appendCategory(cat) {
+  const sheetId = requireSheetId();
+  const token = await getAccessToken();
+
+  const range = encodeURIComponent(`${CATEGORIES_TAB}!A:D`);
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
+
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ values: [categoryToRow(cat)] })
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error('Sheets append failed: ' + JSON.stringify(data));
+  return data;
+}
+
+// Replaces every row in the Categories tab (keeps the header) with the
+// given list. Used for update/delete, same read-all/rewrite-all approach
+// as rewriteItems, for the same reason (Sheets rows aren't addressable by
+// a stable row number once categories get reordered/deleted).
+async function rewriteCategories(cats) {
+  const sheetId = requireSheetId();
+  const token = await getAccessToken();
+
+  const clearRange = encodeURIComponent(`${CATEGORIES_TAB}!A2:D`);
+  const clearUrl = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${clearRange}:clear`;
+  const clearRes = await fetch(clearUrl, { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
+  if (!clearRes.ok) throw new Error('Sheets clear failed: ' + JSON.stringify(await clearRes.json()));
+
+  if (!cats.length) return;
+
+  const values = cats.map(categoryToRow);
+  const appendRange = encodeURIComponent(`${CATEGORIES_TAB}!A2`);
+  const appendUrl = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${appendRange}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
+  const appendRes = await fetch(appendUrl, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ values })
+  });
+  if (!appendRes.ok) throw new Error('Sheets rewrite-append failed: ' + JSON.stringify(await appendRes.json()));
+}
+
 module.exports = {
   appendOrderRow, getAllOrders, rewriteOrders,
-  getAllItems, appendItem, rewriteItems
+  getAllItems, appendItem, rewriteItems,
+  getAllCategories, appendCategory, rewriteCategories
 };

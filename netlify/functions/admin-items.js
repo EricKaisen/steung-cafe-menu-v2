@@ -10,14 +10,31 @@
 // row number once items get added/removed.
 
 const { isAuthorized, unauthorizedResponse } = require('./lib/admin-auth');
-const { getAllItems, appendItem, rewriteItems } = require('./lib/google-sheets');
+const { getAllItems, appendItem, rewriteItems, getAllCategories } = require('./lib/google-sheets');
 
-const CATEGORIES = ['grilled', 'soft', 'beer', 'alcohol', 'hot', 'frappe', 'iced', 'cream'];
+// Fallback list, only used if the Categories sheet tab hasn't been set up
+// yet (see getValidCategoryIds below) so item creation doesn't hard-fail
+// on a fresh install before the admin has visited the Categories panel.
+const FALLBACK_CATEGORIES = ['grilled', 'soft', 'beer', 'alcohol', 'hot', 'frappe', 'iced', 'cream'];
 
-function validateItem(it) {
+// Categories are admin-editable (see admin-categories.js), so the set of
+// valid ids can't be a fixed list — it has to reflect whatever the admin
+// has actually created. Falls back to FALLBACK_CATEGORIES only if the
+// Categories tab is empty/missing.
+async function getValidCategoryIds() {
+  try {
+    const categories = await getAllCategories();
+    if (categories.length) return categories.map(c => c.id);
+  } catch (err) {
+    console.warn('admin-items: could not load categories, using fallback list:', err.message);
+  }
+  return FALLBACK_CATEGORIES;
+}
+
+function validateItem(it, validCategoryIds) {
   if (!it || typeof it !== 'object') return 'Missing item body';
   if (!it.km && !it.en) return 'Item needs at least a Khmer or English name';
-  if (!it.cat || !CATEGORIES.includes(it.cat)) return `cat must be one of: ${CATEGORIES.join(', ')}`;
+  if (!it.cat || !validCategoryIds.includes(it.cat)) return `cat must be one of: ${validCategoryIds.join(', ')}`;
   if (!it.price || typeof it.price !== 'string') return 'price is required (e.g. "6,000\u17DB")';
   return null;
 }
@@ -37,7 +54,7 @@ exports.handler = async function (event) {
 
     if (event.httpMethod === 'POST') {
       const payload = JSON.parse(event.body || '{}');
-      const err = validateItem(payload);
+      const err = validateItem(payload, await getValidCategoryIds());
       if (err) return { statusCode: 400, body: JSON.stringify({ error: err }) };
 
       const item = {
@@ -58,7 +75,7 @@ exports.handler = async function (event) {
     if (event.httpMethod === 'PUT') {
       const payload = JSON.parse(event.body || '{}');
       if (!payload.id) return { statusCode: 400, body: JSON.stringify({ error: 'Missing id' }) };
-      const err = validateItem(payload);
+      const err = validateItem(payload, await getValidCategoryIds());
       if (err) return { statusCode: 400, body: JSON.stringify({ error: err }) };
 
       const items = await getAllItems();
