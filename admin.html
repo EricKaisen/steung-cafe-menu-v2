@@ -1,2223 +1,1531 @@
-<!DOCTYPE html><html lang="km"><head>
+<!DOCTYPE html><html lang="en"><head>
 <meta charset="UTF-8">
-<title>ស្ទឹងកាហ្វេ - Digital Menu Board</title>
+<title>Steung Cafe — Admin</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Moul&amp;family=Kantumruy+Pro:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root{
     --char:        #17110D;
     --char-2:      #1F1610;
     --char-3:      #241A13;
+    --char-4:      #2C2117;
     --ember:       #E8592A;
     --ember-deep:  #B23A24;
     --amber:       #F0A93A;
     --rice:        #F5ECD9;
     --smoke:       #8C7E6E;
     --line:        #3a2c20;
+    --good:        #4FAE6B;
+    --bad:         #E24C4C;
+    --sidebar:     #150F0A;
+    --sidebar-2:   #1F1610;
   }
-
   *{box-sizing:border-box;}
-  html,body{margin:0;padding:0;height:100%;}
+  html,body{margin:0;padding:0;min-height:100%;}
   body{
     background:var(--char);
     font-family:'Kantumruy Pro', sans-serif;
     color:var(--rice);
-    overflow:hidden;
   }
+  ::selection{ background:var(--ember); color:var(--rice); }
+  a{ color:var(--amber); }
+  button{ font-family:inherit; cursor:pointer; }
+  input,select{ font-family:inherit; }
 
-  .board{
-    display:grid;
-    grid-template-columns:280px 1fr;
-    height:100vh;
-    width:100vw;
+  /* ================= LOGIN ================= */
+  .login-wrap{
+    min-height:100vh;
+    display:flex; align-items:center; justify-content:center;
+    padding:20px;
   }
-
-  /* ================= EMBER PARTICLES ================= */
-  .embers{
-    position:fixed; inset:0;
-    pointer-events:none;
-    z-index:0;
-    overflow:hidden;
-    /* Promote to its own GPU compositing layer so mobile browsers don't
-       repaint this whole-screen animated layer (and everything else)
-       on every pinch-zoom/viewport-scale step — that repaint was
-       showing up as a full-screen flicker while zooming. */
-    transform:translateZ(0);
-    will-change:transform;
-    contain:strict;
-  }
-  .embers span{
-    position:absolute;
-    bottom:-10px;
-    width:3px; height:3px;
-    border-radius:50%;
-    background:var(--amber);
-    box-shadow:0 0 6px 2px rgba(240,169,58,0.6);
-    animation:rise linear infinite;
-    opacity:0;
-    transform:translateZ(0);
-  }
-  @keyframes rise{
-    0%{ transform:translate3d(0,0,0); opacity:0; }
-    10%{ opacity:.8; }
-    90%{ opacity:.3; }
-    100%{ transform:translate3d(20px,-100vh,0); opacity:0; }
-  }
-  @media (prefers-reduced-motion:reduce){
-    .embers{display:none;}
-  }
-
-  /* ================= SIDEBAR ================= */
-  .sidebar{
-    position:relative;
-    z-index:2;
-    background:linear-gradient(180deg, var(--char-3) 0%, var(--char-2) 100%);
-    border-right:1px solid var(--line);
-    padding:28px 24px;
-    display:flex;
-    flex-direction:column;
-    height:100vh;
-    overflow:hidden;
-  }
-
-  .grate{
-    height:8px; width:100%;
-    border-radius:4px;
-    background:repeating-linear-gradient(90deg, var(--ember-deep) 0 16px, var(--amber) 16px 19px, var(--ember-deep) 19px 35px, transparent 35px 38px);
-    opacity:.85;
-    margin-bottom:26px;
-  }
-
-  .brand{
+  .login-card{
+    width:100%; max-width:340px;
+    background:linear-gradient(180deg, var(--char-3), var(--char-2));
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:32px 28px;
     text-align:center;
-    margin-bottom:22px;
+    box-shadow:0 10px 30px rgba(20,20,30,.08);
   }
-  .brand .eyebrow{
-    font-size:10px;
-    letter-spacing:.32em;
-    text-transform:uppercase;
-    color:var(--amber);
-    font-weight:700;
-    margin-bottom:8px;
+  .login-card h1{
+    font-size:18px; margin:0 0 4px;
+    letter-spacing:.02em;
   }
-  .brand .title{
-    font-family:'Moul', serif;
-    font-size:34px;
+  .login-card .sub{ color:var(--smoke); font-size:13px; margin:0 0 22px; }
+  .login-card input{
+    width:100%;
+    background:var(--char);
+    border:1px solid var(--line);
     color:var(--rice);
-    text-shadow:0 0 30px rgba(232,89,42,.5);
-    letter-spacing:1px;
+    padding:12px 14px;
+    border-radius:10px;
+    font-size:15px;
+    margin-bottom:12px;
+    outline:none;
   }
-  .brand .roman{
-    font-size:11px;
-    letter-spacing:.28em;
-    text-transform:uppercase;
-    color:var(--smoke);
-    margin-top:6px;
-    max-height:0; opacity:0; overflow:hidden;
-    transition:all .3s ease;
-  }
-  body.lang-en .brand .roman{ max-height:20px; opacity:1; }
-
-  .clock{
-    text-align:center;
-    padding:14px 10px;
-    margin-bottom:20px;
-    background:var(--char);
-    border:1px solid var(--line);
-    border-radius:12px;
-  }
-  .clock .time{
-    font-size:26px;
-    font-weight:800;
-    color:var(--amber);
-    letter-spacing:1px;
-    font-variant-numeric:tabular-nums;
-  }
-  .clock .date{
-    font-size:10.5px;
-    color:var(--smoke);
-    letter-spacing:.1em;
-    text-transform:uppercase;
-    margin-top:3px;
-  }
-
-  .lang-toggle{
-    display:flex;
-    background:var(--char);
-    border:1px solid var(--line);
-    border-radius:999px;
-    padding:4px;
-    margin-bottom:22px;
-    cursor:pointer;
-    user-select:none;
-  }
-  .lang-toggle .opt{
-    flex:1;
-    text-align:center;
-    padding:8px 0;
-    border-radius:999px;
-    font-size:12px;
-    font-weight:700;
-    letter-spacing:.05em;
-    color:var(--smoke);
-    transition:all .2s ease;
-  }
-  .lang-toggle .opt.active{
+  .login-card input:focus{ border-color:var(--ember); }
+  .login-card .err{ color:var(--bad); font-size:13px; min-height:18px; margin:-2px 0 10px; }
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:8px;
     background:linear-gradient(135deg, var(--ember), var(--ember-deep));
     color:var(--rice);
+    border:none; border-radius:10px;
+    padding:12px 18px;
+    font-size:14px; font-weight:700;
+    width:100%;
   }
+  .btn:disabled{ opacity:.55; cursor:default; }
+  .btn.ghost{ background:rgba(255,255,255,.06); border:1px solid var(--line); }
+  .btn.danger{ background:var(--bad); }
+  .btn.small{ padding:7px 12px; font-size:12.5px; width:auto; }
 
-  .side-label{
-    font-size:10px;
-    letter-spacing:.24em;
-    text-transform:uppercase;
-    color:var(--smoke);
-    margin:4px 0 10px;
-  }
+  /* ================= APP SHELL ================= */
+  .app{ display:none; min-height:100vh; }
+  .app.show{ display:flex; flex-direction:row; }
 
-  .side-nav{
-    display:flex;
-    flex-direction:column;
-    gap:4px;
-    flex:1;
+  .sidebar{
+    width:220px; flex-shrink:0;
+    background:var(--sidebar);
+    color:#EDEEF2;
+    display:flex; flex-direction:column;
+    position:sticky; top:0; height:100vh;
   }
-  .side-item{
-    display:flex;
-    align-items:center;
-    gap:12px;
-    padding:11px 12px;
-    border-radius:10px;
-    cursor:pointer;
-    color:var(--smoke);
-    transition:all .18s ease;
-    border:1px solid transparent;
+  .sidebar .brand{
+    display:flex; align-items:center; gap:10px;
+    padding:20px 18px;
+    border-bottom:1px solid rgba(255,255,255,.08);
   }
-  .side-item svg{ width:18px; height:18px; flex-shrink:0; stroke:currentColor; }
-  .side-item .lbl{ font-size:13.5px; font-weight:600; }
-  .side-item .count{
-    margin-left:auto;
-    font-size:10.5px;
-    color:var(--char-2);
-    background:var(--smoke);
-    padding:1px 7px;
+  .sidebar .brand .dot{ width:9px; height:9px; border-radius:50%; background:var(--ember); box-shadow:0 0 0 4px rgba(232,89,42,.2); }
+  .sidebar .brand h1{ font-size:14.5px; margin:0; letter-spacing:.02em; color:#fff; }
+  .sidebar-scroll{ flex:1; overflow-y:auto; padding:14px 10px; }
+  .sidebar-foot{ padding:14px 10px 18px; border-top:1px solid rgba(255,255,255,.08); display:flex; flex-direction:column; gap:10px; }
+
+  .main-wrap{ flex:1; min-width:0; display:flex; flex-direction:column; min-height:100vh; }
+
+  .topbar{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:16px 24px;
+    border-bottom:1px solid var(--line);
+    background:var(--char-2);
+    position:sticky; top:0; z-index:5;
+  }
+  .topbar h1{ font-size:16px; margin:0; letter-spacing:.02em; color:var(--rice); }
+  .topbar .brand{ display:flex; align-items:center; gap:10px; }
+  .topbar .brand .dot{ width:8px; height:8px; border-radius:50%; background:var(--ember); }
+  .topbar .right{ display:flex; align-items:center; gap:12px; }
+
+  /* ================= MENU STATUS TOGGLE ================= */
+  .status-pill{
+    display:flex; align-items:center; gap:8px;
+    padding:6px 12px;
     border-radius:999px;
-    font-weight:700;
-  }
-  .side-item:hover{ color:var(--rice); background:rgba(255,255,255,.03); }
-  .side-item.active{
-    color:var(--rice);
-    background:var(--char);
-    border-color:var(--line);
-  }
-  .side-item.active svg{ stroke:var(--ember); }
-  .side-item.active .count{ background:var(--ember); color:var(--rice); }
-
-  .sidebar-footer{
-    padding-top:16px;
-    border-top:1px solid var(--line);
-    display:flex;
-    flex-direction:column;
-    gap:8px;
-  }
-  .contact-row{
-    display:flex;
-    align-items:center;
-    gap:9px;
-    font-size:12.5px;
-    color:var(--rice);
-    font-weight:600;
-  }
-  .contact-row svg{ width:14px; height:14px; stroke:var(--amber); flex-shrink:0; }
-  .hours-row{
-    font-size:11px;
-    color:var(--amber);
-    font-weight:600;
-    letter-spacing:.02em;
-  }
-
-  .telegram-btn{
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    gap:8px;
-    padding:10px 12px;
-    margin-bottom:12px;
-    border-radius:10px;
-    background:linear-gradient(135deg, #2FA9DE, #1E88C7);
-    color:#fff;
-    font-size:12.5px;
-    font-weight:700;
-    letter-spacing:.02em;
-    text-decoration:none;
-    box-shadow:0 6px 16px rgba(47,169,222,.25);
-    transition:transform .15s ease, box-shadow .15s ease;
-  }
-  .telegram-btn svg{ width:16px; height:16px; fill:#fff; flex-shrink:0; }
-  .telegram-btn:hover{
-    transform:translateY(-1px);
-    box-shadow:0 8px 20px rgba(47,169,222,.35);
-  }
-
-  /* ================= MAIN ================= */
-  .main{
-    position:relative;
-    z-index:2;
-    height:100vh;
-    overflow-y:auto;
-    padding:30px 40px 40px;
-    background:
-      radial-gradient(ellipse 900px 400px at 80% -10%, rgba(232,89,42,.14), transparent 60%);
-  }
-
-  .main-top{
-    display:flex;
-    align-items:flex-start;
-    justify-content:space-between;
-    margin-bottom:26px;
-  }
-  .main-top h1{
-    font-family:'Moul', serif;
-    font-size:26px;
-    color:var(--rice);
-    margin:0 0 4px;
-    font-weight:400;
-  }
-  .main-top .sub{
-    font-size:12.5px;
-    color:var(--smoke);
-    letter-spacing:.02em;
-  }
-  .live-pill{
-    display:flex;
-    align-items:center;
-    gap:7px;
-    background:var(--char-3);
     border:1px solid var(--line);
-    padding:8px 16px;
-    border-radius:999px;
-    font-size:11.5px;
-    font-weight:700;
-    letter-spacing:.08em;
-    text-transform:uppercase;
-    color:var(--amber);
+    background:rgba(255,255,255,.04);
+    font-size:12.5px; font-weight:700;
+    letter-spacing:.02em;
   }
-  .live-dot{
-    width:7px; height:7px; border-radius:50%;
-    background:var(--ember);
-    box-shadow:0 0 8px 2px rgba(232,89,42,.7);
-    animation:pulse 1.6s ease-in-out infinite;
-  }
-  @keyframes pulse{ 0%,100%{opacity:1;} 50%{opacity:.35;} }
+  .status-pill .dot2{ width:8px; height:8px; border-radius:50%; background:var(--good); }
+  .status-pill.is-closed .dot2{ background:var(--bad); }
+  .status-pill .label{ color:var(--smoke); }
+  .status-pill.is-closed .label{ color:var(--rice); }
+  #statusToggleBtn.close-action{ background:var(--bad); }
+  #statusToggleBtn.open-action{ background:var(--good); }
+  #statusToggleBtn:disabled{ opacity:.6; }
 
-  .live-pill.closed{ color:var(--smoke); }
-  .live-pill.closed .live-dot{
-    background:var(--smoke);
-    box-shadow:none;
-    animation:none;
+  .tabs{
+    display:flex; flex-direction:column; gap:2px;
   }
+  .tab{
+    display:flex; align-items:center; gap:10px;
+    background:none; border:none; color:#AEB2C0;
+    padding:11px 14px; font-size:13.5px; font-weight:600;
+    border-radius:10px; text-align:left; white-space:nowrap;
+    border-bottom:none;
+  }
+  .tab:before{
+    content:''; width:6px; height:6px; border-radius:50%;
+    background:currentColor; opacity:.4; flex-shrink:0;
+  }
+  .tab.active{ color:#fff; background:var(--ember); }
+  .tab.active:before{ opacity:1; }
+  .tab:not(.active):hover{ background:rgba(255,255,255,.06); color:#fff; }
 
-  .search-bar{
-    display:flex;
-    align-items:center;
-    gap:10px;
+  .content{ flex:1; padding:20px 24px 60px; max-width:1100px; width:100%; margin:0 auto; }
+  .panel{ display:none; }
+  .panel.active{ display:block; }
+
+  /* ================= ITEMS ================= */
+  .toolbar{ display:flex; gap:10px; align-items:center; margin-bottom:16px; flex-wrap:wrap; }
+  .toolbar select, .toolbar input[type=search]{
+    background:var(--char-3); border:1px solid var(--line); color:var(--rice);
+    padding:9px 12px; border-radius:9px; font-size:13.5px; outline:none;
+  }
+  .toolbar input[type=search]{ flex:1; min-width:160px; }
+  .toolbar .spacer{ flex:1; }
+
+  .item-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(190px, 1fr));
+    gap:14px;
+  }
+  .item-card{
     background:var(--char-3);
     border:1px solid var(--line);
     border-radius:14px;
-    padding:12px 16px;
-    margin-bottom:20px;
-    max-width:420px;
-    transition:border-color .18s ease;
+    overflow:hidden;
+    display:flex; flex-direction:column;
+    box-shadow:0 1px 2px rgba(20,20,30,.04);
+    transition:box-shadow .15s, transform .15s;
   }
-  .search-bar:focus-within{
-    border-color:var(--ember);
-  }
-  .search-bar svg{
-    width:17px; height:17px;
-    stroke:var(--smoke);
-    flex-shrink:0;
-  }
-  .search-bar input{
-    flex:1;
-    background:none;
-    border:none;
-    outline:none;
-    color:var(--rice);
-    font-family:'Kantumruy Pro', sans-serif;
-    font-size:13.5px;
-  }
-  .search-bar input::placeholder{
-    color:var(--smoke);
-  }
-  .search-clear{
-    display:none;
-    width:18px; height:18px;
-    align-items:center;
-    justify-content:center;
-    border-radius:50%;
-    background:var(--char);
-    color:var(--smoke);
-    cursor:pointer;
-    flex-shrink:0;
-    font-size:11px;
-  }
-  .search-clear.show{ display:flex; }
-
-  .empty-state{
-    grid-column:1 / -1;
-    text-align:center;
-    padding:50px 20px;
-    color:var(--smoke);
-    font-size:13.5px;
-  }
-
-  .order-panel{
-    background:linear-gradient(180deg, rgba(36,26,19,0.92) 0%, rgba(31,22,16,0.96) 100%);
-    border:1px solid var(--line);
-    border-radius:18px;
-    padding:16px;
-    margin-bottom:18px;
-    box-shadow:0 12px 28px rgba(0,0,0,.2);
-  }
-  .order-panel-head{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:12px;
-    margin-bottom:12px;
-  }
-  .order-panel-head h3{
-    margin:0;
-    font-size:15px;
-    color:var(--rice);
-    font-weight:700;
-  }
-  .order-panel-head .pill{
-    background:rgba(232,89,42,.16);
-    color:var(--amber);
-    border:1px solid rgba(232,89,42,.3);
-    border-radius:999px;
-    padding:5px 10px;
-    font-size:11px;
-    font-weight:700;
-    text-transform:uppercase;
-    letter-spacing:.06em;
-  }
-  .order-empty{
-    padding:14px 8px;
-    border:1px dashed var(--line);
-    border-radius:12px;
-    text-align:center;
-    color:var(--smoke);
-    font-size:13px;
-    line-height:1.5;
-  }
-  .order-items{
-    display:flex;
-    flex-direction:column;
-    gap:8px;
-    margin-bottom:12px;
-  }
-  .order-item{
-    display:flex;
-    flex-direction:column;
-    gap:8px;
-    padding:10px 12px;
-    border-radius:12px;
-    background:rgba(255,255,255,.03);
-    border:1px solid rgba(255,255,255,.04);
-  }
-  .order-item-top{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
-  .order-item-info{ display:flex; flex-direction:column; gap:2px; min-width:0; }
-  .order-item-name{ font-size:13px; font-weight:700; color:var(--rice); }
-  .order-item-price{ font-size:11.5px; color:var(--smoke); }
-  .order-item-controls{ display:flex; align-items:center; gap:8px; flex-shrink:0; }
-  .order-item-options{ display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
-  .option-chip{
-    border:1px solid var(--line);
-    background:var(--char);
-    color:var(--smoke);
-    font-size:11px;
-    font-weight:700;
-    padding:5px 10px;
-    border-radius:999px;
-    cursor:pointer;
-    font-family:'Kantumruy Pro', sans-serif;
-    transition:all .15s ease;
-  }
-  .option-chip.active{
-    background:var(--ember);
-    border-color:var(--ember);
-    color:#fff;
-  }
-  .order-item-note{
-    width:100%;
-    border:1px solid var(--line);
-    border-radius:8px;
-    padding:7px 9px;
-    background:var(--char);
-    color:var(--rice);
-    font-family:'Kantumruy Pro', sans-serif;
-    font-size:12px;
-    outline:none;
-    box-sizing:border-box;
-  }
-  .order-item-note:focus{ border-color:var(--ember); }
-  .order-item-note::placeholder{ color:var(--smoke); opacity:.7; }
-  .qty-btn{
-    width:28px; height:28px; border:none; border-radius:8px; background:var(--char);
-    color:var(--rice); display:flex; align-items:center; justify-content:center; cursor:pointer;
-    font-size:16px; font-weight:700;
-  }
-  .qty-value{ min-width:24px; text-align:center; font-size:13px; font-weight:700; color:var(--amber); }
-  .customer-field{
-    margin-bottom:10px;
-    display:flex;
-    flex-direction:column;
-    gap:6px;
-  }
-  .customer-field label{
-    font-size:11px;
-    font-weight:700;
-    letter-spacing:.06em;
-    text-transform:uppercase;
-    color:var(--smoke);
-  }
-  .customer-field input{
-    width:100%;
-    border:1px solid var(--line);
-    border-radius:10px;
-    padding:9px 10px;
-    background:var(--char);
-    color:var(--rice);
-    font-family:'Kantumruy Pro', sans-serif;
-    font-size:13px;
-    outline:none;
-  }
-  .customer-field input:focus{ border-color:var(--ember); }
-  .required-mark{ color:var(--ember); font-weight:800; }
-  .optional-mark{ color:var(--smoke); font-weight:500; font-size:11px; }
-  .customer-field input.invalid{ border-color:#e2574c; box-shadow:0 0 0 1px #e2574c; }
-  .contact-note{
-    margin-bottom:12px;
-    font-size:11px;
-    color:var(--smoke);
-    text-align:center;
-  }
-  .order-summary{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    padding-top:10px;
-    margin-top:2px;
-    border-top:1px solid var(--line);
-    font-size:14px;
-    font-weight:700;
-  }
-  .order-summary .value{ color:var(--amber); }
-  .order-actions{ display:flex; gap:8px; margin-top:12px; }
-  .order-actions button{
-    flex:1; border:none; border-radius:10px; padding:9px 10px; font-size:12px; font-weight:700;
-    cursor:pointer; font-family:'Kantumruy Pro', sans-serif;
-  }
-  .order-send-btn{ background:linear-gradient(135deg, var(--ember), var(--ember-deep)); color:var(--rice); }
-  .order-clear-btn{ background:rgba(255,255,255,.06); color:var(--smoke); border:1px solid var(--line); }
-
-  /* ================= CLOSED HOURS POPUP ================= */
-  .closed-overlay{
-    display:none;
-    position:fixed; inset:0;
-    z-index:50;
-    background:rgba(10,7,5,.78);
-    align-items:center;
-    justify-content:center;
-    padding:20px;
-    backdrop-filter:blur(3px);
-    transform:translateZ(0);
-    will-change:transform;
-  }
-  .closed-overlay.show{ display:flex; }
-
-  .closed-modal{
-    background:linear-gradient(180deg, var(--char-3) 0%, var(--char-2) 100%);
-    border:1px solid var(--line);
-    border-radius:20px;
-    padding:32px 28px;
-    max-width:340px;
-    width:100%;
-    text-align:center;
-    box-shadow:0 30px 60px rgba(0,0,0,.5);
-  }
-  .closed-modal .icon-ring{
-    width:64px; height:64px;
-    margin:0 auto 16px;
-    border-radius:50%;
-    background:rgba(232,89,42,.12);
-    border:1px solid rgba(232,89,42,.35);
+  .item-card:hover{ box-shadow:0 8px 20px rgba(20,20,30,.08); transform:translateY(-1px); }
+  .item-card.inactive{ opacity:.45; }
+  .item-card .thumb{
+    aspect-ratio:1/1; background:var(--char-4);
     display:flex; align-items:center; justify-content:center;
+    overflow:hidden;
   }
-  .closed-modal .icon-ring svg{ width:30px; height:30px; stroke:var(--ember); }
-  .closed-modal h2{
-    font-family:'Moul', serif;
-    font-size:20px;
-    color:var(--rice);
-    margin:0 0 8px;
-    font-weight:400;
+  .item-card .thumb img{ width:100%; height:100%; object-fit:cover; }
+  .item-card .thumb .ph{ color:var(--smoke); font-size:11px; }
+  .item-card .body{ padding:10px 12px 12px; display:flex; flex-direction:column; gap:4px; flex:1; }
+  .item-card .name{ font-size:13.5px; font-weight:700; line-height:1.3; }
+  .item-card .meta{ color:var(--smoke); font-size:11.5px; }
+  .item-card .price{ color:var(--amber); font-weight:700; font-size:13px; margin-top:2px; }
+  .item-card .row{ display:flex; gap:6px; margin-top:8px; }
+  .item-card .row .btn{ flex:1; padding:7px 8px; font-size:12px; }
+
+  .empty{ color:var(--smoke); text-align:center; padding:60px 20px; font-size:14px; }
+
+  /* ================= MODAL ================= */
+  .modal-backdrop{
+    display:none; position:fixed; inset:0; z-index:40;
+    background:rgba(0,0,0,.6);
+    align-items:center; justify-content:center; padding:16px;
   }
-  .closed-modal .msg{
-    font-size:13px;
-    color:var(--smoke);
-    line-height:1.5;
-    margin-bottom:18px;
+  .modal-backdrop.show{ display:flex; }
+  .modal{
+    width:100%; max-width:440px; max-height:90vh; overflow:auto;
+    background:var(--char-2); border:1px solid var(--line); border-radius:16px;
+    padding:22px;
+    box-shadow:0 20px 50px rgba(20,20,30,.18);
   }
-  .closed-modal .hours-pill{
-    display:inline-flex;
-    align-items:center;
-    gap:8px;
-    background:var(--char);
-    border:1px solid var(--line);
-    border-radius:999px;
-    padding:8px 18px;
-    font-size:12.5px;
-    font-weight:700;
-    color:var(--amber);
-    margin-bottom:20px;
+  .modal h2{ font-size:16px; margin:0 0 16px; }
+  .field{ margin-bottom:12px; }
+  .field label{ display:block; font-size:12px; color:var(--smoke); margin-bottom:5px; }
+  .field input[type=text], .field select{
+    width:100%; background:var(--char-3); border:1px solid var(--line); color:var(--rice);
+    padding:10px 12px; border-radius:9px; font-size:14px; outline:none;
   }
-  #orderStatusIcon.success{
-    background:rgba(46,184,92,.12);
-    border:1px solid rgba(46,184,92,.4);
+  .field input:focus, .field select:focus{ border-color:var(--ember); }
+  .field-row{ display:flex; gap:10px; }
+  .field-row .field{ flex:1; }
+  .check-row{ display:flex; align-items:center; gap:8px; font-size:13px; margin-bottom:14px; }
+  .check-row input{ width:16px; height:16px; }
+
+  .img-upload{
+    display:flex; align-items:center; gap:12px; margin-bottom:14px;
   }
-  #orderStatusIcon.success svg{ stroke:#3fcf76; }
-  #orderStatusIcon.error{
-    background:rgba(226,87,76,.12);
-    border:1px solid rgba(226,87,76,.4);
+  .img-upload .preview{
+    width:64px; height:64px; border-radius:10px; overflow:hidden;
+    background:var(--char-3); border:1px solid var(--line);
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
   }
-  #orderStatusIcon.error svg{ stroke:#e2574c; }
-  .order-status-close-btn{
-    border:none;
-    background:var(--ember);
-    color:#fff;
-    font-family:'Kantumruy Pro', sans-serif;
-    font-weight:700;
-    font-size:13px;
-    padding:10px 24px;
-    border-radius:999px;
-    cursor:pointer;
+  .img-upload .preview img{ width:100%; height:100%; object-fit:cover; }
+  .img-upload .preview .ph{ color:var(--smoke); font-size:9px; text-align:center; }
+  .img-upload input[type=file]{ font-size:12px; color:var(--smoke); flex:1; }
+  .upload-status{ font-size:11.5px; color:var(--smoke); margin-top:-8px; margin-bottom:12px; min-height:14px; }
+
+  .modal-actions{ display:flex; gap:10px; margin-top:6px; }
+  .modal-msg{ font-size:12.5px; margin-bottom:10px; min-height:14px; }
+  .modal-msg.error{ color:var(--bad); }
+  .modal-msg.ok{ color:var(--good); }
+
+  /* ================= ORDERS / REPORT ================= */
+  .stat-row{ display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:12px; margin-bottom:20px; }
+  .stat-card{
+    background:var(--char-3); border:1px solid var(--line); border-radius:12px; padding:14px 16px;
+    box-shadow:0 1px 2px rgba(20,20,30,.04);
+  }
+  .stat-card .label{ color:var(--smoke); font-size:11.5px; margin-bottom:4px; }
+  .stat-card .value{ font-size:20px; font-weight:800; color:var(--amber); }
+
+  .section-title{ font-size:13px; font-weight:700; color:var(--smoke); text-transform:uppercase; letter-spacing:.06em; margin:20px 0 10px; }
+
+  table{ width:100%; border-collapse:collapse; font-size:13px; }
+  th,td{ text-align:left; padding:9px 10px; border-bottom:1px solid var(--line); }
+  th{ color:var(--smoke); font-weight:600; font-size:11.5px; text-transform:uppercase; letter-spacing:.04em; }
+  tr:last-child td{ border-bottom:none; }
+  .table-wrap{ overflow-x:auto; border:1px solid var(--line); border-radius:12px; background:var(--char-3); box-shadow:0 1px 2px rgba(20,20,30,.04); }
+  .table-wrap table{ min-width:480px; }
+
+  .date-filter{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .date-filter input[type=date]{
+    background:var(--char-3); border:1px solid var(--line); color:var(--rice);
+    padding:8px 10px; border-radius:9px; font-size:13px; outline:none;
   }
 
-  /* ================= ORDER CONFIRM MODAL ================= */
-  .confirm-modal{
-    background:linear-gradient(180deg, var(--char-3) 0%, var(--char-2) 100%);
-    border:1px solid var(--line);
-    border-radius:20px;
-    padding:26px 24px 22px;
-    max-width:420px;
-    width:100%;
-    max-height:86vh;
-    display:flex;
-    flex-direction:column;
-    box-shadow:0 30px 60px rgba(0,0,0,.5);
-    text-align:left;
-  }
-  .confirm-modal h2{
-    font-family:'Moul', serif;
-    font-size:19px;
-    color:var(--rice);
-    margin:0 0 14px;
-    font-weight:400;
-    text-align:center;
-  }
-  .confirm-meta{
-    display:flex;
-    flex-direction:column;
-    gap:4px;
-    background:var(--char);
-    border:1px solid var(--line);
-    border-radius:12px;
-    padding:12px 14px;
-    margin-bottom:14px;
-    font-size:12.5px;
-  }
-  .confirm-meta .row{
-    display:flex;
-    justify-content:space-between;
-    gap:10px;
-    color:var(--smoke);
-  }
-  .confirm-meta .row span:last-child{
-    color:var(--rice);
-    font-weight:600;
-    text-align:right;
-  }
-  .confirm-list{
-    overflow-y:auto;
-    flex:1;
-    display:flex;
-    flex-direction:column;
-    gap:10px;
-    margin-bottom:14px;
-    padding-right:2px;
-  }
-  .confirm-item{
-    display:flex;
-    justify-content:space-between;
-    align-items:flex-start;
-    gap:10px;
-    padding-bottom:10px;
-    border-bottom:1px solid var(--line);
-  }
-  .confirm-item:last-child{ border-bottom:none; padding-bottom:0; }
-  .confirm-item-info{ flex:1; }
-  .confirm-item-name{
-    font-size:13.5px;
-    font-weight:600;
-    color:var(--rice);
-  }
-  .confirm-item-qty{
-    font-size:11.5px;
-    color:var(--amber);
-    font-weight:700;
-    margin-top:1px;
-  }
-  .confirm-item-note{
-    font-size:11px;
-    color:var(--smoke);
-    margin-top:2px;
-    font-style:italic;
-  }
-  .confirm-item-price{
-    font-size:13px;
-    font-weight:700;
-    color:var(--rice);
-    white-space:nowrap;
-  }
-  .confirm-total{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    padding-top:12px;
-    border-top:1px solid var(--line);
-    margin-bottom:16px;
-    font-size:14px;
-    font-weight:700;
-    color:var(--rice);
-  }
-  .confirm-total .value{ color:var(--amber); font-size:17px; }
-  .confirm-actions{
-    display:flex;
-    gap:10px;
-  }
-  .confirm-cancel-btn, .confirm-send-btn{
-    flex:1;
-    border:none;
-    font-family:'Kantumruy Pro', sans-serif;
-    font-weight:700;
-    font-size:13px;
-    padding:12px 16px;
-    border-radius:999px;
-    cursor:pointer;
-    transition:transform .15s ease, opacity .15s ease;
-  }
-  .confirm-cancel-btn{
-    background:var(--char);
-    border:1px solid var(--line);
-    color:var(--rice);
-  }
-  .confirm-cancel-btn:hover{ background:rgba(255,255,255,.05); }
-  .confirm-send-btn{
-    background:linear-gradient(135deg, var(--ember), var(--ember-deep));
-    color:#fff;
-    box-shadow:0 10px 22px rgba(232,89,42,.3);
-  }
-  .confirm-send-btn:hover{ transform:translateY(-1px); }
-  .confirm-send-btn:disabled, .confirm-cancel-btn:disabled{
-    opacity:.6;
-    cursor:not-allowed;
-    transform:none;
-  }
-  .tabs{
-    display:flex;
-    gap:10px;
-    margin-bottom:26px;
-    flex-wrap:wrap;
-  }
-  .tab{
-    display:flex;
-    align-items:center;
-    gap:8px;
-    padding:10px 18px;
-    border-radius:999px;
-    background:var(--char-3);
-    border:1px solid var(--line);
-    color:var(--smoke);
-    font-size:13px;
-    font-weight:600;
-    cursor:pointer;
-    transition:all .18s ease;
-  }
-  .tab svg{ width:15px; height:15px; stroke:currentColor; }
-  .tab:hover{ color:var(--rice); }
-  .tab.active{
-    background:linear-gradient(135deg, var(--ember), var(--ember-deep));
-    color:var(--rice);
-    border-color:transparent;
-    box-shadow:0 6px 18px rgba(232,89,42,.35);
-  }
+  .loading{ color:var(--smoke); font-size:13px; padding:30px; text-align:center; }
 
-  .grid{
+  /* ================= LANG TOGGLE ================= */
+  .lang-toggle{
+    display:flex; border:1px solid var(--line); border-radius:999px; overflow:hidden;
+    background:rgba(255,255,255,.04);
+  }
+  .lang-toggle button{
+    background:none; border:none; color:var(--smoke);
+    font-size:12px; font-weight:700; padding:6px 12px;
+  }
+  .lang-toggle button.active{ background:var(--ember); color:var(--rice); }
+
+  /* ================= TABLES PANEL ================= */
+  .table-grid{
     display:grid;
-    grid-template-columns:repeat(auto-fill, minmax(220px, 1fr));
-    gap:18px;
-    padding-bottom:20px;
+    grid-template-columns:repeat(auto-fill, minmax(150px, 1fr));
+    gap:14px;
+  }
+  .table-card{
+    background:var(--char-3); border:1px solid var(--line); border-radius:14px;
+    padding:14px; display:flex; flex-direction:column; gap:6px;
+    box-shadow:0 1px 2px rgba(20,20,30,.04);
+  }
+  .table-card .tname{ font-size:15px; font-weight:800; }
+  .table-card .tstatus{
+    display:inline-flex; align-items:center; gap:6px; font-size:11.5px; font-weight:700;
+    padding:4px 10px; border-radius:999px; width:fit-content;
+  }
+  .table-card .tstatus.available{ background:rgba(79,174,107,.15); color:var(--good); }
+  .table-card .tstatus.occupied{ background:rgba(226,76,76,.15); color:var(--bad); }
+  .table-card .tstatus.reserved{ background:rgba(240,169,58,.15); color:var(--amber); }
+  .table-card .tnote{ color:var(--smoke); font-size:12px; min-height:14px; }
+  .table-card .row{ display:flex; gap:6px; margin-top:6px; }
+  .table-card .row .btn{ flex:1; padding:7px 8px; font-size:11.5px; }
+  .table-card select{
+    background:var(--char-4); border:1px solid var(--line); color:var(--rice);
+    padding:6px 8px; border-radius:8px; font-size:12px; outline:none;
   }
 
-  .card{
-    position:relative;
-    background:var(--char-3);
-    border:1px solid var(--line);
-    border-radius:16px;
-    padding:12px;
-    display:flex;
-    flex-direction:column;
-    gap:12px;
-    transition:transform .18s ease, border-color .18s ease, box-shadow .18s ease;
-    opacity:0;
-    animation:cardFadeIn .38s ease forwards;
-    overflow:hidden;
-  }
-  @keyframes cardFadeIn{
-    from{ opacity:0; transform:translateY(10px) scale(.98); }
-    to{ opacity:1; transform:translateY(0) scale(1); }
-  }
-  @media (prefers-reduced-motion:reduce){
-    .card{ opacity:1; animation:none; }
-  }
-  .card:hover{
-    transform:translateY(-3px);
-    border-color:var(--ember);
-    box-shadow:0 14px 30px rgba(0,0,0,.35);
+  .receipt-box{
+    font-family:'Kantumruy Pro', sans-serif; width:280px; margin:0 auto; color:#111; background:#fff; padding:16px;
   }
 
-  /* ================= CARD IMAGE CONFIGS ================= */
-  .card-img-wrapper{
-    position:relative;
-    width:100%;
-    height:130px;
-    border-radius:10px;
-    overflow:hidden;
-    background:var(--char);
-    border:1px solid rgba(255,255,255,0.03);
+  /* ================= MOBILE DRAWER ================= */
+  .menu-toggle{
+    display:none; background:none; border:1px solid var(--line); color:var(--rice);
+    width:36px; height:36px; border-radius:9px; align-items:center; justify-content:center;
+    flex-shrink:0;
   }
-  .card-img-wrapper img{
-    width:100%;
-    height:100%;
-    object-fit:cover;
-    transition:transform 0.3s ease;
-  }
-  .card:hover .card-img-wrapper img{
-    transform:scale(1.05);
-  }
-  .card-img-overlay{
-    position:absolute;
-    inset:0;
-    background:linear-gradient(to bottom, rgba(36,26,19,0.2) 0%, rgba(36,26,19,0.75) 100%);
-    pointer-events:none;
-  }
-
-  /* Tag overlays above image frames */
-  .card-tags-overlay{
-    position:absolute;
-    top:8px; left:8px; right:8px;
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    z-index:3;
-  }
-
-  .num-tag{
-    font-size:10px;
-    font-weight:700;
-    color:var(--rice);
-    background:rgba(31,22,16,0.85);
-    backdrop-filter:blur(4px);
-    border:1px solid var(--line);
-    padding:3px 8px;
-    border-radius:999px;
-  }
-
-  .popular-tag{
-    display:flex;
-    align-items:center;
-    gap:4px;
-    font-size:9.5px;
-    font-weight:700;
-    letter-spacing:.05em;
-    text-transform:uppercase;
-    color:#fff;
-    background:linear-gradient(135deg, var(--ember), var(--ember-deep));
-    padding:3px 8px;
-    border-radius:999px;
-    box-shadow:0 2px 8px rgba(232,89,42,0.4);
-    margin-left:auto; /* Pushes to right when number is absent */
-  }
-  .popular-tag svg{ width:10px; height:10px; stroke:#fff; fill:#fff; }
-
-  .card-name{
-    font-size:15.5px;
-    font-weight:700;
-    color:var(--rice);
-    line-height:1.35;
-    min-height:42px;
-    padding:0 4px;
-  }
-
-  .card-bottom{
-    display:flex;
-    align-items:flex-end;
-    justify-content:space-between;
-    margin-top:auto;
-    padding:0 4px 4px;
-  }
-  .price-block{
-    display:flex;
-    flex-direction:column;
-    align-items:flex-end;
-    line-height:1.2;
-  }
-  .card-price{
-    font-size:16.5px;
-    font-weight:800;
-    color:var(--amber);
-  }
-  .card-price-usd{
-    font-size:11px;
-    font-weight:600;
-    color:var(--smoke);
-    margin-top:2px;
-  }
-  .order-btn{
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    gap:6px;
-    width:100%;
-    margin-top:8px;
-    padding:8px 10px;
-    border:none;
-    border-radius:10px;
-    background:linear-gradient(135deg, var(--ember), var(--ember-deep));
-    color:var(--rice);
-    font-size:12px;
-    font-weight:700;
-    font-family:'Kantumruy Pro', sans-serif;
-    cursor:pointer;
-    transition:transform .15s ease;
-  }
-  .order-btn:hover{ transform:translateY(-1px); }
-  .order-btn svg{ width:14px; height:14px; stroke:var(--rice); fill:none; }
-  
-  /* Unavailable/closed items styling */
-  .card-unavailable{
-    opacity:0.6;
-    pointer-events:none;
-  }
-  .card-unavailable:hover{
-    transform:none;
-    border-color:var(--line);
-    box-shadow:none;
-  }
-  .closed-tag{
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-size:9px;
-    font-weight:800;
-    letter-spacing:.08em;
-    text-transform:uppercase;
-    color:#fff;
-    background:rgba(139,69,19,0.9);
-    backdrop-filter:blur(4px);
-    padding:4px 10px;
-    border-radius:999px;
-    box-shadow:0 2px 8px rgba(0,0,0,0.4);
-  }
-  .order-btn.disabled{
-    background:rgba(80,80,80,0.7);
-    cursor:not-allowed;
-    pointer-events:auto;
-  }
-  .order-btn.disabled:hover{
-    transform:none;
-  }
-  .order-btn.disabled svg{
-    stroke:var(--smoke);
-  }
-  
-  .card-cat{
-    font-size:10px;
-    color:var(--smoke);
-    letter-spacing:.06em;
-    text-transform:uppercase;
-  }
-
-  /* scrollbar */
-  .main::-webkit-scrollbar{ width:8px; }
-  .main::-webkit-scrollbar-thumb{ background:var(--line); border-radius:4px; }
-  .main::-webkit-scrollbar-track{ background:transparent; }
-
-  /* ================= MENU TRIGGER (mobile) ================= */
-  .menu-trigger{
-    display:none;
-    position:fixed;
-    top:16px; left:16px;
-    z-index:20;
-    width:42px; height:42px;
-    align-items:center;
-    justify-content:center;
-    background:var(--char-3);
-    border:1px solid var(--line);
-    border-radius:12px;
-    cursor:pointer;
-    box-shadow:0 8px 22px rgba(0,0,0,.45);
-  }
-  .menu-trigger svg{ width:20px; height:20px; stroke:var(--rice); }
-
-  /* ================= SIDEBAR BACKDROP ================= */
   .sidebar-backdrop{
-    display:none;
-    position:fixed; inset:0;
-    z-index:24;
-    background:rgba(0,0,0,.55);
-    opacity:0;
-    pointer-events:none;
-    transition:opacity .28s ease;
+    display:none; position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:19;
   }
-  .sidebar-backdrop.open{
-    opacity:1;
-    pointer-events:auto;
-  }
+  .sidebar-backdrop.show{ display:block; }
 
-  @media (max-width:980px){
-    .board{ grid-template-columns:1fr; }
-    .main{ padding:20px; padding-top:64px; }
-    .menu-trigger{ display:flex; }
-    .sidebar-backdrop{ display:block; }
-
+  @media(max-width:820px){
+    .menu-toggle{ display:inline-flex; }
     .sidebar{
-      display:flex;
-      position:fixed;
-      top:0; left:0;
-      z-index:25;
-      width:280px;
-      max-width:82vw;
-      height:100vh;
-      box-shadow:0 0 40px rgba(0,0,0,.5);
-      transform:translateX(-100%);
-      transition:transform .3s cubic-bezier(.4,0,.2,1);
-      overflow-y:auto;
+      position:fixed; left:0; top:0; width:250px; z-index:20;
+      transform:translateX(-100%); transition:transform .2s ease;
     }
-    .sidebar.open{
-      transform:translateX(0);
-    }
-
-    .tabs{
-      flex-wrap:nowrap;
-      overflow-x:auto;
-      overflow-y:hidden;
-      -webkit-overflow-scrolling:touch;
-      scrollbar-width:none;
-      scroll-snap-type:x proximity;
-      margin-left:-20px;
-      margin-right:-20px;
-      padding-left:20px;
-      padding-right:20px;
-      -webkit-mask-image:linear-gradient(90deg, transparent 0, #000 20px, #000 calc(100% - 20px), transparent 100%);
-      mask-image:linear-gradient(90deg, transparent 0, #000 20px, #000 calc(100% - 20px), transparent 100%);
-    }
-    .tabs::-webkit-scrollbar{ display:none; }
-    .tab{
-      flex-shrink:0;
-      scroll-snap-align:start;
-    }
+    .sidebar.open{ transform:translateX(0); }
   }
-
-  /* ================= PHONE: MINIMAL 2-COLUMN GRID ================= */
-  @media (max-width:600px){
-    .grid{
-      grid-template-columns:repeat(2, 1fr);
-      gap:10px;
-    }
-    .card{
-      padding:8px;
-      gap:8px;
-    }
-    .card-img-wrapper {
-      height: 95px;
-    }
-    .card-name{
-      font-size:12.5px;
-      min-height:32px;
-    }
-    .card-price{ font-size:14px; }
-    .card-price-usd{ font-size:10px; }
-    .card-cat{ font-size:8.5px; }
-    .num-tag{ font-size:9px; padding:2px 6px; }
-    .popular-tag{ font-size:8px; padding:2px 6px; }
-    .popular-tag svg{ width:8px; height:8px; }
+  @media(max-width:600px){
+    .topbar{ padding:14px 16px; }
+    .content{ padding:16px 16px 50px; }
+    .item-grid, .pos-items .item-grid{ grid-template-columns:repeat(auto-fill, minmax(140px, 1fr)); }
   }
 </style>
-</head>
-<body>
-
-<div class="embers" id="embers"></div>
-
-<div class="menu-trigger" id="menuTrigger">
-  <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
-</div>
-
+</head><body>
 <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
 
-<div class="closed-overlay" id="closedOverlay">
-  <div class="closed-modal">
-    <div class="icon-ring">
-      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3.5 2"></path></svg>
+<div class="login-wrap" id="loginWrap">
+  <div class="login-card">
+    <div class="lang-toggle" id="loginLangToggle" style="margin:0 auto 16px; width:fit-content;">
+      <button data-lang="en">EN</button>
+      <button data-lang="km">ខ្មែរ</button>
     </div>
-    <h2 data-km="បិទនៅពេលនេះ" data-en="We're Closed Right Now">បិទនៅពេលនេះ</h2>
-    <div class="msg" data-km="សូមអភ័យទោស! សូមអញ្ជើញមកម្តងទៀតក្នុងម៉ោងបើក។" data-en="Sorry! We is closed at the moment. Please come back during our opening hours.">សូមអភ័យទោស! ស្ទឹងកាហ្វេបិទហើយ។ សូមអញ្ជើញមកម្តងទៀតក្នុងម៉ោងបើកបរិការ។</div>
-    <div class="hours-pill" data-km="ភេសជ្ជៈ: 7ព្រឹក-5ល្ងាច | អាហារ: 5ល្ងាច-1យប់" data-en="Drinks: 7 AM - 5 PM | Foods: 5 PM - 1 AM">ភេសជ្ជៈ: 7ព្រឹក-5ល្ងាច | អាហារ: 5ល្ងាច-1យប់</div>
+    <h1 data-i18n="loginTitle">Steung Cafe Admin</h1>
+    <p class="sub" id="loginSubText" data-i18n="loginSub">Enter the admin password to continue</p>
+    <input type="password" id="passwordInput" data-i18n-placeholder="passwordPh" placeholder="Password" autofocus>
+    <div class="err" id="loginErr"></div>
+    <button class="btn" id="loginBtn" data-i18n="loginBtn">Log in</button>
   </div>
 </div>
 
-<div class="closed-overlay" id="orderStatusOverlay">
-  <div class="closed-modal" id="orderStatusModal">
-    <div class="icon-ring" id="orderStatusIcon"></div>
-    <h2 id="orderStatusTitle"></h2>
-    <div class="msg" id="orderStatusMsg"></div>
-    <button class="order-status-close-btn" id="orderStatusCloseBtn" type="button"></button>
-  </div>
-</div>
-
-<div class="closed-overlay" id="orderConfirmOverlay">
-  <div class="confirm-modal" id="orderConfirmModal">
-    <h2 id="orderConfirmTitle"></h2>
-    <div class="confirm-meta" id="orderConfirmMeta"></div>
-    <div class="confirm-list" id="orderConfirmList"></div>
-    <div class="confirm-total">
-      <span id="orderConfirmTotalLabel"></span>
-      <span class="value" id="orderConfirmTotalValue"></span>
-    </div>
-    <div class="confirm-actions">
-      <button class="confirm-cancel-btn" id="orderConfirmCancelBtn" type="button"></button>
-      <button class="confirm-send-btn" id="orderConfirmSendBtn" type="button"></button>
-    </div>
-  </div>
-</div>
-
-<div class="board">
-
-  <!-- ================= SIDEBAR ================= -->
-  <aside class="sidebar">
-    <div class="grate"></div>
-
+<div class="app" id="app">
+  <div class="sidebar" id="sidebar">
     <div class="brand">
-      <div class="eyebrow" data-km="ម៉ឺនុយឌីជីថល" data-en="DIGITAL MENU">ម៉ឺនុយឌីជីថល</div>
-      <div class="title">ស្ទឹងកាហ្វេ</div>
-      <div class="roman">Steung Cafe</div>
+      <span class="dot"></span>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F0A93A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4Z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+      <h1 data-i18n="appTitle">Steung Cafe Admin</h1>
     </div>
-
-    <div class="clock">
-      <div class="time" id="clockTime">--:--</div>
-      <div class="date" id="clockDate">-- --- ----</div>
-    </div>
-
-    <div class="lang-toggle" id="langToggle">
-      <span class="opt active" id="optKm">ខ្មែរ</span>
-      <span class="opt" id="optEn">EN</span>
-    </div>
-
-    <div class="side-label" data-km="ប្រភេទ" data-en="CATEGORIES">ប្រភេទ</div>
-    <nav class="side-nav" id="sideNav"></nav>
-
-    <div class="sidebar-footer">
-      <a class="telegram-btn" href="https://t.me/+85517779670" target="_blank" rel="noopener">
-        <svg viewBox="0 0 24 24"><path d="M21.9 3.5 2.5 11.2c-1.2.5-1.2 1.2-.2 1.5l4.9 1.5 1.9 5.8c.2.6.4.8.9.8.4 0 .6-.2.9-.5l2.2-2.1 4.6 3.4c.8.5 1.4.2 1.6-.8L23.9 4.6c.3-1.2-.4-1.8-1.6-1.3zM8.3 13.9l9.7-6.1c.5-.3.9-.1.6.2L10.6 15c-.2.2-.4.3-.7.3l.3-3.3z"></path></svg>
-        Telegram — 017 779 670
-      </a>
-      <div class="hours-row" data-km="ភេសជ្ជៈ: 7ព្រឹក-5ល្ងាច | អាហារ: 5ល្ងាច-1យប់" data-en="Drinks: 7 AM - 5 PM | Foods: 5 PM - 1 AM">ភេសជ្ជៈ: 7ព្រឹក-5ល្ងាច | អាហារ: 5ល្ងាច-1យប់</div>
-      <div class="contact-row">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.6 10.8c1.4 2.8 3.8 5.2 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.4 21 3 13.6 3 4c0-.6.4-1 1-1h3.4c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.4 0 .8-.2 1L6.6 10.8z"></path></svg>
-        017 779 670
-      </div>
-      <div class="contact-row">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.6 10.8c1.4 2.8 3.8 5.2 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.4 21 3 13.6 3 4c0-.6.4-1 1-1h3.4c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.4 0 .8-.2 1L6.6 10.8z"></path></svg>
-        096 322 3105
+    <div class="sidebar-scroll">
+      <div class="tabs">
+        <button class="tab active" data-panel="dashboardPanel" data-admin-only>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+          <span data-i18n="tabDashboard">Dashboard</span>
+        </button>
+        <button class="tab" data-panel="itemsPanel" data-admin-only>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          <span data-i18n="tabItems">Menu Items</span>
+        </button>
+        <button class="tab" data-panel="categoriesPanel" data-admin-only>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h6v6H4z"/><path d="M14 4h6v6h-6z"/><path d="M4 14h6v6H4z"/><circle cx="17" cy="17" r="3"/></svg>
+          <span data-i18n="tabCategories">Categories</span>
+        </button>
+        <button class="tab" data-panel="ordersPanel" data-admin-only>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>
+          <span data-i18n="tabOrders">Orders &amp; Report</span>
+        </button>
+        <button class="tab" data-panel="tablesPanel" data-admin-only>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="9" y1="10" x2="9" y2="20"/></svg>
+          <span data-i18n="tabTables">Tables</span>
+        </button>
       </div>
     </div>
-  </aside>
-
-  <!-- ================= MAIN ================= -->
-  <main class="main">
-    <div class="main-top">
-      <div>
-        <h1 data-km="ម៉ឺនុយថ្ងៃនេះ" data-en="Today's Menu">ម៉ឺនុយថ្ងៃនេះ</h1>
-        <div class="sub" data-km="គ្រឿងអាំងស្រស់ៗ ជូនរាល់ថ្ងៃ" data-en="Fresh grilled dishes, served daily">គ្រឿងអាំងស្រស់ៗ ជូនរាល់ថ្ងៃ</div>
+    <div class="sidebar-foot">
+      <div class="lang-toggle" id="appLangToggle" style="align-self:flex-start;">
+        <button data-lang="en">EN</button>
+        <button data-lang="km">ខ្មែរ</button>
       </div>
-      <div class="live-pill" id="livePill"><span class="live-dot" id="liveDot"></span><span id="liveLabel"></span></div>
+      <button class="btn ghost small" id="logoutBtn" data-i18n="logoutBtn" style="width:100%;">Log out</button>
+    </div>
+  </div>
+
+  <div class="main-wrap">
+  <div class="topbar">
+    <div class="brand">
+      <button class="menu-toggle" id="menuToggleBtn" aria-label="Menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="right">
+      <div class="status-pill" id="statusPill" data-admin-only>
+        <span class="dot2"></span>
+        <span class="label" id="statusLabel" data-i18n="loadingText">Loading…</span>
+      </div>
+      <button class="btn small" id="statusToggleBtn" disabled data-admin-only>…</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- ============ DASHBOARD PANEL ============ -->
+    <div class="panel active" id="dashboardPanel">
+      <div class="section-title" data-i18n="dashToday">Today</div>
+      <div class="stat-row">
+        <div class="stat-card"><div class="label" data-i18n="ordersLabel">Orders</div><div class="value" id="dashOrdersToday">–</div></div>
+        <div class="stat-card"><div class="label" data-i18n="revenueLabel">Revenue</div><div class="value" id="dashRevenueToday">–</div></div>
+        <div class="stat-card"><div class="label" data-i18n="avgOrderLabel">Avg order</div><div class="value" id="dashAvgToday">–</div></div>
+      </div>
+      <div class="section-title" data-i18n="dashOverview">Overview</div>
+      <div class="stat-row">
+        <div class="stat-card"><div class="label" data-i18n="dashMenuItems">Menu items</div><div class="value" id="dashItemCount">–</div></div>
+        <div class="stat-card"><div class="label" data-i18n="dashActiveCats">Categories (on/total)</div><div class="value" id="dashCatCount">–</div></div>
+        <div class="stat-card"><div class="label" data-i18n="dashTables">Tables</div><div class="value" id="dashTableCount">–</div></div>
+        <div class="stat-card"><div class="label" data-i18n="dashMenuStatus">Menu status</div><div class="value" id="dashMenuStatus" style="font-size:15px;">–</div></div>
+      </div>
+      <div class="section-title" data-i18n="topItems">Top items</div>
+      <div id="dashTopItemsArea"><div class="loading" data-i18n="loadingText">Loading…</div></div>
     </div>
 
-    <div class="search-bar">
-      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-      <input type="text" id="searchInput" data-km-ph="ស្វែងរកម្ហូប..." data-en-ph="Search menu..." placeholder="ស្វែងរកម្ហូប...">
-      <span class="search-clear" id="searchClear">✕</span>
+    <!-- ============ ITEMS PANEL ============ -->
+    <div class="panel" id="itemsPanel">
+      <div class="toolbar">
+        <select id="catFilter" class="cat-select-filter"></select>
+        <input type="search" id="itemSearch" data-i18n-placeholder="searchPh" placeholder="Search items…">
+        <div class="spacer"></div>
+        <button class="btn small" id="addItemBtn" data-i18n="addItemBtn">+ Add item</button>
+      </div>
+      <div id="itemsArea"><div class="loading" data-i18n="loadingItems">Loading items…</div></div>
     </div>
 
-    <div class="order-panel" id="orderPanel"></div>
+    <!-- ============ CATEGORIES PANEL ============ -->
+    <div class="panel" id="categoriesPanel">
+      <div class="toolbar">
+        <div class="spacer"></div>
+        <button class="btn small" id="addCatBtn" data-i18n="addCatBtn">+ Add category</button>
+      </div>
+      <div id="categoriesArea"><div class="loading" data-i18n="loadingText">Loading…</div></div>
+    </div>
 
-    <div class="tabs" id="tabs"></div>
+    <!-- ============ ORDERS PANEL ============ -->
+    <div class="panel" id="ordersPanel">
+      <div class="toolbar">
+        <div class="date-filter">
+          <input type="date" id="fromDate">
+          <span style="color:var(--smoke);font-size:12px;" data-i18n="toWord">to</span>
+          <input type="date" id="toDate">
+          <button class="btn small ghost" id="applyDateBtn" data-i18n="applyBtn">Apply</button>
+          <button class="btn small ghost" id="last7Btn" data-i18n="last7Btn">Last 7 days</button>
+          <button class="btn small ghost" id="last30Btn" data-i18n="last30Btn">Last 30 days</button>
+        </div>
+      </div>
+      <div id="ordersArea"><div class="loading" data-i18n="loadingOrders">Loading orders…</div></div>
+    </div>
 
-    <div class="grid" id="grid"></div>
-  </main>
+    <!-- ============ TABLES PANEL ============ -->
+    <div class="panel" id="tablesPanel">
+      <div class="toolbar">
+        <div class="spacer"></div>
+        <button class="btn small" id="addTableBtn" data-i18n="addTableBtn">+ Add table</button>
+      </div>
+      <div id="tablesArea"></div>
+    </div>
 
+  </div>
+  </div>
+</div>
+<div class="modal-backdrop" id="itemModalBackdrop">
+  <div class="modal">
+    <h2 id="itemModalTitle" data-i18n="addItemTitle">Add item</h2>
+    <div class="modal-msg" id="itemModalMsg"></div>
+
+    <div class="img-upload">
+      <div class="preview" id="imgPreviewWrap"><span class="ph" data-i18n="noPhoto">No photo</span></div>
+      <div style="flex:1;">
+        <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" id="imgFileInput">
+        <div class="upload-status" id="uploadStatus"></div>
+      </div>
+    </div>
+
+    <div class="field-row">
+      <div class="field"><label data-i18n="khmerName">Khmer name</label><input type="text" id="fieldKm"></div>
+      <div class="field"><label data-i18n="englishName">English name</label><input type="text" id="fieldEn"></div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label data-i18n="category">Category</label>
+        <select id="fieldCat" class="cat-select-field"></select>
+      </div>
+      <div class="field"><label data-i18n="menuNum">Menu #</label><input type="text" id="fieldNum" inputmode="numeric"></div>
+    </div>
+    <div class="field">
+      <label data-i18n="priceLabel">Price (Riel, e.g. 6,000៛)</label>
+      <input type="text" id="fieldPrice" placeholder="6,000៛">
+    </div>
+    <div class="check-row"><input type="checkbox" id="fieldPopular"><label for="fieldPopular" data-i18n="markPopular">Mark as popular</label></div>
+    <div class="check-row"><input type="checkbox" id="fieldActive" checked><label for="fieldActive" data-i18n="activeLabel">Active (visible on the live menu)</label></div>
+
+    <div class="modal-actions">
+      <button class="btn ghost" id="cancelItemBtn" data-i18n="cancelBtn">Cancel</button>
+      <button class="btn" id="saveItemBtn" data-i18n="saveBtn">Save</button>
+    </div>
+  </div>
 </div>
 
-<!-- ================= ICON LIBRARY ================= -->
-<svg style="display:none">
-  <defs>
-    <symbol id="ic-flame" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M12 2c1 3-2 4-2 7a4 4 0 1 0 8 0c0-1.5-1-2.5-1-2.5.5 2-.5 3-1.5 3.5C17 8 15 5 12 2z"></path>
-      <path d="M9 14a3 3 0 1 0 6 0c0-1.5-1.5-2-1.5-3.5 0 0-4 1.5-4.5 3.5z"></path>
-    </symbol>
-    <symbol id="ic-fish" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M3 12c3.5-4.5 9-5.5 13-2.5M16 9.5C20 10.5 21 12 21 12s-1 1.5-5 2.5M3 12c3.5 4.5 9 5.5 13 2.5"></path>
-      <circle cx="8.5" cy="11" r=".6" fill="currentColor" stroke="none"></circle>
-      <path d="M3 12l-2-2m2 2l-2 2"></path>
-    </symbol>
-    <symbol id="ic-skewer" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-      <line x1="3" y1="21" x2="21" y2="3"></line>
-      <rect x="6.5" y="9.5" width="4" height="4" rx="1" transform="rotate(45 8.5 11.5)"></rect>
-      <rect x="11" y="5" width="4" height="4" rx="1" transform="rotate(45 13 7)"></rect>
-      <rect x="2" y="14" width="4" height="4" rx="1" transform="rotate(45 4 16)"></rect>
-    </symbol>
-    <symbol id="ic-leaf" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M20 4C10 4 4 10 4 18c8 0 14-6 14-14z"></path>
-      <path d="M9 15c3-3 6-6 10-9"></path>
-    </symbol>
-    <symbol id="ic-shell" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M4 15C4 8 8 4 12 4s8 4 8 11c-2.5 1.5-5 2.5-8 2.5S6.5 16.5 4 15z"></path>
-      <path d="M12 4v13.5M8 6.5c1 3 1 7 0 10M16 6.5c-1 3-1 7 0 10"></path>
-    </symbol>
-    <symbol id="ic-shrimp" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M6 18c-2-3-2-8 1-11 3-2.5 7-2 8 1.5"></path>
-      <path d="M15 8.5c2 0 4 1.5 4 4.5 0 3.5-3 6-7 6"></path>
-      <path d="M4 15.5l-2 1M4.5 13l-2.3.3M5.5 10.8l-2-.8"></path>
-    </symbol>
-    <symbol id="ic-frog" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-      <ellipse cx="12" cy="14" rx="7" ry="5.5"></ellipse>
-      <circle cx="8" cy="7.5" r="2"></circle>
-      <circle cx="16" cy="7.5" r="2"></circle>
-      <path d="M6 18l-2.5 2.5M18 18l2.5 2.5"></path>
-    </symbol>
-    <symbol id="ic-bowl" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M3 12h18c0 4.5-4 7.5-9 7.5S3 16.5 3 12z"></path>
-      <path d="M9 5.5c-.7.8-.7 1.7 0 2.5M12 4.5c-.7.8-.7 1.7 0 2.5M15 5.5c-.7.8-.7 1.7 0 2.5"></path>
-    </symbol>
-    <symbol id="ic-droplet" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M12 3c4 5 6.5 8.5 6.5 11.5a6.5 6.5 0 1 1-13 0C5.5 11.5 8 8 12 3z"></path>
-    </symbol>
-    <symbol id="ic-can" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-      <rect x="7" y="3" width="10" height="18" rx="2.5"></rect>
-      <path d="M7 8h10M7 16h10"></path>
-    </symbol>
-    <symbol id="ic-bottle" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M10 2h4v4l2 3v11a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2V9l2-3V2z"></path>
-      <path d="M8 13h8"></path>
-    </symbol>
-    <symbol id="ic-glass" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M7 3h10l-1.5 15a2.5 2.5 0 0 1-2.5 2.3h-2a2.5 2.5 0 0 1-2.5-2.3L7 3z"></path>
-      <path d="M8 9h8"></path>
-    </symbol>
-  </defs>
-</svg>
+<!-- ============ CATEGORY MODAL ============ -->
+<div class="modal-backdrop" id="catModalBackdrop">
+  <div class="modal" style="max-width:340px;">
+    <h2 id="catModalTitle" data-i18n="addCatTitle">Add category</h2>
+    <div class="modal-msg" id="catModalMsg"></div>
+    <div class="field"><label data-i18n="khmerName">Khmer name</label><input type="text" id="catFieldKm"></div>
+    <div class="field"><label data-i18n="englishName">English name</label><input type="text" id="catFieldEn"></div>
+    <div class="check-row"><input type="checkbox" id="catFieldActive" checked><label for="catFieldActive" data-i18n="catActiveCheck">Active (customers/staff can order it)</label></div>
+    <div class="modal-actions">
+      <button class="btn ghost" id="cancelCatBtn" data-i18n="cancelBtn">Cancel</button>
+      <button class="btn" id="saveCatBtn" data-i18n="saveBtn">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ TABLE MODAL ============ -->
+<div class="modal-backdrop" id="tableModalBackdrop">
+  <div class="modal" style="max-width:340px;">
+    <h2 id="tableModalTitle" data-i18n="addTableTitle">Add table</h2>
+    <div class="modal-msg" id="tableModalMsg"></div>
+    <div class="field"><label data-i18n="tableName">Table name / number</label><input type="text" id="tableFieldName" placeholder="e.g. Table 5"></div>
+    <div class="field">
+      <label data-i18n="tableStatus">Status</label>
+      <select id="tableFieldStatus">
+        <option value="available" data-i18n="statusAvailable">Available</option>
+        <option value="occupied" data-i18n="statusOccupied">Occupied</option>
+        <option value="reserved" data-i18n="statusReserved">Reserved</option>
+      </select>
+    </div>
+    <div class="field"><label data-i18n="tableNote">Note (reservation name / time)</label><input type="text" id="tableFieldNote" placeholder="e.g. Sok, 7:00 PM"></div>
+    <div class="modal-actions">
+      <button class="btn ghost" id="cancelTableBtn" data-i18n="cancelBtn">Cancel</button>
+      <button class="btn" id="saveTableBtn" data-i18n="saveBtn">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ RECEIPT MODAL ============ -->
+<div class="modal-backdrop" id="receiptModalBackdrop">
+  <div class="modal" style="max-width:340px;">
+    <h2 data-i18n="receiptTitle">Receipt</h2>
+    <div id="receiptContent"></div>
+    <div class="modal-actions">
+      <button class="btn ghost" id="closeReceiptBtn" data-i18n="closeBtn">Close</button>
+      <button class="btn" id="printReceiptBtn" data-i18n="printBtn">Print</button>
+    </div>
+  </div>
+</div>
 
 <script>
-  /* ======================================================================
-     MANUAL "CLOSED TODAY" POPUP SWITCH
-     ----------------------------------------------------------------------
-     Controlled from the admin dashboard's "Close Menu" / "Open Menu"
-     button (see admin.html + netlify/functions/admin-status.js) rather
-     than being hand-edited here. Starts false (open) on every page load
-     and gets corrected by loadStoreStatus() below moments later if the
-     admin has switched it on — and is re-checked periodically so a board
-     left open on a TV picks up the change without a manual refresh.
+(function(){
+  'use strict';
 
-         true  -> popup shows
-         false -> popup hidden (normal hours logic still applies)
-     ====================================================================== */
-  let CAFE_CLOSED_TODAY = false;
+  const FN = '/.netlify/functions';
 
-  // Pulls the admin-set open/closed flag. Fails soft: any error leaves
-  // CAFE_CLOSED_TODAY as-is (defaulting to false/open) so a status-store
-  // hiccup never accidentally closes the live menu.
-  function loadStoreStatus(){
-    fetch('/.netlify/functions/get-status')
-      .then(res => res.ok ? res.json() : Promise.reject(new Error('bad status ' + res.status)))
-      .then(data => {
-        if (data && data.ok && typeof data.closed === 'boolean'){
-          CAFE_CLOSED_TODAY = data.closed;
-          tick();
-        }
-      })
-      .catch(err => {
-        console.warn('Could not load menu open/closed status:', err.message);
-      });
-  }
+  /* ---------------- categories ----------------
+     Categories used to be a fixed, hardcoded list. They're now editable
+     data: each one is { id, km, en, active }. "active:false" means the
+     category still shows up everywhere it's picked from (item editor,
+     filters) but its items are hidden from ordering (POS + live menu
+     if the live menu is wired to the same flag — see loadCategories()).
 
-  /* ================= DATA ================= */
-  // "All" is a purely presentational pseudo-category (never comes from the
-  // server) and always stays pinned first, regardless of what the admin
-  // has added/removed on the backend.
-  const ALL_CATEGORY = { id:'all', km:'ទាំងអស់', en:'All', icon:'ic-flame' };
-
-  // Built-in fallback categories, used until (and unless) admin-managed
-  // categories load successfully from the Categories sheet tab via
-  // get-categories.js. Kept as-is so the live menu never breaks if that
-  // fetch fails — same pattern as the ITEMS fallback below.
+     They're loaded from the server (GET /admin-categories) if that
+     endpoint exists. If your backend doesn't have it yet, this falls
+     back to a copy saved in this browser (localStorage) so the admin
+     still works — add the matching Netlify function later to have
+     categories sync everywhere (including the live customer menu). */
+  const CAT_STORAGE_KEY = 'scm_admin_categories';
   const DEFAULT_CATEGORIES = [
-    { id:'grilled', km:'អាហារ',           en:'Food',         icon:'ic-flame' },
-    { id:'soft',    km:'ភេសជ្ជៈ',      en:'Soft Drinks',  icon:'ic-droplet' },
-    { id:'beer',    km:'ស្រាបៀរ',         en:'Beer',         icon:'ic-bottle' },
-    { id:'alcohol', km:'ស្រា',       en:'Alcohol',      icon:'ic-glass' },
-    { id:'hot',     km:'ភេសជ្ជៈក្ដៅ',        en:'Hot Drink',    icon:'ic-glass' },
-    { id:'frappe',  km:'ភេសជ្ជៈក្រឡុក',    en:'Frappe',       icon:'ic-can' },
-    { id:'iced',    km:'ភេសជ្ជៈត្រជាក់',      en:'Iced Drink',   icon:'ic-droplet' },
-    { id:'cream',   km:'ភេសជ្ជៈគ្រីម',      en:'Cream',        icon:'ic-glass' },
+    { id:'grilled', km:'អាហារ',        en:'Food',        active:true },
+    { id:'soft',    km:'ភេសជ្ជៈទន់',   en:'Soft Drinks', active:true },
+    { id:'beer',    km:'ស្រាបៀរ',       en:'Beer',        active:true },
+    { id:'alcohol', km:'គ្រឿងស្រវឹង',   en:'Alcohol',     active:true },
+    { id:'hot',     km:'ភេសជ្ជៈក្តៅ',   en:'Hot Drink',   active:true },
+    { id:'frappe',  km:'ហ្វ្រាបភេ',      en:'Frappe',      active:true },
+    { id:'iced',    km:'ភេសជ្ជៈត្រជាក់', en:'Iced Drink',  active:true },
+    { id:'cream',   km:'ក្រែម',          en:'Cream',       active:true }
   ];
+  let categories = DEFAULT_CATEGORIES.map(c => Object.assign({}, c)); // seeded now so early renders don't break; refreshed by loadCategories()
+  let categoriesBackendAvailable = true; // flips false the first time /admin-categories isn't found
+  let categoriesLoadedOnce = false;
 
-  // Icon to show for each known category id. Any category the admin adds
-  // that isn't in this map (a brand-new category id) falls back to a
-  // generic bowl icon rather than breaking the sidebar/tabs render.
-  const CATEGORY_ICONS = {
-    grilled:'ic-flame', soft:'ic-droplet', beer:'ic-bottle', alcohol:'ic-glass',
-    hot:'ic-glass', frappe:'ic-can', iced:'ic-droplet', cream:'ic-glass'
+  function catLabel(id){
+    const c = categories.find(x => x.id === id);
+    if (!c) return id;
+    return (lang === 'km' ? (c.km || c.en) : (c.en || c.km)) || id;
+  }
+  function activeCategoryIds(){
+    return categories.filter(c => c.active !== false).map(c => c.id);
+  }
+  function loadLocalCategories(){
+    try {
+      const raw = JSON.parse(localStorage.getItem(CAT_STORAGE_KEY) || 'null');
+      return Array.isArray(raw) && raw.length ? raw : null;
+    } catch (e) { return null; }
+  }
+  function saveLocalCategories(){
+    localStorage.setItem(CAT_STORAGE_KEY, JSON.stringify(categories));
+  }
+  function slugifyCatId(str){
+    const base = String(str || 'cat').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'cat';
+    let id = base, n = 1;
+    while (categories.some(c => c.id === id)) id = base + '-' + (++n);
+    return id;
+  }
+
+  async function loadCategories(){
+    try {
+      const data = await apiFetch('/admin-categories');
+      categories = (data.categories && data.categories.length) ? data.categories : (loadLocalCategories() || categories);
+      categoriesBackendAvailable = true;
+    } catch (err) {
+      categoriesBackendAvailable = false;
+      categories = loadLocalCategories() || categories;
+    }
+    categoriesLoadedOnce = true;
+    saveLocalCategories();
+    populateCategorySelects();
+    renderCategories();
+    if (items.length) { renderItems(); }
+  }
+
+  /* ---------------- i18n ---------------- */
+
+  const I18N = {
+    en: {
+      loginTitle:'Steung Cafe Admin', loginSub:'Enter the admin password to continue',
+      passwordPh:'Password', loginBtn:'Log in', appTitle:'Steung Cafe Admin',
+      loadingText:'Loading…', logoutBtn:'Log out', tabItems:'Menu Items',
+      tabOrders:'Orders & Report', tabTables:'Tables', searchPh:'Search items…',
+      addItemBtn:'+ Add item', loadingItems:'Loading items…', toWord:'to',
+      applyBtn:'Apply', last7Btn:'Last 7 days', last30Btn:'Last 30 days',
+      loadingOrders:'Loading orders…', addTableBtn:'+ Add table',
+      addItemTitle:'Add item', editItemTitle:'Edit item', noPhoto:'No photo',
+      khmerName:'Khmer name', englishName:'English name', category:'Category',
+      menuNum:'Menu #', priceLabel:'Price (Riel, e.g. 6,000៛)',
+      markPopular:'Mark as popular', activeLabel:'Active (visible on the live menu)',
+      cancelBtn:'Cancel', saveBtn:'Save', addTableTitle:'Add table', editTableTitle:'Edit table',
+      tableName:'Table name / number', tableStatus:'Status', tableNote:'Note (reservation name / time)',
+      statusAvailable:'Available', statusOccupied:'Occupied', statusReserved:'Reserved',
+      receiptTitle:'Receipt', closeBtn:'Close', printBtn:'Print',
+      menuOpen:'Menu is OPEN', menuClosed:'Menu is CLOSED', openMenuBtn:'Open Menu', closeMenuBtn:'Close Menu',
+      statusUnavailable:'Status unavailable', editBtn:'Edit', deleteBtn:'Delete', printReceiptBtn:'Receipt',
+      noItemsYet:'No items yet — the Items sheet tab is empty.', clickAddItem:'Click "+ Add item" to create your first one, or the live menu will keep using its built-in default list until you do.',
+      noItemsMatch:'No items match this filter.', enterKmOrEn:'Enter at least a Khmer or English name.',
+      enterPrice:'Enter a price.', savingBtn:'Saving…', ordersLabel:'Orders', revenueLabel:'Revenue',
+      avgOrderLabel:'Avg order', revenueByCat:'Revenue by category', topItems:'Top items',
+      noSalesRange:'No sales in this range.', ordersHeader:'Orders', timeCol:'Time', customerCol:'Customer',
+      contactCol:'Contact', totalCol:'Total', noOrdersRange:'No orders in this range.',
+      confirmClose:'Close the live menu now? Customers won\u2019t be able to order until you reopen it.',
+      couldNotLoadItems:"Couldn't load items:", couldNotLoadOrders:"Couldn't load orders:",
+      confirmDeleteItem:'Delete', cantUndo:"? This can't be undone.", failedDelete:'Failed to delete:',
+      couldNotUpdateStatus:'Could not update menu status:', noTablesYet:'No tables yet — click "+ Add table" to create one.',
+      qtyCol:'Qty', receiptTo:'Steung Cafe', receiptThanks:'Thank you!',
+      loggingInBtn:'Logging in…',
+      tabDashboard:'Dashboard', dashToday:'Today', dashOverview:'Overview',
+      dashMenuItems:'Menu items', dashActiveCats:'Categories (on/total)', dashTables:'Tables',
+      dashMenuStatus:'Menu status', tabCategories:'Categories', addCatBtn:'+ Add category',
+      addCatTitle:'Add category', editCatTitle:'Edit category', catActiveCheck:'Active (customers can order it)',
+      catOnLabel:'Orderable', catOffLabel:'Off — hidden from ordering', turnOnBtn:'Turn on', turnOffBtn:'Turn off',
+      noCatsYet:'No categories yet — click "+ Add category" to create one.', catOffTag:'category off',
+      catInUse:'This category is used by menu items — reassign or delete those items first.',
+      confirmDeleteCat:'Delete category', categoriesOffline:'Saved on this device. Ask your developer to add a categories endpoint on the server so this also syncs to the live menu.'
+    },
+    km: {
+      loginTitle:'ស្ទឹងកាហ្វេ អ្នកគ្រប់គ្រង', loginSub:'បញ្ចូលពាក្យសម្ងាត់អ្នកគ្រប់គ្រងដើម្បីបន្ត',
+      passwordPh:'ពាក្យសម្ងាត់', loginBtn:'ចូល', appTitle:'ស្ទឹងកាហ្វេ អ្នកគ្រប់គ្រង',
+      loadingText:'កំពុងផ្ទុក…', logoutBtn:'ចាកចេញ', tabItems:'មុខម្ហូប',
+      tabOrders:'ការបញ្ជាទិញ & របាយការណ៍', tabTables:'តុ', searchPh:'ស្វែងរកមុខម្ហូប…',
+      addItemBtn:'+ បន្ថែមមុខម្ហូប', loadingItems:'កំពុងផ្ទុកមុខម្ហូប…', toWord:'ដល់',
+      applyBtn:'អនុវត្ត', last7Btn:'៧ថ្ងៃចុងក្រោយ', last30Btn:'៣០ថ្ងៃចុងក្រោយ',
+      loadingOrders:'កំពុងផ្ទុកការបញ្ជាទិញ…', addTableBtn:'+ បន្ថែមតុ',
+      addItemTitle:'បន្ថែមមុខម្ហូប', editItemTitle:'កែសម្រួលមុខម្ហូប', noPhoto:'គ្មានរូបភាព',
+      khmerName:'ឈ្មោះខ្មែរ', englishName:'ឈ្មោះអង់គ្លេស', category:'ប្រភេទ',
+      menuNum:'លេខម៉ឺនុយ', priceLabel:'តម្លៃ (រៀល ឧ. ៦,០០០៛)',
+      markPopular:'សម្គាល់ថាពេញនិយម', activeLabel:'សកម្ម (មើលឃើញនៅលើម៉ឺនុយផ្ទាល់)',
+      cancelBtn:'បោះបង់', saveBtn:'រក្សាទុក', addTableTitle:'បន្ថែមតុ', editTableTitle:'កែសម្រួលតុ',
+      tableName:'ឈ្មោះ/លេខតុ', tableStatus:'ស្ថានភាព', tableNote:'កំណត់ចំណាំ (ឈ្មោះកក់ / ម៉ោង)',
+      statusAvailable:'ទំនេរ', statusOccupied:'កំពុងប្រើ', statusReserved:'បានកក់',
+      receiptTitle:'បង្កាន់ដៃ', closeBtn:'បិទ', printBtn:'បោះពុម្ព',
+      menuOpen:'ម៉ឺនុយកំពុងបើក', menuClosed:'ម៉ឺនុយបានបិទ', openMenuBtn:'បើកម៉ឺនុយ', closeMenuBtn:'បិទម៉ឺនុយ',
+      statusUnavailable:'មិនអាចទាញយកស្ថានភាពបានទេ', editBtn:'កែសម្រួល', deleteBtn:'លុប', printReceiptBtn:'បង្កាន់ដៃ',
+      noItemsYet:'មិនទាន់មានមុខម្ហូបទេ — សន្លឹក Items នៅទទេ។', clickAddItem:'ចុច "+ បន្ថែមមុខម្ហូប" ដើម្បីបង្កើតមួយដំបូង ឬម៉ឺនុយផ្ទាល់នឹងបន្តប្រើបញ្ជីលំនាំដើមរបស់វា។',
+      noItemsMatch:'គ្មានមុខម្ហូបត្រូវនឹងតម្រងនេះទេ។', enterKmOrEn:'សូមបញ្ចូលឈ្មោះខ្មែរ ឬអង់គ្លេសយ៉ាងតិចមួយ។',
+      enterPrice:'សូមបញ្ចូលតម្លៃ។', savingBtn:'កំពុងរក្សាទុក…', ordersLabel:'ការបញ្ជាទិញ', revenueLabel:'ចំណូល',
+      avgOrderLabel:'ជាមធ្យមក្នុងមួយការបញ្ជាទិញ', revenueByCat:'ចំណូលតាមប្រភេទ', topItems:'មុខម្ហូបលក់ដាច់បំផុត',
+      noSalesRange:'គ្មានការលក់ក្នុងចន្លោះពេលនេះទេ។', ordersHeader:'ការបញ្ជាទិញ', timeCol:'ពេលវេលា', customerCol:'អតិថិជន',
+      contactCol:'ទំនាក់ទំនង', totalCol:'សរុប', noOrdersRange:'គ្មានការបញ្ជាទិញក្នុងចន្លោះពេលនេះទេ។',
+      confirmClose:'បិទម៉ឺនុយផ្ទាល់ឥឡូវនេះ? អតិថិជននឹងមិនអាចបញ្ជាទិញបានទេរហូតដល់អ្នកបើកម្ដងទៀត។',
+      couldNotLoadItems:'មិនអាចផ្ទុកមុខម្ហូបបានទេ៖', couldNotLoadOrders:'មិនអាចផ្ទុកការបញ្ជាទិញបានទេ៖',
+      confirmDeleteItem:'លុប', cantUndo:'? សកម្មភាពនេះមិនអាចមកវិញបានទេ។', failedDelete:'បរាជ័យក្នុងការលុប៖',
+      couldNotUpdateStatus:'មិនអាចធ្វើបច្ចុប្បន្នភាពស្ថានភាពម៉ឺនុយបានទេ៖', noTablesYet:'មិនទាន់មានតុទេ — ចុច "+ បន្ថែមតុ" ដើម្បីបង្កើតមួយ។',
+      qtyCol:'ចំនួន', receiptTo:'ស្ទឹងកាហ្វេ', receiptThanks:'អរគុណ!',
+      loggingInBtn:'កំពុងចូល…',
+      tabDashboard:'ផ្ទាំងគ្រប់គ្រង', dashToday:'ថ្ងៃនេះ', dashOverview:'ទិដ្ឋភាពទូទៅ',
+      dashMenuItems:'មុខម្ហូបសរុប', dashActiveCats:'ប្រភេទ (បើក/សរុប)', dashTables:'តុ',
+      dashMenuStatus:'ស្ថានភាពម៉ឺនុយ', tabCategories:'ប្រភេទ', addCatBtn:'+ បន្ថែមប្រភេទ',
+      addCatTitle:'បន្ថែមប្រភេទ', editCatTitle:'កែសម្រួលប្រភេទ', catActiveCheck:'សកម្ម (អតិថិជនអាចបញ្ជាទិញបាន)',
+      catOnLabel:'អាចបញ្ជាទិញបាន', catOffLabel:'បិទ — មិនបង្ហាញសម្រាប់បញ្ជាទិញ', turnOnBtn:'បើក', turnOffBtn:'បិទ',
+      noCatsYet:'មិនទាន់មានប្រភេទទេ — ចុច "+ បន្ថែមប្រភេទ" ដើម្បីបង្កើតមួយ។', catOffTag:'ប្រភេទបានបិទ',
+      catInUse:'ប្រភេទនេះកំពុងប្រើដោយមុខម្ហូប — សូមផ្លាស់ប្តូរប្រភេទរបស់មុខម្ហូបទាំងនោះជាមុនសិន។',
+      confirmDeleteCat:'លុបប្រភេទ', categoriesOffline:'បានរក្សាទុកនៅលើឧបករណ៍នេះ។ សូមស្នើអ្នកអភិវឌ្ឍន៍បន្ថែម endpoint ប្រភេទនៅលើ server ដើម្បីធ្វើសមកាលកម្មទៅម៉ឺនុយផ្ទាល់ផងដែរ។'
+    }
   };
-  function iconForCategoryId(id){
-    return CATEGORY_ICONS[id] || 'ic-bowl';
+
+  let lang = localStorage.getItem('scm_admin_lang') || 'en';
+
+  function t(key){ return (I18N[lang] && I18N[lang][key]) || I18N.en[key] || key; }
+
+  function applyLang(){
+    document.documentElement.lang = lang;
+    document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => { el.placeholder = t(el.dataset.i18nPlaceholder); });
+    document.querySelectorAll('.lang-toggle button').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.lang === lang);
+    });
+    populateCategorySelects();
+    if (typeof renderItems === 'function' && items) renderItems();
+    if (typeof renderCategories === 'function' && categories.length) renderCategories();
+    if (typeof renderTables === 'function' && tables) renderTables();
+    renderStoreStatus(storeClosed);
   }
 
-  let CATEGORIES = [ALL_CATEGORY, ...DEFAULT_CATEGORIES];
-
-  /* Built-in fallback menu, used until (and unless) the admin-managed
-     items load successfully from the Items sheet tab via get-items.js.
-     Kept as-is so the live menu never breaks if that fetch fails. */
-  let ITEMS = [
-    { num:1,  km:'ត្រីសាបាក់អាំង',        en:'Grilled Sabak Fish',            price:'15,000៛', cat:'grilled', icon:'ic-fish',    popular:true,  img:'asset/fish_1.webp' },
-    { num:2,  km:'សាច់ជ្រូកអាំង គីមឈី',    en:'Grilled Pork with Kimchi',      price:'12,000៛', cat:'grilled', icon:'ic-skewer',  popular:true,  img:'asset/pork_2.webp' },
-    { num:3,  km:'ត្រប់អាំងពិសេស',        en:'Grilled Eggplant',      price:'6,000៛',  cat:'grilled', icon:'ic-leaf',     popular:false, img:'asset/eggplant_3.webp' },
-    { num:4,  km:'គោងៀតអាំង',             en:'Grilled​ Dried Beef',             price:'10,000៛', cat:'grilled', icon:'ic-skewer',  popular:false, img:'asset/beef_4.webp' },
-    { num:5,  km:'ព្រុយត្រីអាំង',          en:'Grilled Fish Fins',              price:'10,000៛', cat:'grilled', icon:'ic-fish',    popular:false, img:'asset/fin_5.webp' },
-    { num:6,  km:'ងាវអាំង អំបិលម្ទេស',     en:'Grilled Blood Cockles, Chili-Salt',price:'10,000៛', cat:'grilled', icon:'ic-shell',   popular:false, img:'asset/cockles_5.webp' },
-    { num:7,  km:'យឺហ៊ឺងអាំង',            en:'Grilled Dried Squid',         price:'10,000៛', cat:'grilled', icon:'ic-fish',    popular:false, img:'asset/dried_squid_6.webp' },
-    { num:8,  km:'ហៃប៊ីក្រឡុក',           en:'Tossed Dried Shrimp Salad',     price:'10,000៛', cat:'grilled', icon:'ic-shrimp',  popular:false, img:'asset/shrimp_7.webp' },
-    { num:9,  km:'មឹកអាំង',               en:'Grilled Squid',                 price:'10,000៛', cat:'grilled', icon:'ic-fish',    popular:true,  img:'asset/squid_8.webp' },
-    { num:10, km:'កង្កែបអាំងអំបិលម្ទេស',    en:'Grilled Frog, Chili-Salt',   price:'12,000៛', cat:'grilled', icon:'ic-frog',    popular:false, img:'asset/frog_9.webp' },
-    { num:11, km:'បាយស',                  en:'Steamed Rice',                  price:'1,000៛',  cat:'grilled', icon:'ic-bowl',    popular:false, img:'asset/rice_9.webp' },
-
-    { num:1,  km:'ទឹកបរិសុទ្ធ',            en:'Mineral Water',                price:'1,000៛',  cat:'soft', icon:'ic-droplet', popular:false, img:'asset/water_10.webp' },
-    { num:2,  km:'កូកា-កូឡា',              en:'Coca-Cola',                     price:'3,000៛',  cat:'soft', icon:'ic-can',     popular:false, img:'asset/coca_11.webp' },
-    { num:3,  km:'ស្ទីង',                  en:'Sting Energy Drink',            price:'3,000៛',  cat:'soft', icon:'ic-can',     popular:false, img:'asset/sting_12.webp' },
-    { num:4,  km:'ដូរង្វាន់ ១កំប៉ុង',       en:'Redeem Can-tab (1 can)',        price:'1,000៛',  cat:'beer', icon:'ic-can',     popular:false, img:'asset/can_tab_13.webp' },
-
-    { num:5,  km:'ស្រាបៀរកម្ពុជា',          en:'Cambodia Beer',                 price:'3,000៛',  cat:'beer', icon:'ic-bottle',  popular:true, img:'asset/cambodia_beer_14.webp' },
-    { num:6,  km:'ស្រាបៀរអាន់ឆ័រ',          en:'Anchor Beer',                   price:'3,000៛',  cat:'beer', icon:'ic-bottle',  popular:false, img:'asset/anchor_beer_15.webp' },
-    { num:7,  km:'ស្រាបៀរថៃហ្គឺ',           en:'Tiger Beer',                    price:'3,000៛',  cat:'beer', icon:'ic-bottle',  popular:false, img:'asset/tiger_beer_16.webp' },
-    { num:8,  km:'ស្រាបៀរហ្គៃស្បើក',        en:'Ganzberg Beer',                 price:'3,000៛',  cat:'beer', icon:'ic-bottle',  popular:false, img:'asset/ganbergz_beer_17.webp' },
-    { num:9,  km:'ស្រាបៀរហនុមានស',          en:'Hanuman Beer (White)',          price:'3,000៛',  cat:'beer', icon:'ic-bottle',  popular:true, img:'asset/hanuman_white_16.webp' },
-    { num:10, km:'ស្រាបៀរហនុមានខ្មៅ',        en:'Hanuman Beer (Dark)',           price:'4,000៛',  cat:'beer', icon:'ic-bottle',  popular:true, img:'asset/hanuman_black_17.webp' },
-    { num:11, km:'ស្រាបៀរអង្គរ ដបតូច',       en:'Angkor Beer (Small Bottle)',    price:'4,000៛',  cat:'beer', icon:'ic-bottle',  popular:false, img:'asset/angkor_beer_small_18.webp' },
-    { num:12, km:'ស្រាបៀរអង្គរ ដបធំ',        en:'Angkor Beer (Large Bottle)',    price:'7,000៛',  cat:'beer', icon:'ic-bottle',  popular:false, img:'asset/angkor_beer_small_19.webp' },
-    
-    /* Updated path to point to abc_beer_20.png */
-    { num:13, km:'ស្រាបៀរ ABC',             en:'ABC Beer',                      price:'6,000៛',  cat:'beer', icon:'ic-bottle',  popular:false, img:'asset/abc_beer_20.webp' },
-
-    /* Updated path to point to jinro_21.png */
-    { num:14, km:'ស្រាកូរ៉េ ជីនរ៉ូ',         en:'Korean Soju (Jinro)',           price:'8,000៛',  cat:'alcohol', icon:'ic-glass', popular:false, img:'asset/jinro_21.webp' },
-
-    /* ================= HOT DRINK ================= */
-    { num:1,  km:'កាហ្វេអេសប្រេសូ',          en:'Hot Espresso',                  price:'5,000៛',  cat:'hot', icon:'ic-glass', popular:false, img:'asset/drink_1.webp' },
-    { num:2,  km:'កាហ្វេអាមេរិកាណូ',        en:'Hot Americano',                 price:'5,000៛',  cat:'hot', icon:'ic-glass', popular:false, img:'asset/drink_2.webp' },
-    { num:3,  km:'កាហ្វេទឹកដោះគោខាប់', en:'Hot Cappuccino with Milk Coffee', price:'6,000៛',  cat:'hot', icon:'ic-glass', popular:false, img:'asset/drink_3.webp' },
-    { num:4,  km:'វ៉ានីឡាឡាតេ',         en:'Hot Vanilla Latte',             price:'6,000៛',  cat:'hot', icon:'ic-glass', popular:false, img:'asset/drink_4.webp' },
-    { num:5,  km:'សូកូឡាក្តៅ',             en:'Hot Chocolate',                 price:'6,000៛',  cat:'hot', icon:'ic-glass', popular:false, img:'asset/drink_5.webp' },
-    { num:6,  km:'ម៉ូកាក្តៅ',              en:'Hot Mocha',                     price:'6,000៛',  cat:'hot', icon:'ic-glass', popular:false, img:'asset/drink_6.webp' },
-    { num:7,  km:'ឡាតេក្តៅ',                en:'Hot Latte',                     price:'6,000៛',  cat:'hot', icon:'ic-glass', popular:false, img:'asset/drink_7.webp' },
-    { num:8,  km:'កាពូឈីណូក្តៅ',           en:'Hot Cappuccino',                price:'6,000៛',  cat:'hot', icon:'ic-glass', popular:false, img:'asset/drink_7.webp' },
-    { num:9,  km:'តែបៃតងក្តៅ',            en:'Hot Green Tea',                 price:'5,000៛',  cat:'hot', icon:'ic-glass', popular:false, img:'asset/drink_8.webp' },
-
-    /* ================= FRAPPE ================= */
-    { num:1,  km:'ឡាតេក្រឡុក',              en:'Latte Frappe',                  price:'7,000៛',  cat:'frappe', icon:'ic-can', popular:false, img:'asset/drink_9.webp' },
-    { num:2,  km:'តែបៃតងក្រឡុក',           en:'Green Tea Frappe',              price:'7,000៛',  cat:'frappe', icon:'ic-can', popular:false, img:'asset/drink_10.webp' },
-    { num:3,  km:'សូកូឡាក្រឡុក',            en:'Chocolate Frappe',              price:'7,000៛',  cat:'frappe', icon:'ic-can', popular:false, img:'asset/drink_11.webp' },
-    { num:4,  km:'កាពូឈីណូក្រឡុក',          en:'Cappuccino Frappe',             price:'7,000៛',  cat:'frappe', icon:'ic-can', popular:false, img:'asset/drink_12.webp' },
-    { num:5,  km:'ស្វាយក្រឡុក',            en:'Mango Frappe',                  price:'7,000៛',  cat:'frappe', icon:'ic-can', popular:false, img:'asset/drink_13.webp' },
-    { num:6,  km:'ផាសិនក្រឡុក',            en:'Passion Frappe',                price:'7,000៛',  cat:'frappe', icon:'ic-can', popular:false, img:'asset/drink_14.webp' },
-    { num:7,  km:'ម៉ាឆាក្រឡុក',             en:'Matcha Frappe',                 price:'7,000៛',  cat:'frappe', icon:'ic-can', popular:false, img:'asset/drink_15.webp' },
-    { num:8,  km:'ស្ត្របេរីក្រឡុក',         en:'Strawberry Frappe',             price:'7,000៛',  cat:'frappe', icon:'ic-can', popular:false, img:'asset/drink_16.webp' },
-
-    /* ================= ICED DRINK ================= */
-    { num:1,  km:'កាហ្វេអាមេរិកាណូ',       en:'Iced Americano',                price:'5,000៛',  cat:'iced', icon:'ic-droplet', popular:false, img:'asset/drink_ice_1.webp' },
-    { num:2,  km:'វ៉ានីឡាឡាតេ',      en:'Iced Vanilla Latte',            price:'6,000៛',  cat:'iced', icon:'ic-droplet', popular:false, img:'asset/drink_ice_2.webp' },
-    { num:3,  km:'កាហ្វេទឹកដោះគោខាប់', en:'Iced Condensed Milk Coffee',  price:'6,000៛',  cat:'iced', icon:'ic-droplet', popular:false, img:'asset/drink_ice_3.webp' },
-    { num:4,  km:'ឡាតេត្រជាក់',            en:'Iced Latte',                    price:'6,000៛',  cat:'iced', icon:'ic-droplet', popular:false, img:'asset/drink_ice_4.webp' },
-    { num:5,  km:'កាពូឈីណូត្រជាក់',        en:'Iced Cappuccino',               price:'6,000៛',  cat:'iced', icon:'ic-droplet', popular:false, img:'asset/drink_ice_5.webp' },
-    { num:6,  km:'ទឹកដោះគោផាសិន',         en:'Passion Milk',                  price:'5,000៛',  cat:'iced', icon:'ic-droplet', popular:false, img:'asset/drink_ice_6.webp' },
-    { num:7,  km:'ម៉ាឆាឡាតេ',           en:'Matcha Latte',                  price:'5,000៛',  cat:'iced', icon:'ic-droplet', popular:false, img:'asset/drink_ice_7.webp' },
-    { num:8,  km:'តែបៃតង',         en:'Iced Green Tea',                price:'5,000៛',  cat:'iced', icon:'ic-droplet', popular:false, img:'asset/drink_ice_8.webp' },
-    { num:9,  km:'តែក្រូចឆ្មាបៃតង',     en:'Iced Lemon Green Tea',          price:'4,000៛',  cat:'iced', icon:'ic-droplet', popular:false, img:'asset/drink_ice_10.webp' },
-    { num:10, km:'តែក្រូចឆ្មាក្រហម',    en:'Iced Lemon Red Tea',            price:'4,000៛',  cat:'iced', icon:'ic-droplet', popular:false, img:'asset/drink_ice_9.webp' },
-
-    /* ================= CREAM ================= */
-    { num:1,  km:'ផាសិនគ្រីម',           en:'Passion Cream',                 price:'6,000៛',  cat:'cream', icon:'ic-glass', popular:false, img:'asset/drink_cream_1.webp' },
-    { num:2,  km:'កាហ្វេគ្រីម',            en:'Coffee Cream',                  price:'6,000៛',  cat:'cream', icon:'ic-glass', popular:false, img:'asset/drink_cream_2.webp' },
-    { num:3,  km:'កាហ្វេពងមាន់គ្រីម',        en:'Coffee Egg Cream',              price:'6,000៛',  cat:'cream', icon:'ic-glass', popular:false, img:'asset/drink_cream_3.webp' },
-    { num:4,  km:'ម៉ាឆាដូងគ្រីម',   en:'Matcha Coconut Cream',          price:'6,000៛',  cat:'cream', icon:'ic-glass', popular:false, img:'asset/drink_cream_4.webp' },
-    { num:5,  km:'ម៉ាឆាគ្រីម',            en:'Matcha Cream',                  price:'6,000៛',  cat:'cream', icon:'ic-glass', popular:false, img:'asset/drink_cream_5.webp' },
-  ];
-
-  let lang = 'km';
-  let activeCat = 'all';
-  let searchTerm = '';
-  let cart = [];
-  let customerName = '';
-  let telegramContact = '';
-
-  // approximate exchange rate used for the USD line under each Riel price
-  const USD_RATE = 4000;
-  function toUSD(priceStr){
-    const riel = parseInt(priceStr.replace(/[^0-9]/g, ''), 10);
-    if (!riel) return '';
-    const usd = riel / USD_RATE;
-    return '$' + usd.toFixed(usd < 1 ? 2 : (usd % 1 === 0 ? 0 : 2));
+  function setLang(l){
+    lang = l;
+    localStorage.setItem('scm_admin_lang', l);
+    applyLang();
   }
 
-  function parseRielValue(priceStr){
-    return parseInt(priceStr.replace(/[^0-9]/g, ''), 10) || 0;
-  }
-
-  function formatRiel(value){
-    return value.toLocaleString('en-US') + '៛';
-  }
-
-  function normalizeTelegramContact(value){
-    const text = (value || '').trim();
-    if (!text) return '';
-    return text.startsWith('@') ? text.slice(1) : text;
-  }
-
-  /* ================= RENDER: SIDEBAR NAV & TABS ================= */
-  function catCount(id){
-    return id === 'all' ? ITEMS.length : ITEMS.filter(i => i.cat === id).length;
-  }
-
-  function renderNavAndTabs(){
-    const sideNav = document.getElementById('sideNav');
-    const tabs = document.getElementById('tabs');
-    sideNav.innerHTML = '';
-    tabs.innerHTML = '';
-
-    CATEGORIES.forEach(c => {
-      const label = lang === 'km' ? c.km : c.en;
-      const isActive = c.id === activeCat;
-
-      const sideEl = document.createElement('div');
-      sideEl.className = 'side-item' + (isActive ? ' active' : '');
-      sideEl.innerHTML = `<svg><use href="#${c.icon}"/></svg><span class="lbl">${label}</span><span class="count">${catCount(c.id)}</span>`;
-      sideEl.addEventListener('click', () => { activeCat = c.id; renderNavAndTabs(); renderGrid(); });
-      sideNav.appendChild(sideEl);
-
-      const tabEl = document.createElement('div');
-      tabEl.className = 'tab' + (isActive ? ' active' : '');
-      tabEl.innerHTML = `<svg><use href="#${c.icon}"/></svg><span>${label}</span>`;
-      tabEl.addEventListener('click', () => { activeCat = c.id; renderNavAndTabs(); renderGrid(); });
-      tabs.appendChild(tabEl);
+  function populateCategorySelects(){
+    const offTag = lang === 'km' ? ' (បិទ)' : ' (off)';
+    document.querySelectorAll('.cat-select-filter').forEach(sel => {
+      const cur = sel.value || 'all';
+      sel.innerHTML = `<option value="all">${lang === 'km' ? 'គ្រប់ប្រភេទ' : 'All categories'}</option>` +
+        categories.map(c => `<option value="${c.id}">${escapeHtml(catLabel(c.id))}${c.active === false ? offTag : ''}</option>`).join('');
+      sel.value = cur;
+      if (sel.value !== cur) sel.value = 'all';
+    });
+    document.querySelectorAll('.cat-select-field').forEach(sel => {
+      const cur = sel.value || (categories[0] ? categories[0].id : '');
+      sel.innerHTML = categories.map(c => `<option value="${c.id}">${escapeHtml(catLabel(c.id))}${c.active === false ? offTag : ''}</option>`).join('');
+      sel.value = cur;
+      if (sel.value !== cur && categories[0]) sel.value = categories[0].id;
     });
   }
 
-  /* ================= ORDER -> TELEGRAM INVOICE ================= */
-  // Check if an item can be ordered based on current time
-  function canOrderItem(item){
-    const now = new Date();
-    const hour24 = now.getHours();
+  document.querySelectorAll('.lang-toggle').forEach(group => {
+    group.querySelectorAll('button').forEach(btn => {
+      btn.addEventListener('click', () => setLang(btn.dataset.lang));
+    });
+  });
 
-    // Café drinks: hot, frappe, iced, cream (7 AM - 5 PM)
-    const cafeOnlyCats = ['hot', 'frappe', 'iced', 'cream'];
-    // Grill foods: grilled, beer, alcohol (5 PM - 1 AM)
-    const foodsCats = ['grilled', 'beer', 'alcohol'];
-    // Soft drinks: available whenever either the café or the grill is open (7 AM - 1 AM, spanning both windows)
-    const alwaysOpenDrinkCats = ['soft'];
+  let token = sessionStorage.getItem('scm_admin_token') || '';
+  let items = [];
+  let tables = [];
+  let pendingUploadUrl = ''; // set after a successful image upload, used on save
+  let editingId = null;      // null = creating new
+  let editingTableId = null;
 
-    const cafeOpen = hour24 >= 7 && hour24 < 17;   // 7 AM to 5 PM
-    const grillOpen = hour24 >= 17 || hour24 < 1;  // 5 PM to 1 AM
+  /* ---------------- auth ---------------- */
 
-    if (alwaysOpenDrinkCats.includes(item.cat)){
-      return cafeOpen || grillOpen; // open across the combined hours of both
-    } else if (cafeOnlyCats.includes(item.cat)){
-      return cafeOpen;
-    } else if (foodsCats.includes(item.cat)){
-      return grillOpen;
+  function authHeaders(){ return { 'x-admin-token': token }; }
+
+  async function apiFetch(path, opts){
+    opts = opts || {};
+    opts.headers = Object.assign({}, opts.headers, authHeaders());
+    const res = await fetch(FN + path, opts);
+    if (res.status === 401){
+      logout();
+      throw new Error('Session expired — please log in again');
     }
-    // Any category not in the specific hour groups above — most likely a
-    // new category added from the admin dashboard that hasn't been given
-    // its own hours — defaults to "open whenever the shop is open at all"
-    // rather than permanently unorderable, so new categories work out of
-    // the box instead of silently showing as CLOSED forever.
-    return cafeOpen || grillOpen;
-  }
-  
-  function getItemAvailabilityText(item){
-    const cafeOnlyCats = ['hot', 'frappe', 'iced', 'cream'];
-    const alwaysOpenDrinkCats = ['soft'];
-    const foodsCats = ['grilled', 'beer', 'alcohol'];
-    if (alwaysOpenDrinkCats.includes(item.cat)){
-      return lang === 'km' ? '7ព្រឹក-1យប់' : '7 AM - 1 AM';
-    }
-    if (cafeOnlyCats.includes(item.cat)){
-      return lang === 'km' ? '7ព្រឹក-5ល្ងាច' : '7 AM - 5 PM';
-    }
-    if (foodsCats.includes(item.cat)){
-      return lang === 'km' ? '5ល្ងាច-1យប់' : '5 PM - 1 AM';
-    }
-    return lang === 'km' ? '7ព្រឹក-1យប់' : '7 AM - 1 AM';
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`);
+    return data;
   }
 
-  // Quick-tap special-request presets, shown per category group.
-  const DRINK_OPTION_CATS = ['hot', 'frappe', 'iced', 'cream', 'soft'];
-  const FOOD_OPTION_CATS = ['grilled'];
-
-  const OPTION_PRESETS = {
-    drink: [
-      { km: 'ខ្លាំង', en: 'Strong' },
-      { km: 'ផ្អែមតិច', en: 'Less Sweet' },
-      { km: 'ទឹកកកតិច', en: 'Less Ice' }
-    ],
-    food: [
-      { km: 'ហឹរ', en: 'Spicy' },
-      { km: 'ហឹរតិច', en: 'Less Spicy' },
-      { km: 'មិនហឹរ', en: 'No Spicy' }
-    ]
-  };
-
-  function getOptionPresetsForItem(item){
-    if (DRINK_OPTION_CATS.includes(item.cat)) return OPTION_PRESETS.drink;
-    if (FOOD_OPTION_CATS.includes(item.cat)) return OPTION_PRESETS.food;
-    return [];
+  function showApp(){
+    document.getElementById('loginWrap').style.display = 'none';
+    const appEl = document.getElementById('app');
+    appEl.classList.add('show');
+    applyLang();
+    loadItems();
+    loadCategories();
+    loadStoreStatus();
+    loadTables();
+    loadDashboard();
   }
 
-  function addToCart(item){
-    if (!canOrderItem(item)){
-      alert(lang === 'km' ? `ទស្សនៈបានបិទ។ ម្ហូបនេះលក់បានពេល ${getItemAvailabilityText(item)}` : `Store is closed. This item is available ${getItemAvailabilityText(item)}`);
-      return;
-    }
-    
-    const key = `${item.km}|${item.en}|${item.cat}`;
-    const existing = cart.find(entry => entry.key === key);
-
-    if (existing){
-      existing.qty += 1;
-    } else {
-      cart.push({
-        key,
-        item,
-        qty: 1,
-        note: '',
-        priceNumber: parseRielValue(item.price)
-      });
-    }
-
-    renderOrderPanel();
+  function logout(){
+    token = '';
+    sessionStorage.removeItem('scm_admin_token');
+    document.getElementById('app').classList.remove('show');
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('sidebarBackdrop').classList.remove('show');
+    document.getElementById('loginWrap').style.display = 'flex';
   }
 
-  function updateCartQty(key, delta){
-    const entry = cart.find(item => item.key === key);
-    if (!entry) return;
+  document.getElementById('loginBtn').addEventListener('click', doLogin);
+  document.getElementById('passwordInput').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
 
-    entry.qty += delta;
-    if (entry.qty <= 0){
-      cart = cart.filter(item => item.key !== key);
-    }
+  async function doLogin(){
+    const pw = document.getElementById('passwordInput').value;
+    const errEl = document.getElementById('loginErr');
+    const btn = document.getElementById('loginBtn');
+    errEl.textContent = '';
 
-    renderOrderPanel();
-  }
-
-  function clearCart(){
-    cart = [];
-    renderOrderPanel();
-  }
-
-  function getCartTotal(){
-    return cart.reduce((sum, entry) => sum + (entry.priceNumber * entry.qty), 0);
-  }
-
-  function buildInvoiceText(){
-    const now = new Date();
-    const dateStr = now.toLocaleDateString('en-GB');
-    const timeStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-    const customerLabel = (customerName || (lang === 'km' ? 'មិនបានបញ្ជាក់' : 'Not provided')).trim();
-    const contactLabel = normalizeTelegramContact(telegramContact) || (lang === 'km' ? 'មិនបានបញ្ជាក់' : 'Not provided');
-    const lines = [
-      lang === 'km' ? '🧾 វិក័យប័ត្រកម្ម៉ង់' : '🧾 Order Receipt',
-      lang === 'km' ? 'ស្ទឹងកាហ្វេ (Steung Cafe)' : 'Steung Cafe',
-      '——————————————',
-      `${lang === 'km' ? 'អតិថិជន' : 'Customer'}: ${customerLabel}`,
-      `${lang === 'km' ? 'ទំនាក់ទំនង Telegram' : 'Telegram contact'}: ${contactLabel}`,
-      '——————————————',
-      ...(cart.length ? cart.map(entry => {
-        const name = lang === 'km' ? entry.item.km : entry.item.en;
-        const lineTotal = entry.priceNumber * entry.qty;
-        const noteSuffix = entry.note && entry.note.trim() ? ` (${entry.note.trim()})` : '';
-        return `${name} × ${entry.qty} = ${formatRiel(lineTotal)}${noteSuffix}`;
-      }) : [lang === 'km' ? 'មិនទាន់មានម្ហូបនៅក្នុងការកម្ម៉ង់' : 'No items in the order yet']),
-      '——————————————',
-      `${lang === 'km' ? 'សរុប' : 'Total'}: ${formatRiel(getCartTotal())}`,
-      `${lang === 'km' ? 'កាលបរិច្ឆេទ' : 'Date'}: ${dateStr} ${timeStr}`,
-      lang === 'km' ? 'សូមអរគុណ! 🙏' : 'Thank you! 🙏'
-    ];
-    return lines.join('\n');
-  }
-
-  function showOrderStatus(type, title, message){
-    const overlay = document.getElementById('orderStatusOverlay');
-    const icon = document.getElementById('orderStatusIcon');
-    const titleEl = document.getElementById('orderStatusTitle');
-    const msgEl = document.getElementById('orderStatusMsg');
-    const closeBtn = document.getElementById('orderStatusCloseBtn');
-
-    icon.className = 'icon-ring ' + type;
-    icon.innerHTML = type === 'success'
-      ? '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>'
-      : '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><line x1="12" y1="8" x2="12" y2="13"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>';
-    titleEl.textContent = title;
-    msgEl.textContent = message;
-    closeBtn.textContent = lang === 'km' ? 'យល់ព្រម' : 'OK';
-
-    overlay.classList.add('show');
-  }
-
-  function hideOrderStatus(){
-    document.getElementById('orderStatusOverlay').classList.remove('show');
-  }
-
-  /* ================= ORDER CONFIRM MODAL ================= */
-  function closeOrderConfirm(){
-    document.getElementById('orderConfirmOverlay').classList.remove('show');
-  }
-
-  function renderOrderConfirm(){
-    document.getElementById('orderConfirmTitle').textContent = lang === 'km' ? 'បញ្ជាក់ការកម្ម៉ង់' : 'Confirm Your Order';
-
-    const trimmedName = (customerName || '').trim();
-    const contactLabel = normalizeTelegramContact(telegramContact) || '';
-    const nameLabel = trimmedName || (lang === 'km' ? 'មិនបានបញ្ជាក់' : 'Not provided');
-
-    const metaRows = [
-      `<div class="row"><span>${lang === 'km' ? 'អតិថិជន' : 'Customer'}</span><span>${nameLabel}</span></div>`
-    ];
-    if (contactLabel){
-      metaRows.push(`<div class="row"><span>${lang === 'km' ? 'Telegram' : 'Telegram'}</span><span>${contactLabel}</span></div>`);
-    }
-    document.getElementById('orderConfirmMeta').innerHTML = metaRows.join('');
-
-    const list = document.getElementById('orderConfirmList');
-    list.innerHTML = cart.map(entry => {
-      const name = lang === 'km' ? entry.item.km : entry.item.en;
-      const lineTotal = entry.priceNumber * entry.qty;
-      const noteHtml = entry.note ? `<div class="confirm-item-note">${entry.note}</div>` : '';
-      return `
-        <div class="confirm-item">
-          <div class="confirm-item-info">
-            <div class="confirm-item-name">${name}</div>
-            <div class="confirm-item-qty">${entry.item.price} × ${entry.qty}</div>
-            ${noteHtml}
-          </div>
-          <div class="confirm-item-price">${formatRiel(lineTotal)}</div>
-        </div>
-      `;
-    }).join('');
-
-    document.getElementById('orderConfirmTotalLabel').textContent = lang === 'km' ? 'សរុប' : 'Total';
-    document.getElementById('orderConfirmTotalValue').textContent = formatRiel(getCartTotal());
-
-    document.getElementById('orderConfirmCancelBtn').textContent = lang === 'km' ? 'កែសម្រួល' : 'Edit Order';
-    document.getElementById('orderConfirmSendBtn').textContent = lang === 'km' ? 'ផ្ញើទៅ Telegram' : 'Send to Telegram';
-  }
-
-  function openOrderConfirm(){
-    if (cart.length === 0) return;
-
-    renderOrderConfirm();
-    document.getElementById('orderConfirmOverlay').classList.add('show');
-  }
-
-  async function sendOrderToTelegram(){
-    if (cart.length === 0) return;
-
-    const trimmedName = (customerName || '').trim();
-    const nameInput = document.getElementById('customerNameInput');
-    if (nameInput) nameInput.classList.remove('invalid');
-
-    const text = buildInvoiceText();
-    const orderPayload = {
-      customerName: trimmedName,
-      contact: normalizeTelegramContact(telegramContact) || '',
-      total: getCartTotal(),
-      items: cart.map(entry => ({
-        km: entry.item.km,
-        en: entry.item.en,
-        cat: entry.item.cat,
-        qty: entry.qty,
-        price: entry.priceNumber,
-        note: entry.note || ''
-      }))
-    };
-    const confirmSendBtn = document.getElementById('orderConfirmSendBtn');
-    const confirmCancelBtn = document.getElementById('orderConfirmCancelBtn');
-    const originalLabel = confirmSendBtn ? confirmSendBtn.textContent : '';
-
-    if (confirmSendBtn){
-      confirmSendBtn.disabled = true;
-      confirmSendBtn.textContent = lang === 'km' ? 'កំពុងផ្ញើ...' : 'Sending...';
-    }
-    if (confirmCancelBtn) confirmCancelBtn.disabled = true;
-
+    btn.disabled = true; btn.textContent = t('loggingInBtn');
     try {
-      const res = await fetch('/.netlify/functions/send-order', {
+      const res = await fetch(FN + '/admin-login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text, order: orderPayload })
+        body: JSON.stringify({ password: pw })
       });
       const data = await res.json();
-
-      if (!res.ok || !data.ok){
-        throw new Error(data.error || 'Failed to send order');
-      }
-
-      closeOrderConfirm();
-      showOrderStatus(
-        'success',
-        lang === 'km' ? 'ការកម្ម៉ង់បានជោគជ័យ!' : 'Order Sent!',
-        lang === 'km' ? 'ការកម្ម៉ង់របស់អ្នកបានផ្ញើដោយជោគជ័យ។ សូមអរគុណ! 🙏' : 'Your order was sent successfully. Thank you! 🙏'
-      );
-      clearCart();
+      if (!res.ok || !data.ok) throw new Error(data.error || 'Login failed');
+      token = data.token;
+      sessionStorage.setItem('scm_admin_token', token);
+      showApp();
     } catch (err) {
-      // Show the real reason so the customer knows what went wrong, not a generic message.
-      const reason = (err && err.message) ? err.message : (lang === 'km' ? 'មិនស្គាល់មូលហេតុ' : 'Unknown error');
-      closeOrderConfirm();
-      showOrderStatus(
-        'error',
-        lang === 'km' ? 'មិនអាចផ្ញើការកម្ម៉ង់បានទេ' : 'Could Not Send Order',
-        (lang === 'km' ? 'មូលហេតុ: ' : 'Reason: ') + reason
-      );
-      console.error('sendOrderToTelegram error:', err);
+      errEl.textContent = err.message;
     } finally {
-      if (confirmSendBtn){
-        confirmSendBtn.disabled = false;
-        confirmSendBtn.textContent = originalLabel;
-      }
-      if (confirmCancelBtn) confirmCancelBtn.disabled = false;
+      btn.disabled = false; btn.textContent = t('loginBtn');
     }
   }
 
-  function renderOrderPanel(){
-    const panel = document.getElementById('orderPanel');
-    if (!panel) return;
+  document.getElementById('logoutBtn').addEventListener('click', logout);
 
-    if (cart.length === 0){
-      panel.innerHTML = `
-        <div class="order-panel-head">
-          <h3>${lang === 'km' ? 'ការកម្ម៉ង់' : 'Order'}</h3>
-          <span class="pill">0</span>
-        </div>
-        <div class="order-empty">${lang === 'km' ? 'ចុចលើម្ហូបដើម្បីបន្ថែមមុខម្ហូបទៅក្នុងការកម្ម៉ង់' : 'Tap an item to add it to the order'}</div>
-      `;
+  /* ---------------- mobile sidebar drawer ---------------- */
+
+  document.getElementById('menuToggleBtn').addEventListener('click', () => {
+    document.getElementById('sidebar').classList.add('open');
+    document.getElementById('sidebarBackdrop').classList.add('show');
+  });
+  document.getElementById('sidebarBackdrop').addEventListener('click', () => {
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('sidebarBackdrop').classList.remove('show');
+  });
+  document.querySelectorAll('.tab').forEach(tb => tb.addEventListener('click', () => {
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('sidebarBackdrop').classList.remove('show');
+  }));
+
+  /* ---------------- menu open/closed status ---------------- */
+
+  let storeClosed = false; // last-known state, used to compute the toggle target
+
+  function renderStoreStatus(closed){
+    storeClosed = closed;
+    const pill = document.getElementById('statusPill');
+    const label = document.getElementById('statusLabel');
+    const btn = document.getElementById('statusToggleBtn');
+    pill.classList.toggle('is-closed', closed);
+    label.textContent = closed ? t('menuClosed') : t('menuOpen');
+    btn.textContent = closed ? t('openMenuBtn') : t('closeMenuBtn');
+    btn.className = `btn small ${closed ? 'open-action' : 'close-action'}`;
+    btn.disabled = false;
+  }
+
+  async function loadStoreStatus(){
+    try {
+      const data = await apiFetch('/admin-status', { method: 'GET' });
+      renderStoreStatus(!!data.closed);
+    } catch (err) {
+      document.getElementById('statusLabel').textContent = t('statusUnavailable');
+    }
+  }
+
+  async function toggleStoreStatus(){
+    const btn = document.getElementById('statusToggleBtn');
+    const next = !storeClosed;
+    if (next && !confirm(t('confirmClose'))) return;
+    btn.disabled = true;
+    btn.textContent = '\u2026';
+    try {
+      const data = await apiFetch('/admin-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ closed: next })
+      });
+      renderStoreStatus(!!data.closed);
+    } catch (err) {
+      alert(t('couldNotUpdateStatus') + ' ' + err.message);
+      renderStoreStatus(storeClosed); // restore the button from the known-good state
+    }
+  }
+
+  document.getElementById('statusToggleBtn').addEventListener('click', toggleStoreStatus);
+
+  /* ---------------- tabs ---------------- */
+
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById(tab.dataset.panel).classList.add('active');
+      if (tab.dataset.panel === 'ordersPanel' && !ordersLoadedOnce) loadOrders();
+      if (tab.dataset.panel === 'dashboardPanel') loadDashboard();
+      if (tab.dataset.panel === 'categoriesPanel' && !categoriesLoadedOnce) loadCategories();
+    });
+  });
+
+  /* ---------------- items: list ---------------- */
+
+  async function loadItems(){
+    const area = document.getElementById('itemsArea');
+    area.innerHTML = '<div class="loading">Loading items…</div>';
+    try {
+      const data = await apiFetch('/admin-items');
+      items = data.items || [];
+      renderItems();
+    } catch (err) {
+      area.innerHTML = `<div class="empty">${t('couldNotLoadItems')} ${escapeHtml(err.message)}</div>`;
+    }
+  }
+
+  function renderItems(){
+    const area = document.getElementById('itemsArea');
+    const cat = document.getElementById('catFilter').value;
+    const q = document.getElementById('itemSearch').value.trim().toLowerCase();
+
+    let list = items.slice();
+    if (cat !== 'all') list = list.filter(it => it.cat === cat);
+    if (q) list = list.filter(it => (it.km + ' ' + it.en).toLowerCase().includes(q));
+    list.sort((a,b) => (a.cat === b.cat ? a.num - b.num : a.cat.localeCompare(b.cat)));
+
+    if (!items.length){
+      area.innerHTML = `<div class="empty">${t('noItemsYet')}<br>${t('clickAddItem')}</div>`;
+      return;
+    }
+    if (!list.length){
+      area.innerHTML = `<div class="empty">${t('noItemsMatch')}</div>`;
       return;
     }
 
-    panel.innerHTML = `
-      <div class="order-panel-head">
-        <h3>${lang === 'km' ? 'ការកម្ម៉ង់' : 'Order'}</h3>
-        <span class="pill">${cart.length} ${lang === 'km' ? 'មុខ' : 'items'}</span>
-      </div>
-      <div class="customer-field">
-        <label for="customerNameInput">${lang === 'km' ? 'ឈ្មោះអតិថិជន' : 'Customer name'} <span class="optional-mark">(${lang === 'km' ? 'មិនចាំបាច់' : 'optional'})</span></label>
-        <input id="customerNameInput" type="text" value="${customerName}" placeholder="${lang === 'km' ? 'បញ្ចូលឈ្មោះ...' : 'Enter customer name...'}">
-      </div>
-      <div class="customer-field">
-        <label for="telegramContactInput">${lang === 'km' ? 'លេខ / ឈ្មោះ Telegram' : 'Telegram contact'}</label>
-        <input id="telegramContactInput" type="text" value="${telegramContact}" placeholder="${lang === 'km' ? 'ឧ. @username ឬ +855...' : 'e.g. @username or +855...'}">
-      </div>
-      <div class="contact-note">${lang === 'km' ? 'ផ្ញើទៅ Telegram របស់ ស្ទឹងកាហ្វេ' : 'Send to the Steung Cafe Telegram account'}</div>
-      <div class="order-items">
-        ${cart.map(entry => {
-          const presets = getOptionPresetsForItem(entry.item);
-          const noteVal = entry.note || '';
-          return `
-          <div class="order-item">
-            <div class="order-item-top">
-              <div class="order-item-info">
-                <div class="order-item-name">${lang === 'km' ? entry.item.km : entry.item.en}</div>
-                <div class="order-item-price">${entry.item.price} × ${entry.qty}</div>
-              </div>
-              <div class="order-item-controls">
-                <button class="qty-btn" type="button" data-action="dec" data-key="${entry.key}">−</button>
-                <span class="qty-value">${entry.qty}</span>
-                <button class="qty-btn" type="button" data-action="inc" data-key="${entry.key}">+</button>
-              </div>
-            </div>
-            ${presets.length ? `
-            <div class="order-item-options">
-              ${presets.map(opt => {
-                const label = lang === 'km' ? opt.km : opt.en;
-                const isActive = noteVal.trim() === label;
-                return `<button class="option-chip${isActive ? ' active' : ''}" type="button" data-key="${entry.key}" data-label="${label}">${label}</button>`;
-              }).join('')}
-            </div>` : ''}
-            <input class="order-item-note" type="text" data-key="${entry.key}" value="${noteVal}" placeholder="${lang === 'km' ? 'សំណើពិសេស (ស្រេចចិត្ត)...' : 'Special request (optional)...'}">
-          </div>
-        `;
-        }).join('')}
-      </div>
-      <div class="order-summary">
-        <span>${lang === 'km' ? 'សរុប' : 'Total'}</span>
-        <span class="value">${formatRiel(getCartTotal())}</span>
-      </div>
-      <div class="order-actions">
-        <button class="order-clear-btn" type="button">${lang === 'km' ? 'ជម្រះ' : 'Clear'}</button>
-        <button class="order-send-btn" type="button">${lang === 'km' ? 'កម្ម៉ង់' : 'Order'}</button>
-      </div>
-    `;
+    area.innerHTML = `<div class="item-grid">${list.map(itemCardHtml).join('')}</div>`;
 
-    const customerInput = panel.querySelector('#customerNameInput');
-    if (customerInput){
-      customerInput.addEventListener('input', (e) => {
-        customerName = e.target.value;
-        if (e.target.value.trim()) e.target.classList.remove('invalid');
-      });
-    }
-
-    const telegramInput = panel.querySelector('#telegramContactInput');
-    if (telegramInput){
-      telegramInput.addEventListener('input', (e) => {
-        telegramContact = e.target.value;
-      });
-    }
-
-    panel.querySelector('.order-clear-btn').addEventListener('click', clearCart);
-    panel.querySelector('.order-send-btn').addEventListener('click', openOrderConfirm);
-
-    panel.querySelectorAll('.qty-btn').forEach(button => {
-      button.addEventListener('click', () => {
-        const key = button.getAttribute('data-key');
-        const action = button.getAttribute('data-action');
-        updateCartQty(key, action === 'inc' ? 1 : -1);
-      });
+    area.querySelectorAll('[data-edit]').forEach(btn => {
+      btn.addEventListener('click', () => openItemModal(items.find(it => it.id === btn.dataset.edit)));
     });
-
-    panel.querySelectorAll('.option-chip').forEach(chip => {
-      chip.addEventListener('click', () => {
-        const key = chip.getAttribute('data-key');
-        const label = chip.getAttribute('data-label');
-        const entry = cart.find(e => e.key === key);
-        if (!entry) return;
-        // Toggle: tapping the active chip again clears the note, otherwise select it
-        entry.note = (entry.note && entry.note.trim() === label) ? '' : label;
-        renderOrderPanel();
-      });
-    });
-
-    panel.querySelectorAll('.order-item-note').forEach(input => {
-      input.addEventListener('input', (e) => {
-        const key = input.getAttribute('data-key');
-        const entry = cart.find(en => en.key === key);
-        if (entry) entry.note = e.target.value;
-      });
+    area.querySelectorAll('[data-del]').forEach(btn => {
+      btn.addEventListener('click', () => deleteItem(btn.dataset.del));
     });
   }
 
-  // Persistent map of item-key -> already-built card element, so re-renders
-  // can reuse existing DOM nodes (and their already-loaded <img>) instead of
-  // destroying and recreating every card/image on each render, which was
-  // causing the whole grid (images included) to flicker/refade.
-  const gridCardEls = new Map();
+  function itemCardHtml(it){
+    const name = it.km || it.en || '(untitled)';
+    const thumb = it.img
+      ? `<img src="${escapeAttr(it.img)}" alt="">`
+      : `<span class="ph">No photo</span>`;
+    return `
+      <div class="item-card ${it.active === false ? 'inactive' : ''}">
+        <div class="thumb">${thumb}</div>
+        <div class="body">
+          <div class="name">${escapeHtml(name)}</div>
+          <div class="meta">${escapeHtml(catLabel(it.cat))}${it.popular ? ' · ★' : ''}${it.active === false ? ' · ' + (lang==='km' ? 'អសកម្ម' : 'inactive') : ''}${activeCategoryIds().indexOf(it.cat) === -1 ? ' · ' + t('catOffTag') : ''}</div>
+          <div class="price">${escapeHtml(it.price || '')}</div>
+          <div class="row">
+            <button class="btn ghost small" data-edit="${it.id}">${t('editBtn')}</button>
+            <button class="btn danger small" data-del="${it.id}">${t('deleteBtn')}</button>
+          </div>
+        </div>
+      </div>`;
+  }
 
-  function renderGrid(){
-    const grid = document.getElementById('grid');
-    let list = activeCat === 'all' ? ITEMS : ITEMS.filter(i => i.cat === activeCat);
+  document.getElementById('catFilter').addEventListener('change', renderItems);
+  document.getElementById('itemSearch').addEventListener('input', renderItems);
 
-    const term = searchTerm.trim().toLowerCase();
-    if (term){
-      list = list.filter(i => i.km.toLowerCase().includes(term) || i.en.toLowerCase().includes(term));
+  async function deleteItem(id){
+    const it = items.find(i => i.id === id);
+    if (!it) return;
+    if (!confirm(`${t('confirmDeleteItem')} "${it.km || it.en}"${t('cantUndo')}`)) return;
+    try {
+      await apiFetch('/admin-items?id=' + encodeURIComponent(id), { method: 'DELETE' });
+      items = items.filter(i => i.id !== id);
+      renderItems();
+    } catch (err) {
+      alert(t('failedDelete') + ' ' + err.message);
     }
+  }
 
-    // Show items that are currently open for order first, closed items after.
-    // Uses a stable sort so items keep their original relative order within each group.
-    list = list
-      .map((item, originalIndex) => ({ item, originalIndex }))
-      .sort((a, b) => {
-        const aOpen = canOrderItem(a.item) ? 0 : 1;
-        const bOpen = canOrderItem(b.item) ? 0 : 1;
-        if (aOpen !== bOpen) return aOpen - bOpen;
-        return a.originalIndex - b.originalIndex;
-      })
-      .map(entry => entry.item);
+  /* ---------------- categories: list + add/edit/toggle ---------------- */
 
-    if (list.length === 0){
-      grid.innerHTML = '';
-      gridCardEls.clear();
-      const empty = document.createElement('div');
-      empty.className = 'empty-state';
-      empty.textContent = lang === 'km' ? 'រកមិនឃើញម្ហូបដែលត្រូវនឹងការស្វែងរក' : 'No items match your search';
-      grid.appendChild(empty);
+  function renderCategories(){
+    const area = document.getElementById('categoriesArea');
+    if (!area) return;
+    if (!categories.length){
+      area.innerHTML = `<div class="empty">${t('noCatsYet')}</div>`;
+      return;
+    }
+    area.innerHTML = `<div class="table-grid">${categories.map(catCardHtml).join('')}</div>`;
+    area.querySelectorAll('[data-catedit]').forEach(btn => {
+      btn.addEventListener('click', () => openCatModal(categories.find(c => c.id === btn.dataset.catedit)));
+    });
+    area.querySelectorAll('[data-cattoggle]').forEach(btn => {
+      btn.addEventListener('click', () => toggleCategory(btn.dataset.cattoggle));
+    });
+    area.querySelectorAll('[data-catdel]').forEach(btn => {
+      btn.addEventListener('click', () => deleteCategory(btn.dataset.catdel));
+    });
+  }
+
+  function catCardHtml(c){
+    const on = c.active !== false;
+    const itemCount = items.filter(it => it.cat === c.id).length;
+    return `
+      <div class="table-card">
+        <div class="tname">${escapeHtml(c.km || c.en || c.id)}</div>
+        <div class="tnote">${escapeHtml(c.km && c.en ? c.en : '')}${itemCount ? ` · ${itemCount} ${lang==='km'?'មុខម្ហូប':'items'}` : ''}</div>
+        <span class="tstatus ${on ? 'available' : 'occupied'}">${on ? t('catOnLabel') : t('catOffLabel')}</span>
+        <div class="row">
+          <button class="btn ghost small" data-catedit="${c.id}">${t('editBtn')}</button>
+          <button class="btn small" data-cattoggle="${c.id}">${on ? t('turnOffBtn') : t('turnOnBtn')}</button>
+        </div>
+        ${itemCount ? '' : `<div class="row"><button class="btn danger small" data-catdel="${c.id}">${t('deleteBtn')}</button></div>`}
+      </div>`;
+  }
+
+  async function syncCategoryToServer(payload, method){
+    if (!categoriesBackendAvailable) return;
+    try {
+      await apiFetch('/admin-categories', { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    } catch (err) {
+      categoriesBackendAvailable = false; // stop retrying every click; still saved locally
+    }
+  }
+
+  async function toggleCategory(id){
+    const c = categories.find(x => x.id === id);
+    if (!c) return;
+    c.active = !(c.active !== false);
+    saveLocalCategories();
+    renderCategories();
+    populateCategorySelects();
+    renderItems();
+    syncCategoryToServer({ id, active: c.active }, 'PUT');
+  }
+
+  let editingCatId = null;
+  document.getElementById('addCatBtn').addEventListener('click', () => openCatModal(null));
+  document.getElementById('cancelCatBtn').addEventListener('click', closeCatModal);
+  document.getElementById('catModalBackdrop').addEventListener('click', e => {
+    if (e.target.id === 'catModalBackdrop') closeCatModal();
+  });
+
+  function openCatModal(c){
+    editingCatId = c ? c.id : null;
+    document.getElementById('catModalTitle').textContent = c ? t('editCatTitle') : t('addCatTitle');
+    document.getElementById('catModalMsg').textContent = '';
+    document.getElementById('catModalMsg').className = 'modal-msg';
+    document.getElementById('catFieldKm').value = c ? c.km || '' : '';
+    document.getElementById('catFieldEn').value = c ? c.en || '' : '';
+    document.getElementById('catFieldActive').checked = c ? c.active !== false : true;
+    document.getElementById('catModalBackdrop').classList.add('show');
+  }
+  function closeCatModal(){
+    document.getElementById('catModalBackdrop').classList.remove('show');
+  }
+
+  document.getElementById('saveCatBtn').addEventListener('click', async () => {
+    const msgEl = document.getElementById('catModalMsg');
+    const btn = document.getElementById('saveCatBtn');
+    msgEl.textContent = ''; msgEl.className = 'modal-msg';
+
+    const km = document.getElementById('catFieldKm').value.trim();
+    const en = document.getElementById('catFieldEn').value.trim();
+    const active = document.getElementById('catFieldActive').checked;
+    if (!km && !en){
+      msgEl.textContent = t('enterKmOrEn');
+      msgEl.className = 'modal-msg error';
       return;
     }
 
-    const seenKeys = new Set();
-
-    list.forEach((item, idx) => {
-      const key = `${item.cat}-${item.num}`;
-      seenKeys.add(key);
-      const catMeta = CATEGORIES.find(c => c.id === item.cat);
-      // catMeta can be missing if a category was deleted/renamed on the
-      // server after this item was created — fall back to the raw id
-      // instead of throwing and breaking the whole grid render.
-      const catLabel = catMeta ? (lang === 'km' ? catMeta.km : catMeta.en) : item.cat;
-      const name = lang === 'km' ? item.km : item.en;
-      // Card display (sort position, Closed tag, hours tooltip) is based purely
-      // on store hours — never on geolocation. Geofencing only gates the actual
-      // "Add" tap (see addToCart), so GPS resolving after page load never
-      // reorders the grid or flips tags/colors on the customer.
-      const isAvailable = canOrderItem(item);
-      const availText = getItemAvailabilityText(item);
-
-      const closedTagHtml = !isAvailable ? `<span class="closed-tag">${lang === 'km' ? 'បិទ' : 'CLOSED'}</span>` : '';
-      const btnHtml = isAvailable ? `<button class="order-btn" type="button"><svg viewBox="0 0 24 24"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/></svg><span>${lang === 'km' ? 'បន្ថែម' : 'Add'}</span></button>` : `<div class="order-btn disabled" title="${availText}"><svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><circle cx="12" cy="12" r="10"/></svg><span>${lang === 'km' ? 'មិនលក់' : 'Closed'}</span></div>`;
-      const overlayStyle = !isAvailable ? 'style="background: rgba(0,0,0,0.6);"' : '';
-      const innerHtml = `
-        <div class="card-img-wrapper">
-          <div class="card-tags-overlay">
-            ${item.popular ? '' : `<span class="num-tag">#${item.num}</span>`}
-            ${item.popular ? `<span class="popular-tag"><svg viewBox="0 0 24 24"><use href="#ic-flame"/></svg>${lang==='km' ? 'ពេញនិយម' : 'Popular'}</span>` : ''}
-            ${closedTagHtml}
-          </div>
-          <img src="${item.img}" alt="${name}" ${idx < 8 ? 'loading="eager" fetchpriority="high"' : 'loading="lazy"'} />
-          <div class="card-img-overlay" ${overlayStyle}></div>
-        </div>
-        <div class="card-name">${name}</div>
-        <div class="card-bottom">
-          <span class="card-cat">${catLabel}</span>
-          <div class="price-block">
-            <span class="card-price">${item.price}</span>
-            <span class="card-price-usd">${toUSD(item.price)}</span>
-          </div>
-        </div>
-        ${btnHtml}
-      `;
-
-      let card = gridCardEls.get(key);
-      const isNew = !card;
-      if (isNew){
-        card = document.createElement('div');
-        gridCardEls.set(key, card);
-      }
-
-      // Only touch markup/animation when something about this card actually
-      // changed (availability, language, price, etc.) or it's brand new —
-      // otherwise leave the existing node (and its already-loaded <img>)
-      // completely alone so it never re-flashes.
-      const stateSig = `${isAvailable}|${lang}|${name}|${item.price}|${availText}`;
-      if (isNew || card.dataset.sig !== stateSig){
-        card.dataset.sig = stateSig;
-        card.className = `card ${isAvailable ? '' : 'card-unavailable'}`;
-        card.innerHTML = innerHtml;
-        if (isAvailable){
-          card.querySelector('.order-btn').addEventListener('click', () => addToCart(item));
-        }
-      }
-      if (isNew){
-        card.style.animationDelay = (Math.min(idx, 14) * 0.035) + 's';
+    btn.disabled = true; btn.textContent = t('savingBtn');
+    try {
+      if (editingCatId){
+        const c = categories.find(x => x.id === editingCatId);
+        if (c){ c.km = km; c.en = en; c.active = active; }
+        await syncCategoryToServer({ id: editingCatId, km, en, active }, 'PUT');
       } else {
-        // Already on the page — never replay the entrance animation for it.
-        card.style.animation = 'none';
-      }
-
-      if (grid.children[idx] !== card){
-        grid.insertBefore(card, grid.children[idx] || null);
-      }
-    });
-
-    // Remove cards for items no longer in the filtered/sorted list.
-    for (const [key, el] of gridCardEls){
-      if (!seenKeys.has(key)){
-        el.remove();
-        gridCardEls.delete(key);
-      }
-    }
-  }
-
-  /* ================= LANGUAGE TOGGLE ================= */
-  const langToggle = document.getElementById('langToggle');
-  const optKm = document.getElementById('optKm');
-  const optEn = document.getElementById('optEn');
-
-  function applyStaticLang(){
-    document.querySelectorAll('[data-km][data-en]').forEach(el => {
-      el.textContent = lang === 'km' ? el.getAttribute('data-km') : el.getAttribute('data-en');
-    });
-    document.body.classList.toggle('lang-en', lang === 'en');
-    optKm.classList.toggle('active', lang === 'km');
-    optEn.classList.toggle('active', lang === 'en');
-    document.documentElement.lang = lang;
-
-    const searchInput = document.getElementById('searchInput');
-    searchInput.placeholder = lang === 'km'
-      ? searchInput.getAttribute('data-km-ph')
-      : searchInput.getAttribute('data-en-ph');
-  }
-
-  function toggleLang(){
-    lang = lang === 'km' ? 'en' : 'km';
-    applyStaticLang();
-    renderNavAndTabs();
-    renderOrderPanel();
-    renderGrid();
-    if (document.getElementById('orderConfirmOverlay').classList.contains('show')){
-      renderOrderConfirm();
-    }
-    tick();
-  }
-
-  langToggle.addEventListener('click', toggleLang);
-
-  /* ================= SEARCH / FILTER ================= */
-  const searchInput = document.getElementById('searchInput');
-  const searchClear = document.getElementById('searchClear');
-
-  searchInput.addEventListener('input', () => {
-    searchTerm = searchInput.value;
-    searchClear.classList.toggle('show', searchTerm.length > 0);
-    renderGrid();
-  });
-
-  searchClear.addEventListener('click', () => {
-    searchInput.value = '';
-    searchTerm = '';
-    searchClear.classList.remove('show');
-    searchInput.focus();
-    renderGrid();
-  });
-
-  /* ================= CLOCK ================= */
-  const monthsKm = ['មករា','កុម្ភៈ','មីនា','មេសា','ឧសភា','មិថុនា','កក្កដា','សីហា','កញ្ញា','តុលា','វិច្ឆិកា','ធ្នូ'];
-  const monthsEn = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-
-  let hasShownClosedPopup = false;
-  const closedOverlay = document.getElementById('closedOverlay');
-
-  function showClosedPopup(){
-    closedOverlay.classList.add('show');
-  }
-  function hideClosedPopup(){
-    closedOverlay.classList.remove('show');
-  }
-  closedOverlay.addEventListener('click', (e) => {
-    if (e.target === closedOverlay) hideClosedPopup();
-  });
-
-  const orderStatusOverlay = document.getElementById('orderStatusOverlay');
-  document.getElementById('orderStatusCloseBtn').addEventListener('click', hideOrderStatus);
-  orderStatusOverlay.addEventListener('click', (e) => {
-    if (e.target === orderStatusOverlay) hideOrderStatus();
-  });
-
-  const orderConfirmOverlay = document.getElementById('orderConfirmOverlay');
-  document.getElementById('orderConfirmCancelBtn').addEventListener('click', closeOrderConfirm);
-  document.getElementById('orderConfirmSendBtn').addEventListener('click', sendOrderToTelegram);
-  orderConfirmOverlay.addEventListener('click', (e) => {
-    if (e.target === orderConfirmOverlay) closeOrderConfirm();
-  });
-
-  function tick(){
-    const now = new Date();
-    const hour24 = now.getHours();
-    let h = hour24;
-    const m = String(now.getMinutes()).padStart(2,'0');
-    const ampm = h >= 12 ? 'PM' : 'AM';
-    h = h % 12; if (h === 0) h = 12;
-    document.getElementById('clockTime').textContent = `${h}:${m} ${ampm}`;
-    const months = lang === 'km' ? monthsKm : monthsEn;
-    document.getElementById('clockDate').textContent = `${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
-
-    // shop hours: drinks 7 AM - 5 PM, foods 5 PM - 1 AM
-    // Check if either drinks or foods are open
-    const drinksOpen = hour24 >= 7 && hour24 < 17;  // 7 AM to 5 PM
-    const foodsOpen = hour24 >= 17 || hour24 < 1;   // 5 PM to 1 AM
-    const hoursOpen = drinksOpen || foodsOpen;
-    // manual switch (CAFE_CLOSED_TODAY) always wins over the normal hours
-    const isOpen = hoursOpen && !CAFE_CLOSED_TODAY;
-    const livePill = document.getElementById('livePill');
-    const liveLabel = document.getElementById('liveLabel');
-    livePill.classList.toggle('closed', !isOpen);
-    liveLabel.textContent = isOpen
-      ? (lang === 'km' ? 'កំពុងបើក' : 'OPEN')
-      : (lang === 'km' ? 'បិទ' : 'CLOSED');
-
-    if (CAFE_CLOSED_TODAY){
-      // manually forced closed: keep the popup up regardless of the clock
-      if (!hasShownClosedPopup){
-        showClosedPopup();
-        hasShownClosedPopup = true;
-      }
-    } else if (!isOpen && !hasShownClosedPopup){
-      // only pop up the closed notice while actually closed; never during opening hours
-      showClosedPopup();
-      hasShownClosedPopup = true;
-    } else if (isOpen){
-      hasShownClosedPopup = false;
-      hideClosedPopup();
-    }
-  }
-  tick();
-  setInterval(tick, 1000 * 15);
-  loadStoreStatus();
-  setInterval(loadStoreStatus, 1000 * 30);
-
-  /* ================= MOBILE SLIDABLE SIDEBAR ================= */
-  const sidebarEl = document.querySelector('.sidebar');
-  const menuTrigger = document.getElementById('menuTrigger');
-  const sidebarBackdrop = document.getElementById('sidebarBackdrop');
-
-  function openSidebar(){
-    sidebarEl.classList.add('open');
-    sidebarBackdrop.classList.add('open');
-  }
-  function closeSidebar(){
-    sidebarEl.classList.remove('open');
-    sidebarBackdrop.classList.remove('open');
-  }
-  function toggleSidebar(){
-    sidebarEl.classList.contains('open') ? closeSidebar() : openSidebar();
-  }
-
-  menuTrigger.addEventListener('click', toggleSidebar);
-  sidebarBackdrop.addEventListener('click', closeSidebar);
-
-  // close the drawer after picking a category on mobile
-  sidebarEl.addEventListener('click', (e) => {
-    if (e.target.closest('.side-item') && window.matchMedia('(max-width:980px)').matches){
-      closeSidebar();
-    }
-  });
-
-  // swipe gestures: swipe right from the left edge to open, swipe left to close
-  let touchStartX = null;
-  let touchStartY = null;
-
-  document.addEventListener('touchstart', (e) => {
-    const t = e.touches[0];
-    touchStartX = t.clientX;
-    touchStartY = t.clientY;
-  }, { passive:true });
-
-  document.addEventListener('touchend', (e) => {
-    if (touchStartX === null) return;
-    const t = e.changedTouches[0];
-    const dx = t.clientX - touchStartX;
-    const dy = t.clientY - touchStartY;
-
-    if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5){
-      const isMobile = window.matchMedia('(max-width:980px)').matches;
-      if (isMobile){
-        if (dx > 0 && touchStartX < 30 && !sidebarEl.classList.contains('open')){
-          openSidebar();
-        } else if (dx < 0 && sidebarEl.classList.contains('open')){
-          closeSidebar();
+        const id = slugifyCatId(en || km);
+        const newCat = { id, km, en, active };
+        if (categoriesBackendAvailable){
+          try {
+            const data = await apiFetch('/admin-categories', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newCat) });
+            categories.push(data.category || newCat);
+          } catch (err) {
+            categoriesBackendAvailable = false;
+            categories.push(newCat);
+          }
+        } else {
+          categories.push(newCat);
         }
       }
-    }
-    touchStartX = null;
-    touchStartY = null;
-  }, { passive:true });
-
-  window.addEventListener('resize', () => {
-    if (!window.matchMedia('(max-width:980px)').matches){
-      closeSidebar();
+      saveLocalCategories();
+      populateCategorySelects();
+      renderCategories();
+      renderItems();
+      closeCatModal();
+      if (!categoriesBackendAvailable) {
+        msgEl.textContent = '';
+      }
+    } catch (err) {
+      msgEl.textContent = err.message;
+      msgEl.className = 'modal-msg error';
+    } finally {
+      btn.disabled = false; btn.textContent = t('saveBtn');
     }
   });
 
-  /* ================= EMBER PARTICLES ================= */
-  const emberWrap = document.getElementById('embers');
-  for (let i = 0; i < 24; i++){
-    const s = document.createElement('span');
-    s.style.left = Math.random() * 100 + 'vw';
-    s.style.animationDuration = (6 + Math.random() * 8) + 's';
-    s.style.animationDelay = (Math.random() * 10) + 's';
-    emberWrap.appendChild(s);
+  async function deleteCategory(id){
+    const c = categories.find(x => x.id === id);
+    if (!c) return;
+    if (items.some(it => it.cat === id)){
+      alert(t('catInUse'));
+      return;
+    }
+    if (!confirm(`${t('confirmDeleteCat')} "${c.km || c.en}"?`)) return;
+    categories = categories.filter(x => x.id !== id);
+    saveLocalCategories();
+    populateCategorySelects();
+    renderCategories();
+    if (categoriesBackendAvailable){
+      try { await apiFetch('/admin-categories?id=' + encodeURIComponent(id), { method: 'DELETE' }); }
+      catch (err) { categoriesBackendAvailable = false; }
+    }
   }
 
-  /* ================= INIT ================= */
-  applyStaticLang();
-  renderNavAndTabs();
-  renderOrderPanel();
-  renderGrid();
+  /* ---------------- dashboard ---------------- */
 
-  // Pull admin-managed categories from the Categories sheet tab (via the
-  // admin dashboard's Categories panel). If the fetch fails, is empty, or
-  // the tab hasn't been populated yet, the built-in DEFAULT_CATEGORIES
-  // list above stays as-is — the menu never breaks because of this. This
-  // is what makes categories added/removed/renamed in admin.html actually
-  // show up here.
-  (function loadCategoriesFromAdmin(){
-    fetch('/.netlify/functions/get-categories')
-      .then(res => res.ok ? res.json() : Promise.reject(new Error('bad status ' + res.status)))
-      .then(data => {
-        if (data && data.ok && Array.isArray(data.categories) && data.categories.length){
-          const serverCats = data.categories.map(c => ({
-            id: c.id, km: c.km, en: c.en, icon: iconForCategoryId(c.id)
-          }));
-          CATEGORIES = [ALL_CATEGORY, ...serverCats];
-          // If the category the customer currently has selected got
-          // removed/renamed away, fall back to "All" rather than showing
-          // an empty grid for a category that no longer exists.
-          if (!CATEGORIES.some(c => c.id === activeCat)) activeCat = 'all';
-          renderNavAndTabs();
-          renderGrid();
-        }
-      })
-      .catch(err => {
-        console.warn('Using built-in categories — could not load admin categories:', err.message);
+  async function loadDashboard(){
+    document.getElementById('dashItemCount').textContent = items.length;
+    document.getElementById('dashCatCount').textContent = activeCategoryIds().length + ' / ' + categories.length;
+    document.getElementById('dashTableCount').textContent = tables.length;
+    document.getElementById('dashMenuStatus').textContent = storeClosed ? t('menuClosed') : t('menuOpen');
+    document.getElementById('dashOrdersToday').textContent = '…';
+    document.getElementById('dashRevenueToday').textContent = '…';
+    document.getElementById('dashAvgToday').textContent = '…';
+    document.getElementById('dashTopItemsArea').innerHTML = `<div class="loading">${t('loadingText')}</div>`;
+    try {
+      const today = todayKey();
+      const data = await apiFetch('/admin-orders?from=' + encodeURIComponent(today) + '&to=' + encodeURIComponent(today));
+      const summary = data.summary || {};
+      document.getElementById('dashOrdersToday').textContent = summary.orderCount || 0;
+      document.getElementById('dashRevenueToday').textContent = fmtRiel(summary.totalRevenue);
+      document.getElementById('dashAvgToday').textContent = fmtRiel(summary.orderCount ? summary.totalRevenue / summary.orderCount : 0);
+      const topItems = summary.topItems || [];
+      document.getElementById('dashTopItemsArea').innerHTML = topItems.length
+        ? `<div class="table-wrap"><table><thead><tr><th>${lang==='km'?'មុខម្ហូប':'Item'}</th><th>${t('qtyCol')}</th><th>${t('revenueLabel')}</th></tr></thead><tbody>${
+            topItems.map(it => `<tr><td>${escapeHtml(it.label)}</td><td>${it.qty}</td><td>${fmtRiel(it.revenue)}</td></tr>`).join('')
+          }</tbody></table></div>`
+        : `<div class="empty">${t('noSalesRange')}</div>`;
+    } catch (err) {
+      document.getElementById('dashOrdersToday').textContent = '—';
+      document.getElementById('dashRevenueToday').textContent = '—';
+      document.getElementById('dashAvgToday').textContent = '—';
+      document.getElementById('dashTopItemsArea').innerHTML = `<div class="empty">${t('couldNotLoadOrders')} ${escapeHtml(err.message)}</div>`;
+    }
+  }
+
+  /* ---------------- items: add/edit modal ---------------- */
+
+  document.getElementById('addItemBtn').addEventListener('click', () => openItemModal(null));
+  document.getElementById('cancelItemBtn').addEventListener('click', closeItemModal);
+  document.getElementById('itemModalBackdrop').addEventListener('click', e => {
+    if (e.target.id === 'itemModalBackdrop') closeItemModal();
+  });
+
+  function openItemModal(it){
+    editingId = it ? it.id : null;
+    pendingUploadUrl = it ? (it.img || '') : '';
+    document.getElementById('itemModalTitle').textContent = it ? t('editItemTitle') : t('addItemTitle');
+    document.getElementById('itemModalMsg').textContent = '';
+    document.getElementById('itemModalMsg').className = 'modal-msg';
+    document.getElementById('fieldKm').value = it ? it.km || '' : '';
+    document.getElementById('fieldEn').value = it ? it.en || '' : '';
+    const defaultCat = categories[0] ? categories[0].id : '';
+    document.getElementById('fieldCat').value = it ? it.cat || defaultCat : (document.getElementById('catFilter').value !== 'all' ? document.getElementById('catFilter').value : defaultCat);
+    document.getElementById('fieldNum').value = it ? it.num || '' : '';
+    document.getElementById('fieldPrice').value = it ? it.price || '' : '';
+    document.getElementById('fieldPopular').checked = !!(it && it.popular);
+    document.getElementById('fieldActive').checked = it ? it.active !== false : true;
+    document.getElementById('imgFileInput').value = '';
+    document.getElementById('uploadStatus').textContent = '';
+    updateImgPreview(pendingUploadUrl);
+    document.getElementById('itemModalBackdrop').classList.add('show');
+  }
+
+  function closeItemModal(){
+    document.getElementById('itemModalBackdrop').classList.remove('show');
+  }
+
+  function updateImgPreview(url){
+    const wrap = document.getElementById('imgPreviewWrap');
+    wrap.innerHTML = url ? `<img src="${escapeAttr(url)}" alt="">` : `<span class="ph">No photo</span>`;
+  }
+
+  document.getElementById('imgFileInput').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const statusEl = document.getElementById('uploadStatus');
+
+    if (file.size > 5 * 1024 * 1024){
+      statusEl.textContent = 'Image too large — max 5MB.';
+      statusEl.style.color = 'var(--bad)';
+      return;
+    }
+
+    statusEl.textContent = 'Uploading…';
+    statusEl.style.color = 'var(--smoke)';
+
+    try {
+      const dataUrl = await fileToDataUrl(file);
+      const data = await apiFetch('/upload-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filename: file.name, dataUrl })
       });
-  })();
+      pendingUploadUrl = data.url;
+      updateImgPreview(pendingUploadUrl);
+      statusEl.textContent = 'Uploaded ✓';
+      statusEl.style.color = 'var(--good)';
+    } catch (err) {
+      statusEl.textContent = 'Upload failed: ' + err.message;
+      statusEl.style.color = 'var(--bad)';
+    }
+  });
 
-  // Pull admin-managed items from the Items sheet tab (via the admin
-  // dashboard). If the fetch fails, is empty, or the tab hasn't been
-  // populated yet, the built-in ITEMS list above stays as-is — the menu
-  // never breaks because of this.
-  (function loadItemsFromAdmin(){
-    fetch('/.netlify/functions/get-items')
-      .then(res => res.ok ? res.json() : Promise.reject(new Error('bad status ' + res.status)))
-      .then(data => {
-        if (data && data.ok && Array.isArray(data.items) && data.items.length){
-          ITEMS = data.items.map(it => ({
-            num: it.num, km: it.km, en: it.en, price: it.price,
-            cat: it.cat, popular: !!it.popular, img: it.img || ''
-          }));
-          renderNavAndTabs();
-          renderGrid();
-        }
-      })
-      .catch(err => {
-        console.warn('Using built-in menu — could not load admin items:', err.message);
+  function fileToDataUrl(file){
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(new Error('Could not read file'));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  document.getElementById('saveItemBtn').addEventListener('click', saveItem);
+
+  async function saveItem(){
+    const msgEl = document.getElementById('itemModalMsg');
+    const btn = document.getElementById('saveItemBtn');
+    msgEl.textContent = ''; msgEl.className = 'modal-msg';
+
+    const payload = {
+      km: document.getElementById('fieldKm').value.trim(),
+      en: document.getElementById('fieldEn').value.trim(),
+      cat: document.getElementById('fieldCat').value,
+      num: parseInt(document.getElementById('fieldNum').value, 10) || 0,
+      price: document.getElementById('fieldPrice').value.trim(),
+      popular: document.getElementById('fieldPopular').checked,
+      active: document.getElementById('fieldActive').checked,
+      img: pendingUploadUrl
+    };
+
+    if (!payload.km && !payload.en){
+      msgEl.textContent = t('enterKmOrEn');
+      msgEl.className = 'modal-msg error';
+      return;
+    }
+    if (!payload.price){
+      msgEl.textContent = t('enterPrice');
+      msgEl.className = 'modal-msg error';
+      return;
+    }
+
+    btn.disabled = true; btn.textContent = t('savingBtn');
+    try {
+      if (editingId){
+        payload.id = editingId;
+        const data = await apiFetch('/admin-items', {
+          method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+        });
+        const idx = items.findIndex(i => i.id === editingId);
+        if (idx !== -1) items[idx] = data.item;
+      } else {
+        const data = await apiFetch('/admin-items', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+        });
+        items.push(data.item);
+      }
+      closeItemModal();
+      renderItems();
+    } catch (err) {
+      msgEl.textContent = err.message;
+      msgEl.className = 'modal-msg error';
+    } finally {
+      btn.disabled = false; btn.textContent = t('saveBtn');
+    }
+  }
+
+  /* ---------------- orders / report ---------------- */
+
+  let ordersLoadedOnce = false;
+
+  function fmtRiel(n){ return Math.round(n||0).toLocaleString('en-US') + '\u17DB'; }
+  function todayKey(){ return new Date().toISOString().slice(0,10); }
+  function daysAgoKey(n){ const d = new Date(); d.setDate(d.getDate()-n); return d.toISOString().slice(0,10); }
+
+  document.getElementById('applyDateBtn').addEventListener('click', () => loadOrders());
+  document.getElementById('last7Btn').addEventListener('click', () => {
+    document.getElementById('fromDate').value = daysAgoKey(6);
+    document.getElementById('toDate').value = todayKey();
+    loadOrders();
+  });
+  document.getElementById('last30Btn').addEventListener('click', () => {
+    document.getElementById('fromDate').value = daysAgoKey(29);
+    document.getElementById('toDate').value = todayKey();
+    loadOrders();
+  });
+
+  async function loadOrders(){
+    ordersLoadedOnce = true;
+    const area = document.getElementById('ordersArea');
+    area.innerHTML = '<div class="loading">Loading orders…</div>';
+
+    const from = document.getElementById('fromDate').value;
+    const to = document.getElementById('toDate').value;
+    const qs = [];
+    if (from) qs.push('from=' + encodeURIComponent(from));
+    if (to) qs.push('to=' + encodeURIComponent(to));
+
+    try {
+      const data = await apiFetch('/admin-orders' + (qs.length ? '?' + qs.join('&') : ''));
+      renderOrders(data.orders || [], data.summary || {});
+    } catch (err) {
+      area.innerHTML = `<div class="empty">${t('couldNotLoadOrders')} ${escapeHtml(err.message)}</div>`;
+    }
+  }
+
+  function renderOrders(orders, summary){
+    const area = document.getElementById('ordersArea');
+    const byCategory = summary.byCategory || [];
+    const topItems = summary.topItems || [];
+
+    let html = `
+      <div class="stat-row">
+        <div class="stat-card"><div class="label">${t('ordersLabel')}</div><div class="value">${summary.orderCount || 0}</div></div>
+        <div class="stat-card"><div class="label">${t('revenueLabel')}</div><div class="value">${fmtRiel(summary.totalRevenue)}</div></div>
+        <div class="stat-card"><div class="label">${t('avgOrderLabel')}</div><div class="value">${fmtRiel(summary.orderCount ? summary.totalRevenue / summary.orderCount : 0)}</div></div>
+      </div>`;
+
+    html += `<div class="section-title">${t('revenueByCat')}</div>`;
+    html += byCategory.length
+      ? `<div class="table-wrap"><table><thead><tr><th>${t('category')}</th><th>${t('revenueLabel')}</th></tr></thead><tbody>${
+          byCategory.map(c => `<tr><td>${escapeHtml(c.label)}</td><td>${fmtRiel(c.revenue)}</td></tr>`).join('')
+        }</tbody></table></div>`
+      : `<div class="empty">${t('noSalesRange')}</div>`;
+
+    html += `<div class="section-title">${t('topItems')}</div>`;
+    html += topItems.length
+      ? `<div class="table-wrap"><table><thead><tr><th>${t('tabItems') === 'Menu Items' ? 'Item' : (lang==='km'?'មុខម្ហូប':'Item')}</th><th>${t('qtyCol')}</th><th>${t('revenueLabel')}</th></tr></thead><tbody>${
+          topItems.map(it => `<tr><td>${escapeHtml(it.label)}</td><td>${it.qty}</td><td>${fmtRiel(it.revenue)}</td></tr>`).join('')
+        }</tbody></table></div>`
+      : `<div class="empty">${t('noSalesRange')}</div>`;
+
+    html += `<div class="section-title">${t('ordersHeader')}</div>`;
+    html += orders.length
+      ? `<div class="table-wrap"><table><thead><tr><th>${t('timeCol')}</th><th>${t('customerCol')}</th><th>${t('contactCol')}</th><th>${t('totalCol')}</th><th></th></tr></thead><tbody>${
+          orders.map((o,idx) => `<tr><td>${escapeHtml(new Date(o.dateISO).toLocaleString())}</td><td>${escapeHtml(o.customerName || '—')}</td><td>${escapeHtml(o.contact || '—')}</td><td>${fmtRiel(o.total)}</td><td><button class="btn ghost small" data-receipt="${idx}">${t('printReceiptBtn')}</button></td></tr>`).join('')
+        }</tbody></table></div>`
+      : `<div class="empty">${t('noOrdersRange')}</div>`;
+
+    area.innerHTML = html;
+    area.querySelectorAll('[data-receipt]').forEach(btn => {
+      btn.addEventListener('click', () => showReceipt(orders[Number(btn.dataset.receipt)]));
+    });
+  }
+
+  /* ---------------- receipt ---------------- */
+
+  function showReceipt(order){
+    const items = order.items || [];
+    const lines = items.length
+      ? items.map(it => `<div style="display:flex;justify-content:space-between;font-size:12px;margin:2px 0;"><span>${escapeHtml(it.name || it.label || '')} ${it.qty ? '×' + it.qty : ''}</span><span>${fmtRiel(it.total != null ? it.total : it.price)}</span></div>`).join('')
+      : '';
+    const html = `
+      <div class="receipt-box">
+        <div style="text-align:center;font-weight:800;margin-bottom:4px;">${t('receiptTo')}</div>
+        <div style="text-align:center;font-size:11px;color:#666;margin-bottom:10px;">${escapeHtml(new Date(order.dateISO).toLocaleString())}</div>
+        <div style="font-size:12px;margin-bottom:6px;">${t('customerCol')}: ${escapeHtml(order.customerName || '—')}</div>
+        <div style="font-size:12px;margin-bottom:10px;">${t('contactCol')}: ${escapeHtml(order.contact || '—')}</div>
+        <div style="border-top:1px dashed #999;padding-top:8px;">${lines}</div>
+        <div style="border-top:1px dashed #999;margin-top:8px;padding-top:8px;display:flex;justify-content:space-between;font-weight:800;">
+          <span>${t('totalCol')}</span><span>${fmtRiel(order.total)}</span>
+        </div>
+        <div style="text-align:center;font-size:11px;color:#666;margin-top:10px;">${t('receiptThanks')}</div>
+      </div>`;
+    document.getElementById('receiptContent').innerHTML = html;
+    document.getElementById('receiptModalBackdrop').classList.add('show');
+  }
+
+  document.getElementById('closeReceiptBtn').addEventListener('click', () => {
+    document.getElementById('receiptModalBackdrop').classList.remove('show');
+  });
+  document.getElementById('receiptModalBackdrop').addEventListener('click', e => {
+    if (e.target.id === 'receiptModalBackdrop') document.getElementById('receiptModalBackdrop').classList.remove('show');
+  });
+  document.getElementById('printReceiptBtn').addEventListener('click', () => {
+    const w = window.open('', '_blank', 'width=360,height=600');
+    w.document.write(`<html><head><title>${t('receiptTitle')}</title></head><body>${document.getElementById('receiptContent').innerHTML}</body></html>`);
+    w.document.close();
+    w.focus();
+    w.print();
+  });
+
+  /* ---------------- tables / reservations ---------------- */
+
+  function loadTables(){
+    try {
+      tables = JSON.parse(localStorage.getItem('scm_admin_tables') || '[]');
+    } catch (e) { tables = []; }
+    renderTables();
+  }
+
+  function saveTables(){
+    localStorage.setItem('scm_admin_tables', JSON.stringify(tables));
+  }
+
+  function renderTables(){
+    const area = document.getElementById('tablesArea');
+    if (!area) return;
+    if (!tables.length){
+      area.innerHTML = `<div class="empty">${t('noTablesYet')}</div>`;
+      return;
+    }
+    area.innerHTML = `<div class="table-grid">${tables.map(tableCardHtml).join('')}</div>`;
+    area.querySelectorAll('[data-tedit]').forEach(btn => {
+      btn.addEventListener('click', () => openTableModal(tables.find(x => x.id === btn.dataset.tedit)));
+    });
+    area.querySelectorAll('[data-tdel]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        tables = tables.filter(x => x.id !== btn.dataset.tdel);
+        saveTables(); renderTables();
       });
-  })();
+    });
+    area.querySelectorAll('[data-tcycle]').forEach(sel => {
+      sel.addEventListener('change', () => {
+        const tb = tables.find(x => x.id === sel.dataset.tcycle);
+        if (tb){ tb.status = sel.value; saveTables(); renderTables(); }
+      });
+    });
+  }
+
+  function tableCardHtml(tb){
+    return `
+      <div class="table-card">
+        <div class="tname">${escapeHtml(tb.name)}</div>
+        <select data-tcycle="${tb.id}">
+          <option value="available" ${tb.status==='available'?'selected':''}>${t('statusAvailable')}</option>
+          <option value="occupied" ${tb.status==='occupied'?'selected':''}>${t('statusOccupied')}</option>
+          <option value="reserved" ${tb.status==='reserved'?'selected':''}>${t('statusReserved')}</option>
+        </select>
+        <span class="tstatus ${tb.status}">${t('status' + tb.status.charAt(0).toUpperCase() + tb.status.slice(1))}</span>
+        <div class="tnote">${escapeHtml(tb.note || '')}</div>
+        <div class="row">
+          <button class="btn ghost small" data-tedit="${tb.id}">${t('editBtn')}</button>
+          <button class="btn danger small" data-tdel="${tb.id}">${t('deleteBtn')}</button>
+        </div>
+      </div>`;
+  }
+
+  document.getElementById('addTableBtn').addEventListener('click', () => openTableModal(null));
+  document.getElementById('cancelTableBtn').addEventListener('click', closeTableModal);
+  document.getElementById('tableModalBackdrop').addEventListener('click', e => {
+    if (e.target.id === 'tableModalBackdrop') closeTableModal();
+  });
+
+  function openTableModal(tb){
+    editingTableId = tb ? tb.id : null;
+    document.getElementById('tableModalTitle').textContent = tb ? t('editTableTitle') : t('addTableTitle');
+    document.getElementById('tableModalMsg').textContent = '';
+    document.getElementById('tableFieldName').value = tb ? tb.name : '';
+    document.getElementById('tableFieldStatus').value = tb ? tb.status : 'available';
+    document.getElementById('tableFieldNote').value = tb ? (tb.note || '') : '';
+    document.getElementById('tableModalBackdrop').classList.add('show');
+  }
+
+  function closeTableModal(){
+    document.getElementById('tableModalBackdrop').classList.remove('show');
+  }
+
+  document.getElementById('saveTableBtn').addEventListener('click', () => {
+    const name = document.getElementById('tableFieldName').value.trim();
+    const msgEl = document.getElementById('tableModalMsg');
+    if (!name){
+      msgEl.textContent = t('tableName');
+      msgEl.className = 'modal-msg error';
+      return;
+    }
+    const status = document.getElementById('tableFieldStatus').value;
+    const note = document.getElementById('tableFieldNote').value.trim();
+    if (editingTableId){
+      const tb = tables.find(x => x.id === editingTableId);
+      if (tb){ tb.name = name; tb.status = status; tb.note = note; }
+    } else {
+      tables.push({ id: 't_' + Date.now() + '_' + Math.random().toString(36).slice(2,7), name, status, note });
+    }
+    saveTables();
+    renderTables();
+    closeTableModal();
+  });
+
+  /* ---------------- utils ---------------- */
+
+  function escapeHtml(s){
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+  function escapeAttr(s){ return escapeHtml(s); }
+
+  /* ---------------- init ---------------- */
+
+  applyLang();
+  if (token) showApp();
+})();
 </script>
-
-
 </body></html>
