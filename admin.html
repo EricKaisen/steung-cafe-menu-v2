@@ -235,6 +235,47 @@
 
   .loading{ color:var(--smoke); font-size:13px; padding:30px; text-align:center; }
 
+  /* ================= LANG TOGGLE ================= */
+  .lang-toggle{
+    display:flex; border:1px solid var(--line); border-radius:999px; overflow:hidden;
+    background:rgba(255,255,255,.04);
+  }
+  .lang-toggle button{
+    background:none; border:none; color:var(--smoke);
+    font-size:12px; font-weight:700; padding:6px 12px;
+  }
+  .lang-toggle button.active{ background:var(--ember); color:var(--rice); }
+
+  /* ================= TABLES PANEL ================= */
+  .table-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(150px, 1fr));
+    gap:14px;
+  }
+  .table-card{
+    background:var(--char-3); border:1px solid var(--line); border-radius:14px;
+    padding:14px; display:flex; flex-direction:column; gap:6px;
+  }
+  .table-card .tname{ font-size:15px; font-weight:800; }
+  .table-card .tstatus{
+    display:inline-flex; align-items:center; gap:6px; font-size:11.5px; font-weight:700;
+    padding:4px 10px; border-radius:999px; width:fit-content;
+  }
+  .table-card .tstatus.available{ background:rgba(79,174,107,.15); color:var(--good); }
+  .table-card .tstatus.occupied{ background:rgba(226,76,76,.15); color:var(--bad); }
+  .table-card .tstatus.reserved{ background:rgba(240,169,58,.15); color:var(--amber); }
+  .table-card .tnote{ color:var(--smoke); font-size:12px; min-height:14px; }
+  .table-card .row{ display:flex; gap:6px; margin-top:6px; }
+  .table-card .row .btn{ flex:1; padding:7px 8px; font-size:11.5px; }
+  .table-card select{
+    background:var(--char-4); border:1px solid var(--line); color:var(--rice);
+    padding:6px 8px; border-radius:8px; font-size:12px; outline:none;
+  }
+
+  .receipt-box{
+    font-family:'Kantumruy Pro', sans-serif; width:280px; margin:0 auto; color:#111; background:#fff; padding:16px;
+  }
+
   @media(max-width:600px){
     .topbar{ padding:14px 16px; }
     .tabs{ padding:10px 16px 0; }
@@ -245,30 +286,39 @@
 
 <div class="login-wrap" id="loginWrap">
   <div class="login-card">
-    <h1>Steung Cafe Admin</h1>
-    <p class="sub">Enter the admin password to continue</p>
-    <input type="password" id="passwordInput" placeholder="Password" autofocus>
+    <div class="lang-toggle" id="loginLangToggle" style="margin:0 auto 16px; width:fit-content;">
+      <button data-lang="en">EN</button>
+      <button data-lang="km">ខ្មែរ</button>
+    </div>
+    <h1 data-i18n="loginTitle">Steung Cafe Admin</h1>
+    <p class="sub" data-i18n="loginSub">Enter the admin password to continue</p>
+    <input type="password" id="passwordInput" data-i18n-placeholder="passwordPh" placeholder="Password" autofocus>
     <div class="err" id="loginErr"></div>
-    <button class="btn" id="loginBtn">Log in</button>
+    <button class="btn" id="loginBtn" data-i18n="loginBtn">Log in</button>
   </div>
 </div>
 
 <div class="app" id="app">
   <div class="topbar">
-    <div class="brand"><span class="dot"></span><h1>Steung Cafe Admin</h1></div>
+    <div class="brand"><span class="dot"></span><h1 data-i18n="appTitle">Steung Cafe Admin</h1></div>
     <div class="right">
+      <div class="lang-toggle" id="appLangToggle">
+        <button data-lang="en">EN</button>
+        <button data-lang="km">ខ្មែរ</button>
+      </div>
       <div class="status-pill" id="statusPill">
         <span class="dot2"></span>
-        <span class="label" id="statusLabel">Loading…</span>
+        <span class="label" id="statusLabel" data-i18n="loadingText">Loading…</span>
       </div>
       <button class="btn small" id="statusToggleBtn" disabled>…</button>
-      <button class="btn ghost small" id="logoutBtn">Log out</button>
+      <button class="btn ghost small" id="logoutBtn" data-i18n="logoutBtn">Log out</button>
     </div>
   </div>
 
   <div class="tabs">
-    <button class="tab active" data-panel="itemsPanel">Menu Items</button>
-    <button class="tab" data-panel="ordersPanel">Orders &amp; Report</button>
+    <button class="tab active" data-panel="itemsPanel" data-i18n="tabItems">Menu Items</button>
+    <button class="tab" data-panel="ordersPanel" data-i18n="tabOrders">Orders &amp; Report</button>
+    <button class="tab" data-panel="tablesPanel" data-i18n="tabTables">Tables</button>
   </div>
 
   <div class="content">
@@ -276,22 +326,12 @@
     <!-- ============ ITEMS PANEL ============ -->
     <div class="panel active" id="itemsPanel">
       <div class="toolbar">
-        <select id="catFilter">
-          <option value="all">All categories</option>
-          <option value="grilled">Grilled</option>
-          <option value="soft">Soft Drinks</option>
-          <option value="beer">Beer</option>
-          <option value="alcohol">Alcohol</option>
-          <option value="hot">Hot Drink</option>
-          <option value="frappe">Frappe</option>
-          <option value="iced">Iced Drink</option>
-          <option value="cream">Cream</option>
-        </select>
-        <input type="search" id="itemSearch" placeholder="Search items…">
+        <select id="catFilter" class="cat-select-filter"></select>
+        <input type="search" id="itemSearch" data-i18n-placeholder="searchPh" placeholder="Search items…">
         <div class="spacer"></div>
-        <button class="btn small" id="addItemBtn">+ Add item</button>
+        <button class="btn small" id="addItemBtn" data-i18n="addItemBtn">+ Add item</button>
       </div>
-      <div id="itemsArea"><div class="loading">Loading items…</div></div>
+      <div id="itemsArea"><div class="loading" data-i18n="loadingItems">Loading items…</div></div>
     </div>
 
     <!-- ============ ORDERS PANEL ============ -->
@@ -299,14 +339,23 @@
       <div class="toolbar">
         <div class="date-filter">
           <input type="date" id="fromDate">
-          <span style="color:var(--smoke);font-size:12px;">to</span>
+          <span style="color:var(--smoke);font-size:12px;" data-i18n="toWord">to</span>
           <input type="date" id="toDate">
-          <button class="btn small ghost" id="applyDateBtn">Apply</button>
-          <button class="btn small ghost" id="last7Btn">Last 7 days</button>
-          <button class="btn small ghost" id="last30Btn">Last 30 days</button>
+          <button class="btn small ghost" id="applyDateBtn" data-i18n="applyBtn">Apply</button>
+          <button class="btn small ghost" id="last7Btn" data-i18n="last7Btn">Last 7 days</button>
+          <button class="btn small ghost" id="last30Btn" data-i18n="last30Btn">Last 30 days</button>
         </div>
       </div>
-      <div id="ordersArea"><div class="loading">Loading orders…</div></div>
+      <div id="ordersArea"><div class="loading" data-i18n="loadingOrders">Loading orders…</div></div>
+    </div>
+
+    <!-- ============ TABLES PANEL ============ -->
+    <div class="panel" id="tablesPanel">
+      <div class="toolbar">
+        <div class="spacer"></div>
+        <button class="btn small" id="addTableBtn" data-i18n="addTableBtn">+ Add table</button>
+      </div>
+      <div id="tablesArea"></div>
     </div>
 
   </div>
@@ -315,11 +364,11 @@
 <!-- ============ ITEM EDIT MODAL ============ -->
 <div class="modal-backdrop" id="itemModalBackdrop">
   <div class="modal">
-    <h2 id="itemModalTitle">Add item</h2>
+    <h2 id="itemModalTitle" data-i18n="addItemTitle">Add item</h2>
     <div class="modal-msg" id="itemModalMsg"></div>
 
     <div class="img-upload">
-      <div class="preview" id="imgPreviewWrap"><span class="ph">No photo</span></div>
+      <div class="preview" id="imgPreviewWrap"><span class="ph" data-i18n="noPhoto">No photo</span></div>
       <div style="flex:1;">
         <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" id="imgFileInput">
         <div class="upload-status" id="uploadStatus"></div>
@@ -327,35 +376,60 @@
     </div>
 
     <div class="field-row">
-      <div class="field"><label>Khmer name</label><input type="text" id="fieldKm"></div>
-      <div class="field"><label>English name</label><input type="text" id="fieldEn"></div>
+      <div class="field"><label data-i18n="khmerName">Khmer name</label><input type="text" id="fieldKm"></div>
+      <div class="field"><label data-i18n="englishName">English name</label><input type="text" id="fieldEn"></div>
     </div>
     <div class="field-row">
       <div class="field">
-        <label>Category</label>
-        <select id="fieldCat">
-          <option value="grilled">Grilled</option>
-          <option value="soft">Soft Drinks</option>
-          <option value="beer">Beer</option>
-          <option value="alcohol">Alcohol</option>
-          <option value="hot">Hot Drink</option>
-          <option value="frappe">Frappe</option>
-          <option value="iced">Iced Drink</option>
-          <option value="cream">Cream</option>
-        </select>
+        <label data-i18n="category">Category</label>
+        <select id="fieldCat" class="cat-select-field"></select>
       </div>
-      <div class="field"><label>Menu #</label><input type="text" id="fieldNum" inputmode="numeric"></div>
+      <div class="field"><label data-i18n="menuNum">Menu #</label><input type="text" id="fieldNum" inputmode="numeric"></div>
     </div>
     <div class="field">
-      <label>Price (Riel, e.g. 6,000៛)</label>
+      <label data-i18n="priceLabel">Price (Riel, e.g. 6,000៛)</label>
       <input type="text" id="fieldPrice" placeholder="6,000៛">
     </div>
-    <div class="check-row"><input type="checkbox" id="fieldPopular"><label for="fieldPopular">Mark as popular</label></div>
-    <div class="check-row"><input type="checkbox" id="fieldActive" checked><label for="fieldActive">Active (visible on the live menu)</label></div>
+    <div class="check-row"><input type="checkbox" id="fieldPopular"><label for="fieldPopular" data-i18n="markPopular">Mark as popular</label></div>
+    <div class="check-row"><input type="checkbox" id="fieldActive" checked><label for="fieldActive" data-i18n="activeLabel">Active (visible on the live menu)</label></div>
 
     <div class="modal-actions">
-      <button class="btn ghost" id="cancelItemBtn">Cancel</button>
-      <button class="btn" id="saveItemBtn">Save</button>
+      <button class="btn ghost" id="cancelItemBtn" data-i18n="cancelBtn">Cancel</button>
+      <button class="btn" id="saveItemBtn" data-i18n="saveBtn">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ TABLE MODAL ============ -->
+<div class="modal-backdrop" id="tableModalBackdrop">
+  <div class="modal" style="max-width:340px;">
+    <h2 id="tableModalTitle" data-i18n="addTableTitle">Add table</h2>
+    <div class="modal-msg" id="tableModalMsg"></div>
+    <div class="field"><label data-i18n="tableName">Table name / number</label><input type="text" id="tableFieldName" placeholder="e.g. Table 5"></div>
+    <div class="field">
+      <label data-i18n="tableStatus">Status</label>
+      <select id="tableFieldStatus">
+        <option value="available" data-i18n="statusAvailable">Available</option>
+        <option value="occupied" data-i18n="statusOccupied">Occupied</option>
+        <option value="reserved" data-i18n="statusReserved">Reserved</option>
+      </select>
+    </div>
+    <div class="field"><label data-i18n="tableNote">Note (reservation name / time)</label><input type="text" id="tableFieldNote" placeholder="e.g. Sok, 7:00 PM"></div>
+    <div class="modal-actions">
+      <button class="btn ghost" id="cancelTableBtn" data-i18n="cancelBtn">Cancel</button>
+      <button class="btn" id="saveTableBtn" data-i18n="saveBtn">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ RECEIPT MODAL ============ -->
+<div class="modal-backdrop" id="receiptModalBackdrop">
+  <div class="modal" style="max-width:340px;">
+    <h2 data-i18n="receiptTitle">Receipt</h2>
+    <div id="receiptContent"></div>
+    <div class="modal-actions">
+      <button class="btn ghost" id="closeReceiptBtn" data-i18n="closeBtn">Close</button>
+      <button class="btn" id="printReceiptBtn" data-i18n="printBtn">Print</button>
     </div>
   </div>
 </div>
@@ -366,14 +440,127 @@
 
   const FN = '/.netlify/functions';
   const CAT_LABELS = {
-    grilled:'Grilled', soft:'Soft Drinks', beer:'Beer', alcohol:'Alcohol',
-    hot:'Hot Drink', frappe:'Frappe', iced:'Iced Drink', cream:'Cream'
+    en: { grilled:'Grilled', soft:'Soft Drinks', beer:'Beer', alcohol:'Alcohol',
+          hot:'Hot Drink', frappe:'Frappe', iced:'Iced Drink', cream:'Cream', all:'All categories' },
+    km: { grilled:'អាំង', soft:'ភេសជ្ជៈទន់', beer:'ស្រាបៀរ', alcohol:'គ្រឿងស្រវឹង',
+          hot:'ភេសជ្ជៈក្តៅ', frappe:'ហ្វ្រាបភេ', iced:'ភេសជ្ជៈត្រជាក់', cream:'ក្រែម', all:'គ្រប់ប្រភេទ' }
   };
+
+  /* ---------------- i18n ---------------- */
+
+  const I18N = {
+    en: {
+      loginTitle:'Steung Cafe Admin', loginSub:'Enter the admin password to continue',
+      passwordPh:'Password', loginBtn:'Log in', appTitle:'Steung Cafe Admin',
+      loadingText:'Loading…', logoutBtn:'Log out', tabItems:'Menu Items',
+      tabOrders:'Orders & Report', tabTables:'Tables', searchPh:'Search items…',
+      addItemBtn:'+ Add item', loadingItems:'Loading items…', toWord:'to',
+      applyBtn:'Apply', last7Btn:'Last 7 days', last30Btn:'Last 30 days',
+      loadingOrders:'Loading orders…', addTableBtn:'+ Add table',
+      addItemTitle:'Add item', editItemTitle:'Edit item', noPhoto:'No photo',
+      khmerName:'Khmer name', englishName:'English name', category:'Category',
+      menuNum:'Menu #', priceLabel:'Price (Riel, e.g. 6,000៛)',
+      markPopular:'Mark as popular', activeLabel:'Active (visible on the live menu)',
+      cancelBtn:'Cancel', saveBtn:'Save', addTableTitle:'Add table', editTableTitle:'Edit table',
+      tableName:'Table name / number', tableStatus:'Status', tableNote:'Note (reservation name / time)',
+      statusAvailable:'Available', statusOccupied:'Occupied', statusReserved:'Reserved',
+      receiptTitle:'Receipt', closeBtn:'Close', printBtn:'Print',
+      menuOpen:'Menu is OPEN', menuClosed:'Menu is CLOSED', openMenuBtn:'Open Menu', closeMenuBtn:'Close Menu',
+      statusUnavailable:'Status unavailable', editBtn:'Edit', deleteBtn:'Delete', printReceiptBtn:'Receipt',
+      noItemsYet:'No items yet — the Items sheet tab is empty.', clickAddItem:'Click "+ Add item" to create your first one, or the live menu will keep using its built-in default list until you do.',
+      noItemsMatch:'No items match this filter.', enterKmOrEn:'Enter at least a Khmer or English name.',
+      enterPrice:'Enter a price.', savingBtn:'Saving…', ordersLabel:'Orders', revenueLabel:'Revenue',
+      avgOrderLabel:'Avg order', revenueByCat:'Revenue by category', topItems:'Top items',
+      noSalesRange:'No sales in this range.', ordersHeader:'Orders', timeCol:'Time', customerCol:'Customer',
+      contactCol:'Contact', totalCol:'Total', noOrdersRange:'No orders in this range.',
+      confirmClose:'Close the live menu now? Customers won\u2019t be able to order until you reopen it.',
+      couldNotLoadItems:"Couldn't load items:", couldNotLoadOrders:"Couldn't load orders:",
+      confirmDeleteItem:'Delete', cantUndo:"? This can't be undone.", failedDelete:'Failed to delete:',
+      couldNotUpdateStatus:'Could not update menu status:', noTablesYet:'No tables yet — click "+ Add table" to create one.',
+      qtyCol:'Qty', receiptTo:'Steung Cafe', receiptThanks:'Thank you!'
+    },
+    km: {
+      loginTitle:'ស្ទឹងកាហ្វេ អ្នកគ្រប់គ្រង', loginSub:'បញ្ចូលពាក្យសម្ងាត់អ្នកគ្រប់គ្រងដើម្បីបន្ត',
+      passwordPh:'ពាក្យសម្ងាត់', loginBtn:'ចូល', appTitle:'ស្ទឹងកាហ្វេ អ្នកគ្រប់គ្រង',
+      loadingText:'កំពុងផ្ទុក…', logoutBtn:'ចាកចេញ', tabItems:'មុខម្ហូប',
+      tabOrders:'ការបញ្ជាទិញ & របាយការណ៍', tabTables:'តុ', searchPh:'ស្វែងរកមុខម្ហូប…',
+      addItemBtn:'+ បន្ថែមមុខម្ហូប', loadingItems:'កំពុងផ្ទុកមុខម្ហូប…', toWord:'ដល់',
+      applyBtn:'អនុវត្ត', last7Btn:'៧ថ្ងៃចុងក្រោយ', last30Btn:'៣០ថ្ងៃចុងក្រោយ',
+      loadingOrders:'កំពុងផ្ទុកការបញ្ជាទិញ…', addTableBtn:'+ បន្ថែមតុ',
+      addItemTitle:'បន្ថែមមុខម្ហូប', editItemTitle:'កែសម្រួលមុខម្ហូប', noPhoto:'គ្មានរូបភាព',
+      khmerName:'ឈ្មោះខ្មែរ', englishName:'ឈ្មោះអង់គ្លេស', category:'ប្រភេទ',
+      menuNum:'លេខម៉ឺនុយ', priceLabel:'តម្លៃ (រៀល ឧ. ៦,០០០៛)',
+      markPopular:'សម្គាល់ថាពេញនិយម', activeLabel:'សកម្ម (មើលឃើញនៅលើម៉ឺនុយផ្ទាល់)',
+      cancelBtn:'បោះបង់', saveBtn:'រក្សាទុក', addTableTitle:'បន្ថែមតុ', editTableTitle:'កែសម្រួលតុ',
+      tableName:'ឈ្មោះ/លេខតុ', tableStatus:'ស្ថានភាព', tableNote:'កំណត់ចំណាំ (ឈ្មោះកក់ / ម៉ោង)',
+      statusAvailable:'ទំនេរ', statusOccupied:'កំពុងប្រើ', statusReserved:'បានកក់',
+      receiptTitle:'បង្កាន់ដៃ', closeBtn:'បិទ', printBtn:'បោះពុម្ព',
+      menuOpen:'ម៉ឺនុយកំពុងបើក', menuClosed:'ម៉ឺនុយបានបិទ', openMenuBtn:'បើកម៉ឺនុយ', closeMenuBtn:'បិទម៉ឺនុយ',
+      statusUnavailable:'មិនអាចទាញយកស្ថានភាពបានទេ', editBtn:'កែសម្រួល', deleteBtn:'លុប', printReceiptBtn:'បង្កាន់ដៃ',
+      noItemsYet:'មិនទាន់មានមុខម្ហូបទេ — សន្លឹក Items នៅទទេ។', clickAddItem:'ចុច "+ បន្ថែមមុខម្ហូប" ដើម្បីបង្កើតមួយដំបូង ឬម៉ឺនុយផ្ទាល់នឹងបន្តប្រើបញ្ជីលំនាំដើមរបស់វា។',
+      noItemsMatch:'គ្មានមុខម្ហូបត្រូវនឹងតម្រងនេះទេ។', enterKmOrEn:'សូមបញ្ចូលឈ្មោះខ្មែរ ឬអង់គ្លេសយ៉ាងតិចមួយ។',
+      enterPrice:'សូមបញ្ចូលតម្លៃ។', savingBtn:'កំពុងរក្សាទុក…', ordersLabel:'ការបញ្ជាទិញ', revenueLabel:'ចំណូល',
+      avgOrderLabel:'ជាមធ្យមក្នុងមួយការបញ្ជាទិញ', revenueByCat:'ចំណូលតាមប្រភេទ', topItems:'មុខម្ហូបលក់ដាច់បំផុត',
+      noSalesRange:'គ្មានការលក់ក្នុងចន្លោះពេលនេះទេ។', ordersHeader:'ការបញ្ជាទិញ', timeCol:'ពេលវេលា', customerCol:'អតិថិជន',
+      contactCol:'ទំនាក់ទំនង', totalCol:'សរុប', noOrdersRange:'គ្មានការបញ្ជាទិញក្នុងចន្លោះពេលនេះទេ។',
+      confirmClose:'បិទម៉ឺនុយផ្ទាល់ឥឡូវនេះ? អតិថិជននឹងមិនអាចបញ្ជាទិញបានទេរហូតដល់អ្នកបើកម្ដងទៀត។',
+      couldNotLoadItems:'មិនអាចផ្ទុកមុខម្ហូបបានទេ៖', couldNotLoadOrders:'មិនអាចផ្ទុកការបញ្ជាទិញបានទេ៖',
+      confirmDeleteItem:'លុប', cantUndo:'? សកម្មភាពនេះមិនអាចមកវិញបានទេ។', failedDelete:'បរាជ័យក្នុងការលុប៖',
+      couldNotUpdateStatus:'មិនអាចធ្វើបច្ចុប្បន្នភាពស្ថានភាពម៉ឺនុយបានទេ៖', noTablesYet:'មិនទាន់មានតុទេ — ចុច "+ បន្ថែមតុ" ដើម្បីបង្កើតមួយ។',
+      qtyCol:'ចំនួន', receiptTo:'ស្ទឹងកាហ្វេ', receiptThanks:'អរគុណ!'
+    }
+  };
+
+  let lang = localStorage.getItem('scm_admin_lang') || 'en';
+
+  function t(key){ return (I18N[lang] && I18N[lang][key]) || I18N.en[key] || key; }
+
+  function applyLang(){
+    document.documentElement.lang = lang;
+    document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => { el.placeholder = t(el.dataset.i18nPlaceholder); });
+    document.querySelectorAll('.lang-toggle button').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.lang === lang);
+    });
+    populateCategorySelects();
+    if (typeof renderItems === 'function' && items) renderItems();
+    if (typeof renderTables === 'function' && tables) renderTables();
+    renderStoreStatus(storeClosed);
+  }
+
+  function setLang(l){
+    lang = l;
+    localStorage.setItem('scm_admin_lang', l);
+    applyLang();
+  }
+
+  function populateCategorySelects(){
+    const cats = ['grilled','soft','beer','alcohol','hot','frappe','iced','cream'];
+    document.querySelectorAll('.cat-select-filter').forEach(sel => {
+      const cur = sel.value || 'all';
+      sel.innerHTML = `<option value="all">${CAT_LABELS[lang].all}</option>` +
+        cats.map(c => `<option value="${c}">${CAT_LABELS[lang][c]}</option>`).join('');
+      sel.value = cur;
+    });
+    document.querySelectorAll('.cat-select-field').forEach(sel => {
+      const cur = sel.value || 'grilled';
+      sel.innerHTML = cats.map(c => `<option value="${c}">${CAT_LABELS[lang][c]}</option>`).join('');
+      sel.value = cur;
+    });
+  }
+
+  document.querySelectorAll('.lang-toggle').forEach(group => {
+    group.querySelectorAll('button').forEach(btn => {
+      btn.addEventListener('click', () => setLang(btn.dataset.lang));
+    });
+  });
 
   let token = sessionStorage.getItem('scm_admin_token') || '';
   let items = [];
+  let tables = [];
   let pendingUploadUrl = ''; // set after a successful image upload, used on save
   let editingId = null;      // null = creating new
+  let editingTableId = null;
 
   /* ---------------- auth ---------------- */
 
@@ -395,8 +582,10 @@
   function showApp(){
     document.getElementById('loginWrap').style.display = 'none';
     document.getElementById('app').classList.add('show');
+    applyLang();
     loadItems();
     loadStoreStatus();
+    loadTables();
   }
 
   function logout(){
@@ -445,8 +634,8 @@
     const label = document.getElementById('statusLabel');
     const btn = document.getElementById('statusToggleBtn');
     pill.classList.toggle('is-closed', closed);
-    label.textContent = closed ? 'Menu is CLOSED' : 'Menu is OPEN';
-    btn.textContent = closed ? 'Open Menu' : 'Close Menu';
+    label.textContent = closed ? t('menuClosed') : t('menuOpen');
+    btn.textContent = closed ? t('openMenuBtn') : t('closeMenuBtn');
     btn.className = `btn small ${closed ? 'open-action' : 'close-action'}`;
     btn.disabled = false;
   }
@@ -456,14 +645,14 @@
       const data = await apiFetch('/admin-status', { method: 'GET' });
       renderStoreStatus(!!data.closed);
     } catch (err) {
-      document.getElementById('statusLabel').textContent = 'Status unavailable';
+      document.getElementById('statusLabel').textContent = t('statusUnavailable');
     }
   }
 
   async function toggleStoreStatus(){
     const btn = document.getElementById('statusToggleBtn');
     const next = !storeClosed;
-    if (next && !confirm('Close the live menu now? Customers won\u2019t be able to order until you reopen it.')) return;
+    if (next && !confirm(t('confirmClose'))) return;
     btn.disabled = true;
     btn.textContent = '\u2026';
     try {
@@ -474,7 +663,7 @@
       });
       renderStoreStatus(!!data.closed);
     } catch (err) {
-      alert('Could not update menu status: ' + err.message);
+      alert(t('couldNotUpdateStatus') + ' ' + err.message);
       renderStoreStatus(storeClosed); // restore the button from the known-good state
     }
   }
@@ -503,7 +692,7 @@
       items = data.items || [];
       renderItems();
     } catch (err) {
-      area.innerHTML = `<div class="empty">Couldn't load items: ${escapeHtml(err.message)}</div>`;
+      area.innerHTML = `<div class="empty">${t('couldNotLoadItems')} ${escapeHtml(err.message)}</div>`;
     }
   }
 
@@ -518,11 +707,11 @@
     list.sort((a,b) => (a.cat === b.cat ? a.num - b.num : a.cat.localeCompare(b.cat)));
 
     if (!items.length){
-      area.innerHTML = `<div class="empty">No items yet — the Items sheet tab is empty.<br>Click "+ Add item" to create your first one, or the live menu will keep using its built-in default list until you do.</div>`;
+      area.innerHTML = `<div class="empty">${t('noItemsYet')}<br>${t('clickAddItem')}</div>`;
       return;
     }
     if (!list.length){
-      area.innerHTML = '<div class="empty">No items match this filter.</div>';
+      area.innerHTML = `<div class="empty">${t('noItemsMatch')}</div>`;
       return;
     }
 
@@ -546,11 +735,11 @@
         <div class="thumb">${thumb}</div>
         <div class="body">
           <div class="name">${escapeHtml(name)}</div>
-          <div class="meta">${CAT_LABELS[it.cat] || it.cat}${it.popular ? ' · ★ popular' : ''}${it.active === false ? ' · inactive' : ''}</div>
+          <div class="meta">${(CAT_LABELS[lang] && CAT_LABELS[lang][it.cat]) || it.cat}${it.popular ? ' · ★' : ''}${it.active === false ? ' · ' + (lang==='km' ? 'អសកម្ម' : 'inactive') : ''}</div>
           <div class="price">${escapeHtml(it.price || '')}</div>
           <div class="row">
-            <button class="btn ghost small" data-edit="${it.id}">Edit</button>
-            <button class="btn danger small" data-del="${it.id}">Delete</button>
+            <button class="btn ghost small" data-edit="${it.id}">${t('editBtn')}</button>
+            <button class="btn danger small" data-del="${it.id}">${t('deleteBtn')}</button>
           </div>
         </div>
       </div>`;
@@ -562,13 +751,13 @@
   async function deleteItem(id){
     const it = items.find(i => i.id === id);
     if (!it) return;
-    if (!confirm(`Delete "${it.km || it.en}"? This can't be undone.`)) return;
+    if (!confirm(`${t('confirmDeleteItem')} "${it.km || it.en}"${t('cantUndo')}`)) return;
     try {
       await apiFetch('/admin-items?id=' + encodeURIComponent(id), { method: 'DELETE' });
       items = items.filter(i => i.id !== id);
       renderItems();
     } catch (err) {
-      alert('Failed to delete: ' + err.message);
+      alert(t('failedDelete') + ' ' + err.message);
     }
   }
 
@@ -583,7 +772,7 @@
   function openItemModal(it){
     editingId = it ? it.id : null;
     pendingUploadUrl = it ? (it.img || '') : '';
-    document.getElementById('itemModalTitle').textContent = it ? 'Edit item' : 'Add item';
+    document.getElementById('itemModalTitle').textContent = it ? t('editItemTitle') : t('addItemTitle');
     document.getElementById('itemModalMsg').textContent = '';
     document.getElementById('itemModalMsg').className = 'modal-msg';
     document.getElementById('fieldKm').value = it ? it.km || '' : '';
@@ -667,17 +856,17 @@
     };
 
     if (!payload.km && !payload.en){
-      msgEl.textContent = 'Enter at least a Khmer or English name.';
+      msgEl.textContent = t('enterKmOrEn');
       msgEl.className = 'modal-msg error';
       return;
     }
     if (!payload.price){
-      msgEl.textContent = 'Enter a price.';
+      msgEl.textContent = t('enterPrice');
       msgEl.className = 'modal-msg error';
       return;
     }
 
-    btn.disabled = true; btn.textContent = 'Saving…';
+    btn.disabled = true; btn.textContent = t('savingBtn');
     try {
       if (editingId){
         payload.id = editingId;
@@ -698,7 +887,7 @@
       msgEl.textContent = err.message;
       msgEl.className = 'modal-msg error';
     } finally {
-      btn.disabled = false; btn.textContent = 'Save';
+      btn.disabled = false; btn.textContent = t('saveBtn');
     }
   }
 
@@ -737,7 +926,7 @@
       const data = await apiFetch('/admin-orders' + (qs.length ? '?' + qs.join('&') : ''));
       renderOrders(data.orders || [], data.summary || {});
     } catch (err) {
-      area.innerHTML = `<div class="empty">Couldn't load orders: ${escapeHtml(err.message)}</div>`;
+      area.innerHTML = `<div class="empty">${t('couldNotLoadOrders')} ${escapeHtml(err.message)}</div>`;
     }
   }
 
@@ -748,34 +937,171 @@
 
     let html = `
       <div class="stat-row">
-        <div class="stat-card"><div class="label">Orders</div><div class="value">${summary.orderCount || 0}</div></div>
-        <div class="stat-card"><div class="label">Revenue</div><div class="value">${fmtRiel(summary.totalRevenue)}</div></div>
-        <div class="stat-card"><div class="label">Avg order</div><div class="value">${fmtRiel(summary.orderCount ? summary.totalRevenue / summary.orderCount : 0)}</div></div>
+        <div class="stat-card"><div class="label">${t('ordersLabel')}</div><div class="value">${summary.orderCount || 0}</div></div>
+        <div class="stat-card"><div class="label">${t('revenueLabel')}</div><div class="value">${fmtRiel(summary.totalRevenue)}</div></div>
+        <div class="stat-card"><div class="label">${t('avgOrderLabel')}</div><div class="value">${fmtRiel(summary.orderCount ? summary.totalRevenue / summary.orderCount : 0)}</div></div>
       </div>`;
 
-    html += '<div class="section-title">Revenue by category</div>';
+    html += `<div class="section-title">${t('revenueByCat')}</div>`;
     html += byCategory.length
-      ? `<div class="table-wrap"><table><thead><tr><th>Category</th><th>Revenue</th></tr></thead><tbody>${
+      ? `<div class="table-wrap"><table><thead><tr><th>${t('category')}</th><th>${t('revenueLabel')}</th></tr></thead><tbody>${
           byCategory.map(c => `<tr><td>${escapeHtml(c.label)}</td><td>${fmtRiel(c.revenue)}</td></tr>`).join('')
         }</tbody></table></div>`
-      : '<div class="empty">No sales in this range.</div>';
+      : `<div class="empty">${t('noSalesRange')}</div>`;
 
-    html += '<div class="section-title">Top items</div>';
+    html += `<div class="section-title">${t('topItems')}</div>`;
     html += topItems.length
-      ? `<div class="table-wrap"><table><thead><tr><th>Item</th><th>Qty</th><th>Revenue</th></tr></thead><tbody>${
+      ? `<div class="table-wrap"><table><thead><tr><th>${t('tabItems') === 'Menu Items' ? 'Item' : (lang==='km'?'មុខម្ហូប':'Item')}</th><th>${t('qtyCol')}</th><th>${t('revenueLabel')}</th></tr></thead><tbody>${
           topItems.map(it => `<tr><td>${escapeHtml(it.label)}</td><td>${it.qty}</td><td>${fmtRiel(it.revenue)}</td></tr>`).join('')
         }</tbody></table></div>`
-      : '<div class="empty">No sales in this range.</div>';
+      : `<div class="empty">${t('noSalesRange')}</div>`;
 
-    html += '<div class="section-title">Orders</div>';
+    html += `<div class="section-title">${t('ordersHeader')}</div>`;
     html += orders.length
-      ? `<div class="table-wrap"><table><thead><tr><th>Time</th><th>Customer</th><th>Contact</th><th>Total</th></tr></thead><tbody>${
-          orders.map(o => `<tr><td>${escapeHtml(new Date(o.dateISO).toLocaleString())}</td><td>${escapeHtml(o.customerName || '—')}</td><td>${escapeHtml(o.contact || '—')}</td><td>${fmtRiel(o.total)}</td></tr>`).join('')
+      ? `<div class="table-wrap"><table><thead><tr><th>${t('timeCol')}</th><th>${t('customerCol')}</th><th>${t('contactCol')}</th><th>${t('totalCol')}</th><th></th></tr></thead><tbody>${
+          orders.map((o,idx) => `<tr><td>${escapeHtml(new Date(o.dateISO).toLocaleString())}</td><td>${escapeHtml(o.customerName || '—')}</td><td>${escapeHtml(o.contact || '—')}</td><td>${fmtRiel(o.total)}</td><td><button class="btn ghost small" data-receipt="${idx}">${t('printReceiptBtn')}</button></td></tr>`).join('')
         }</tbody></table></div>`
-      : '<div class="empty">No orders in this range.</div>';
+      : `<div class="empty">${t('noOrdersRange')}</div>`;
 
     area.innerHTML = html;
+    area.querySelectorAll('[data-receipt]').forEach(btn => {
+      btn.addEventListener('click', () => showReceipt(orders[Number(btn.dataset.receipt)]));
+    });
   }
+
+  /* ---------------- receipt ---------------- */
+
+  function showReceipt(order){
+    const items = order.items || [];
+    const lines = items.length
+      ? items.map(it => `<div style="display:flex;justify-content:space-between;font-size:12px;margin:2px 0;"><span>${escapeHtml(it.name || it.label || '')} ${it.qty ? '×' + it.qty : ''}</span><span>${fmtRiel(it.total != null ? it.total : it.price)}</span></div>`).join('')
+      : '';
+    const html = `
+      <div class="receipt-box">
+        <div style="text-align:center;font-weight:800;margin-bottom:4px;">${t('receiptTo')}</div>
+        <div style="text-align:center;font-size:11px;color:#666;margin-bottom:10px;">${escapeHtml(new Date(order.dateISO).toLocaleString())}</div>
+        <div style="font-size:12px;margin-bottom:6px;">${t('customerCol')}: ${escapeHtml(order.customerName || '—')}</div>
+        <div style="font-size:12px;margin-bottom:10px;">${t('contactCol')}: ${escapeHtml(order.contact || '—')}</div>
+        <div style="border-top:1px dashed #999;padding-top:8px;">${lines}</div>
+        <div style="border-top:1px dashed #999;margin-top:8px;padding-top:8px;display:flex;justify-content:space-between;font-weight:800;">
+          <span>${t('totalCol')}</span><span>${fmtRiel(order.total)}</span>
+        </div>
+        <div style="text-align:center;font-size:11px;color:#666;margin-top:10px;">${t('receiptThanks')}</div>
+      </div>`;
+    document.getElementById('receiptContent').innerHTML = html;
+    document.getElementById('receiptModalBackdrop').classList.add('show');
+  }
+
+  document.getElementById('closeReceiptBtn').addEventListener('click', () => {
+    document.getElementById('receiptModalBackdrop').classList.remove('show');
+  });
+  document.getElementById('receiptModalBackdrop').addEventListener('click', e => {
+    if (e.target.id === 'receiptModalBackdrop') document.getElementById('receiptModalBackdrop').classList.remove('show');
+  });
+  document.getElementById('printReceiptBtn').addEventListener('click', () => {
+    const w = window.open('', '_blank', 'width=360,height=600');
+    w.document.write(`<html><head><title>${t('receiptTitle')}</title></head><body>${document.getElementById('receiptContent').innerHTML}</body></html>`);
+    w.document.close();
+    w.focus();
+    w.print();
+  });
+
+  /* ---------------- tables / reservations ---------------- */
+
+  function loadTables(){
+    try {
+      tables = JSON.parse(localStorage.getItem('scm_admin_tables') || '[]');
+    } catch (e) { tables = []; }
+    renderTables();
+  }
+
+  function saveTables(){
+    localStorage.setItem('scm_admin_tables', JSON.stringify(tables));
+  }
+
+  function renderTables(){
+    const area = document.getElementById('tablesArea');
+    if (!area) return;
+    if (!tables.length){
+      area.innerHTML = `<div class="empty">${t('noTablesYet')}</div>`;
+      return;
+    }
+    area.innerHTML = `<div class="table-grid">${tables.map(tableCardHtml).join('')}</div>`;
+    area.querySelectorAll('[data-tedit]').forEach(btn => {
+      btn.addEventListener('click', () => openTableModal(tables.find(x => x.id === btn.dataset.tedit)));
+    });
+    area.querySelectorAll('[data-tdel]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        tables = tables.filter(x => x.id !== btn.dataset.tdel);
+        saveTables(); renderTables();
+      });
+    });
+    area.querySelectorAll('[data-tcycle]').forEach(sel => {
+      sel.addEventListener('change', () => {
+        const tb = tables.find(x => x.id === sel.dataset.tcycle);
+        if (tb){ tb.status = sel.value; saveTables(); renderTables(); }
+      });
+    });
+  }
+
+  function tableCardHtml(tb){
+    return `
+      <div class="table-card">
+        <div class="tname">${escapeHtml(tb.name)}</div>
+        <select data-tcycle="${tb.id}">
+          <option value="available" ${tb.status==='available'?'selected':''}>${t('statusAvailable')}</option>
+          <option value="occupied" ${tb.status==='occupied'?'selected':''}>${t('statusOccupied')}</option>
+          <option value="reserved" ${tb.status==='reserved'?'selected':''}>${t('statusReserved')}</option>
+        </select>
+        <span class="tstatus ${tb.status}">${t('status' + tb.status.charAt(0).toUpperCase() + tb.status.slice(1))}</span>
+        <div class="tnote">${escapeHtml(tb.note || '')}</div>
+        <div class="row">
+          <button class="btn ghost small" data-tedit="${tb.id}">${t('editBtn')}</button>
+          <button class="btn danger small" data-tdel="${tb.id}">${t('deleteBtn')}</button>
+        </div>
+      </div>`;
+  }
+
+  document.getElementById('addTableBtn').addEventListener('click', () => openTableModal(null));
+  document.getElementById('cancelTableBtn').addEventListener('click', closeTableModal);
+  document.getElementById('tableModalBackdrop').addEventListener('click', e => {
+    if (e.target.id === 'tableModalBackdrop') closeTableModal();
+  });
+
+  function openTableModal(tb){
+    editingTableId = tb ? tb.id : null;
+    document.getElementById('tableModalTitle').textContent = tb ? t('editTableTitle') : t('addTableTitle');
+    document.getElementById('tableModalMsg').textContent = '';
+    document.getElementById('tableFieldName').value = tb ? tb.name : '';
+    document.getElementById('tableFieldStatus').value = tb ? tb.status : 'available';
+    document.getElementById('tableFieldNote').value = tb ? (tb.note || '') : '';
+    document.getElementById('tableModalBackdrop').classList.add('show');
+  }
+
+  function closeTableModal(){
+    document.getElementById('tableModalBackdrop').classList.remove('show');
+  }
+
+  document.getElementById('saveTableBtn').addEventListener('click', () => {
+    const name = document.getElementById('tableFieldName').value.trim();
+    const msgEl = document.getElementById('tableModalMsg');
+    if (!name){
+      msgEl.textContent = t('tableName');
+      msgEl.className = 'modal-msg error';
+      return;
+    }
+    const status = document.getElementById('tableFieldStatus').value;
+    const note = document.getElementById('tableFieldNote').value.trim();
+    if (editingTableId){
+      const tb = tables.find(x => x.id === editingTableId);
+      if (tb){ tb.name = name; tb.status = status; tb.note = note; }
+    } else {
+      tables.push({ id: 't_' + Date.now() + '_' + Math.random().toString(36).slice(2,7), name, status, note });
+    }
+    saveTables();
+    renderTables();
+    closeTableModal();
+  });
 
   /* ---------------- utils ---------------- */
 
@@ -786,6 +1112,7 @@
 
   /* ---------------- init ---------------- */
 
+  applyLang();
   if (token) showApp();
 })();
 </script>
