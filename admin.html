@@ -6,18 +6,20 @@
 <link href="https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root{
-    --char:        #17110D;
-    --char-2:      #1F1610;
-    --char-3:      #241A13;
-    --char-4:      #2C2117;
+    --char:        #F3F4F6;
+    --char-2:      #FFFFFF;
+    --char-3:      #FFFFFF;
+    --char-4:      #F3F4F6;
     --ember:       #E8592A;
-    --ember-deep:  #B23A24;
-    --amber:       #F0A93A;
-    --rice:        #F5ECD9;
-    --smoke:       #8C7E6E;
-    --line:        #3a2c20;
-    --good:        #4FAE6B;
-    --bad:         #E24C4C;
+    --ember-deep:  #C8441C;
+    --amber:       #E8592A;
+    --rice:        #1F2430;
+    --smoke:       #8A8F9C;
+    --line:        #E7E8EC;
+    --good:        #22A06B;
+    --bad:         #E5484D;
+    --sidebar:     #1B1F2A;
+    --sidebar-2:   #262C3B;
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;min-height:100%;}
@@ -44,6 +46,7 @@
     border-radius:16px;
     padding:32px 28px;
     text-align:center;
+    box-shadow:0 10px 30px rgba(20,20,30,.08);
   }
   .login-card h1{
     font-size:18px; margin:0 0 4px;
@@ -79,7 +82,27 @@
 
   /* ================= APP SHELL ================= */
   .app{ display:none; min-height:100vh; }
-  .app.show{ display:flex; flex-direction:column; }
+  .app.show{ display:flex; flex-direction:row; }
+
+  .sidebar{
+    width:220px; flex-shrink:0;
+    background:var(--sidebar);
+    color:#EDEEF2;
+    display:flex; flex-direction:column;
+    position:sticky; top:0; height:100vh;
+  }
+  .sidebar .brand{
+    display:flex; align-items:center; gap:10px;
+    padding:20px 18px;
+    border-bottom:1px solid rgba(255,255,255,.08);
+  }
+  .sidebar .brand .dot{ width:9px; height:9px; border-radius:50%; background:var(--ember); box-shadow:0 0 0 4px rgba(232,89,42,.2); }
+  .sidebar .brand h1{ font-size:14.5px; margin:0; letter-spacing:.02em; color:#fff; }
+  .sidebar-scroll{ flex:1; overflow-y:auto; padding:14px 10px; }
+  .sidebar-foot{ padding:14px 10px 18px; border-top:1px solid rgba(255,255,255,.08); display:flex; flex-direction:column; gap:10px; }
+
+  .main-wrap{ flex:1; min-width:0; display:flex; flex-direction:column; min-height:100vh; }
+
   .topbar{
     display:flex; align-items:center; justify-content:space-between;
     padding:16px 24px;
@@ -87,7 +110,7 @@
     background:var(--char-2);
     position:sticky; top:0; z-index:5;
   }
-  .topbar h1{ font-size:16px; margin:0; letter-spacing:.02em; }
+  .topbar h1{ font-size:16px; margin:0; letter-spacing:.02em; color:var(--rice); }
   .topbar .brand{ display:flex; align-items:center; gap:10px; }
   .topbar .brand .dot{ width:8px; height:8px; border-radius:50%; background:var(--ember); }
   .topbar .right{ display:flex; align-items:center; gap:12px; }
@@ -111,19 +134,22 @@
   #statusToggleBtn:disabled{ opacity:.6; }
 
   .tabs{
-    display:flex; gap:6px;
-    padding:12px 24px 0;
-    border-bottom:1px solid var(--line);
-    background:var(--char-2);
-    overflow-x:auto;
+    display:flex; flex-direction:column; gap:2px;
   }
   .tab{
-    background:none; border:none; color:var(--smoke);
-    padding:10px 14px; font-size:14px; font-weight:600;
-    border-bottom:2px solid transparent;
-    white-space:nowrap;
+    display:flex; align-items:center; gap:10px;
+    background:none; border:none; color:#AEB2C0;
+    padding:11px 14px; font-size:13.5px; font-weight:600;
+    border-radius:10px; text-align:left; white-space:nowrap;
+    border-bottom:none;
   }
-  .tab.active{ color:var(--rice); border-color:var(--ember); }
+  .tab:before{
+    content:''; width:6px; height:6px; border-radius:50%;
+    background:currentColor; opacity:.4; flex-shrink:0;
+  }
+  .tab.active{ color:#fff; background:var(--ember); }
+  .tab.active:before{ opacity:1; }
+  .tab:not(.active):hover{ background:rgba(255,255,255,.06); color:#fff; }
 
   .content{ flex:1; padding:20px 24px 60px; max-width:1100px; width:100%; margin:0 auto; }
   .panel{ display:none; }
@@ -149,7 +175,10 @@
     border-radius:14px;
     overflow:hidden;
     display:flex; flex-direction:column;
+    box-shadow:0 1px 2px rgba(20,20,30,.04);
+    transition:box-shadow .15s, transform .15s;
   }
+  .item-card:hover{ box-shadow:0 8px 20px rgba(20,20,30,.08); transform:translateY(-1px); }
   .item-card.inactive{ opacity:.45; }
   .item-card .thumb{
     aspect-ratio:1/1; background:var(--char-4);
@@ -178,6 +207,7 @@
     width:100%; max-width:440px; max-height:90vh; overflow:auto;
     background:var(--char-2); border:1px solid var(--line); border-radius:16px;
     padding:22px;
+    box-shadow:0 20px 50px rgba(20,20,30,.18);
   }
   .modal h2{ font-size:16px; margin:0 0 16px; }
   .field{ margin-bottom:12px; }
@@ -214,6 +244,7 @@
   .stat-row{ display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:12px; margin-bottom:20px; }
   .stat-card{
     background:var(--char-3); border:1px solid var(--line); border-radius:12px; padding:14px 16px;
+    box-shadow:0 1px 2px rgba(20,20,30,.04);
   }
   .stat-card .label{ color:var(--smoke); font-size:11.5px; margin-bottom:4px; }
   .stat-card .value{ font-size:20px; font-weight:800; color:var(--amber); }
@@ -224,7 +255,7 @@
   th,td{ text-align:left; padding:9px 10px; border-bottom:1px solid var(--line); }
   th{ color:var(--smoke); font-weight:600; font-size:11.5px; text-transform:uppercase; letter-spacing:.04em; }
   tr:last-child td{ border-bottom:none; }
-  .table-wrap{ overflow-x:auto; border:1px solid var(--line); border-radius:12px; background:var(--char-3); }
+  .table-wrap{ overflow-x:auto; border:1px solid var(--line); border-radius:12px; background:var(--char-3); box-shadow:0 1px 2px rgba(20,20,30,.04); }
   .table-wrap table{ min-width:480px; }
 
   .date-filter{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
@@ -255,6 +286,7 @@
   .table-card{
     background:var(--char-3); border:1px solid var(--line); border-radius:14px;
     padding:14px; display:flex; flex-direction:column; gap:6px;
+    box-shadow:0 1px 2px rgba(20,20,30,.04);
   }
   .table-card .tname{ font-size:15px; font-weight:800; }
   .table-card .tstatus{
@@ -276,9 +308,16 @@
     font-family:'Kantumruy Pro', sans-serif; width:280px; margin:0 auto; color:#111; background:#fff; padding:16px;
   }
 
+  @media(max-width:820px){
+    .app.show{ flex-direction:column; }
+    .sidebar{ width:100%; height:auto; position:static; flex-direction:row; align-items:center; }
+    .sidebar .brand{ border-bottom:none; border-right:1px solid rgba(255,255,255,.08); }
+    .sidebar-scroll{ padding:8px; overflow-x:auto; }
+    .tabs{ flex-direction:row; }
+    .sidebar-foot{ border-top:none; flex-direction:row; padding:8px; }
+  }
   @media(max-width:600px){
     .topbar{ padding:14px 16px; }
-    .tabs{ padding:10px 16px 0; }
     .content{ padding:16px 16px 50px; }
   }
 </style>
@@ -299,26 +338,34 @@
 </div>
 
 <div class="app" id="app">
-  <div class="topbar">
+  <div class="sidebar">
     <div class="brand"><span class="dot"></span><h1 data-i18n="appTitle">Steung Cafe Admin</h1></div>
-    <div class="right">
-      <div class="lang-toggle" id="appLangToggle">
+    <div class="sidebar-scroll">
+      <div class="tabs">
+        <button class="tab active" data-panel="itemsPanel" data-i18n="tabItems">Menu Items</button>
+        <button class="tab" data-panel="ordersPanel" data-i18n="tabOrders">Orders &amp; Report</button>
+        <button class="tab" data-panel="tablesPanel" data-i18n="tabTables">Tables</button>
+      </div>
+    </div>
+    <div class="sidebar-foot">
+      <div class="lang-toggle" id="appLangToggle" style="align-self:flex-start;">
         <button data-lang="en">EN</button>
         <button data-lang="km">ខ្មែរ</button>
       </div>
+      <button class="btn ghost small" id="logoutBtn" data-i18n="logoutBtn" style="width:100%;">Log out</button>
+    </div>
+  </div>
+
+  <div class="main-wrap">
+  <div class="topbar">
+    <div class="brand"></div>
+    <div class="right">
       <div class="status-pill" id="statusPill">
         <span class="dot2"></span>
         <span class="label" id="statusLabel" data-i18n="loadingText">Loading…</span>
       </div>
       <button class="btn small" id="statusToggleBtn" disabled>…</button>
-      <button class="btn ghost small" id="logoutBtn" data-i18n="logoutBtn">Log out</button>
     </div>
-  </div>
-
-  <div class="tabs">
-    <button class="tab active" data-panel="itemsPanel" data-i18n="tabItems">Menu Items</button>
-    <button class="tab" data-panel="ordersPanel" data-i18n="tabOrders">Orders &amp; Report</button>
-    <button class="tab" data-panel="tablesPanel" data-i18n="tabTables">Tables</button>
   </div>
 
   <div class="content">
@@ -359,9 +406,8 @@
     </div>
 
   </div>
+  </div>
 </div>
-
-<!-- ============ ITEM EDIT MODAL ============ -->
 <div class="modal-backdrop" id="itemModalBackdrop">
   <div class="modal">
     <h2 id="itemModalTitle" data-i18n="addItemTitle">Add item</h2>
