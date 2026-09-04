@@ -1088,6 +1088,18 @@
   </div>
 </div>
 
+<div class="closed-overlay" id="geoOverlay">
+  <div class="closed-modal">
+    <div class="icon-ring">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+    </div>
+    <h2 id="geoOverlayTitle">កំពុងពិនិត្យទីតាំង...</h2>
+    <div class="msg" id="geoOverlayMsg">សូមរង់ចាំមួយភ្លែត ខណៈយើងកំពុងផ្ទៀងផ្ទាត់ថាអ្នកនៅជិតហាង។</div>
+    <div class="hours-pill" id="geoDistancePill"></div>
+    <button class="order-status-close-btn" id="geoOverlayCloseBtn" type="button" style="display:none;"></button>
+  </div>
+</div>
+
 <div class="closed-overlay" id="orderStatusOverlay">
   <div class="closed-modal" id="orderStatusModal">
     <div class="icon-ring" id="orderStatusIcon"></div>
@@ -1272,18 +1284,136 @@
       });
   }
 
-  /* ================= DATA ================= */
-  // "All" is a purely presentational pseudo-category (never comes from the
-  // server) and always stays pinned first, regardless of what the admin
-  // has added/removed on the backend.
-  const ALL_CATEGORY = { id:'all', km:'ទាំងអស់', en:'All', icon:'ic-flame' };
+  // ================= GPS GEOFENCING =================
+  // Café's real-world coordinates (from the shared Google Maps location).
+  const CAFE_LOCATION = { lat: 13.3499168, lng: 103.8525531 };
+  const GEOFENCE_RADIUS_METERS = 50;
 
-  // Built-in fallback categories, used until (and unless) admin-managed
-  // categories load successfully from the Categories sheet tab via
-  // get-categories.js. Kept as-is so the live menu never breaks if that
-  // fetch fails — same pattern as the ITEMS fallback below.
-  const DEFAULT_CATEGORIES = [
-    { id:'grilled', km:'អាហារ',           en:'Food',         icon:'ic-flame' },
+  // geoState: 'pending' (checking), 'in-range', 'out-of-range', 'unavailable' (denied/unsupported/error)
+  let geoState = 'pending';
+  let geoDistanceMeters = null;
+
+  function haversineDistanceMeters(lat1, lng1, lat2, lng2){
+    const R = 6371000; // Earth radius in meters
+    const toRad = deg => deg * Math.PI / 180;
+    const dLat = toRad(lat2 - lat1);
+    const dLng = toRad(lng2 - lng1);
+    const a = Math.sin(dLat / 2) ** 2 +
+              Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+              Math.sin(dLng / 2) ** 2;
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  }
+
+  // Fail-closed: ordering requires an explicit, confirmed 'in-range' location
+  // for this visit. While the check is pending, or if location is
+  // denied/unavailable/off, or if the customer is confirmed out of range,
+  // ordering is blocked.
+  function isWithinGeofence(){
+    return geoState === 'in-range';
+  }
+
+  function formatDistance(meters){
+    if (meters == null) return '';
+    if (meters < 1000) return `${Math.round(meters)} m`;
+    return `${(meters / 1000).toFixed(1)} km`;
+  }
+
+  function updateGeoOverlay(){
+    const overlay = document.getElementById('geoOverlay');
+    const titleEl = document.getElementById('geoOverlayTitle');
+    const msgEl = document.getElementById('geoOverlayMsg');
+    const distancePill = document.getElementById('geoDistancePill');
+    const closeBtn = document.getElementById('geoOverlayCloseBtn');
+    if (!overlay) return;
+
+    if (geoState === 'in-range'){
+      overlay.classList.remove('show');
+      return;
+    }
+
+    if (geoState === 'out-of-range'){
+      const distText = formatDistance(geoDistanceMeters);
+      titleEl.textContent = lang === 'km' ? 'អ្នកនៅឆ្ងាយពីហាង' : "You're Outside Our Order Area";
+      msgEl.textContent = lang === 'km'
+        ? 'ការកម្ម៉ង់អាចធ្វើបានតែនៅជិតហាងប៉ុណ្ណោះ។'
+        : 'Ordering is only available near Steung Cafe.';
+      distancePill.textContent = lang === 'km'
+        ? `អ្នកនៅចម្ងាយ ${distText} ពីហាង (ត្រូវការក្នុងចម្ងាយ ${GEOFENCE_RADIUS_METERS} ម៉ែត្រ)`
+        : `You're ${distText} away (must be within ${GEOFENCE_RADIUS_METERS}m)`;
+      if (closeBtn){
+        closeBtn.style.display = '';
+        closeBtn.textContent = lang === 'km' ? 'យល់ព្រម' : 'OK';
+      }
+    } else if (geoState === 'unavailable'){
+      titleEl.textContent = lang === 'km' ? 'ត្រូវការទីតាំង' : 'Location Required';
+      msgEl.textContent = lang === 'km'
+        ? 'សូមបើកសេវាទីតាំង (GPS) ហើយអនុញ្ញាតឱ្យគេហទំព័រនេះប្រើប្រាស់ទីតាំងរបស់អ្នក ដើម្បីកម្ម៉ង់។'
+        : 'Please turn on location services and allow this site to access your location to place an order.';
+      distancePill.textContent = '';
+      if (closeBtn){
+        closeBtn.style.display = '';
+        closeBtn.textContent = lang === 'km' ? 'យល់ព្រម' : 'OK';
+      }
+    } else {
+      // pending
+      titleEl.textContent = lang === 'km' ? 'កំពុងពិនិត្យទីតាំង...' : 'Checking Your Location...';
+      msgEl.textContent = lang === 'km'
+        ? 'សូមរង់ចាំមួយភ្លែត ខណៈយើងកំពុងផ្ទៀងផ្ទាត់ថាអ្នកនៅជិតហាង។'
+        : 'Please wait while we confirm you\'re near the café.';
+      distancePill.textContent = '';
+      if (closeBtn) closeBtn.style.display = 'none';
+    }
+  }
+
+  // Shows the overlay (content must already be current via updateGeoOverlay).
+  // Only ever called when the customer actively tries to order while out of
+  // range/denied/unavailable — never automatically in the background.
+  function showGeoOverlay(){
+    if (geoState === 'in-range') return;
+    document.getElementById('geoOverlay').classList.add('show');
+  }
+
+  function startWatchingLocation(){
+    navigator.geolocation.watchPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        geoDistanceMeters = haversineDistanceMeters(latitude, longitude, CAFE_LOCATION.lat, CAFE_LOCATION.lng);
+        // The grid itself (sort order, Closed tags) no longer depends on
+        // geoState — only the on-tap "Add" gate and the geoOverlay dialog do —
+        // so refining GPS fixes here never reorders or re-tags the menu.
+        geoState = geoDistanceMeters <= GEOFENCE_RADIUS_METERS ? 'in-range' : 'out-of-range';
+        updateGeoOverlay();
+      },
+      () => {
+        // Denied, timed out, or otherwise unavailable — fail closed. No location, no ordering.
+        geoState = 'unavailable';
+        updateGeoOverlay();
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 }
+    );
+  }
+
+  function checkGeofence(){
+    if (!('geolocation' in navigator)){
+      geoState = 'unavailable';
+      return;
+    }
+
+    // No custom "asking for location" popup here — just quietly start
+    // watching position in the background. The browser's own native
+    // permission prompt will appear automatically only if it actually needs
+    // to ask (first time, or if permission isn't granted yet); if it's
+    // already granted from before, this just works silently. Ordering stays
+    // blocked (with a reason shown only if they try to order) whenever
+    // they're out of range, denied, or location is off.
+    startWatchingLocation();
+  }
+
+  /* ================= DATA ================= */
+  const CATEGORIES = [
+    { id:'all',     km:'ទាំងអស់',        en:'All',          icon:'ic-flame' },
+    { id:'grilled', km:'អាំង',            en:'Grilled',      icon:'ic-flame' },
     { id:'soft',    km:'ភេសជ្ជៈ',      en:'Soft Drinks',  icon:'ic-droplet' },
     { id:'beer',    km:'ស្រាបៀរ',         en:'Beer',         icon:'ic-bottle' },
     { id:'alcohol', km:'ស្រា',       en:'Alcohol',      icon:'ic-glass' },
@@ -1292,19 +1422,6 @@
     { id:'iced',    km:'ភេសជ្ជៈត្រជាក់',      en:'Iced Drink',   icon:'ic-droplet' },
     { id:'cream',   km:'ភេសជ្ជៈគ្រីម',      en:'Cream',        icon:'ic-glass' },
   ];
-
-  // Icon to show for each known category id. Any category the admin adds
-  // that isn't in this map (a brand-new category id) falls back to a
-  // generic bowl icon rather than breaking the sidebar/tabs render.
-  const CATEGORY_ICONS = {
-    grilled:'ic-flame', soft:'ic-droplet', beer:'ic-bottle', alcohol:'ic-glass',
-    hot:'ic-glass', frappe:'ic-can', iced:'ic-droplet', cream:'ic-glass'
-  };
-  function iconForCategoryId(id){
-    return CATEGORY_ICONS[id] || 'ic-bowl';
-  }
-
-  let CATEGORIES = [ALL_CATEGORY, ...DEFAULT_CATEGORIES];
 
   /* Built-in fallback menu, used until (and unless) the admin-managed
      items load successfully from the Items sheet tab via get-items.js.
@@ -1465,28 +1582,19 @@
     } else if (foodsCats.includes(item.cat)){
       return grillOpen;
     }
-    // Any category not in the specific hour groups above — most likely a
-    // new category added from the admin dashboard that hasn't been given
-    // its own hours — defaults to "open whenever the shop is open at all"
-    // rather than permanently unorderable, so new categories work out of
-    // the box instead of silently showing as CLOSED forever.
-    return cafeOpen || grillOpen;
+    return false; // Unknown category
   }
   
   function getItemAvailabilityText(item){
     const cafeOnlyCats = ['hot', 'frappe', 'iced', 'cream'];
     const alwaysOpenDrinkCats = ['soft'];
-    const foodsCats = ['grilled', 'beer', 'alcohol'];
     if (alwaysOpenDrinkCats.includes(item.cat)){
       return lang === 'km' ? '7ព្រឹក-1យប់' : '7 AM - 1 AM';
     }
     if (cafeOnlyCats.includes(item.cat)){
       return lang === 'km' ? '7ព្រឹក-5ល្ងាច' : '7 AM - 5 PM';
     }
-    if (foodsCats.includes(item.cat)){
-      return lang === 'km' ? '5ល្ងាច-1យប់' : '5 PM - 1 AM';
-    }
-    return lang === 'km' ? '7ព្រឹក-1យប់' : '7 AM - 1 AM';
+    return lang === 'km' ? '5ល្ងាច-1យប់' : '5 PM - 1 AM';
   }
 
   // Quick-tap special-request presets, shown per category group.
@@ -1513,6 +1621,11 @@
   }
 
   function addToCart(item){
+    if (!isWithinGeofence()){
+      updateGeoOverlay();
+      showGeoOverlay();
+      return;
+    }
     if (!canOrderItem(item)){
       alert(lang === 'km' ? `ទស្សនៈបានបិទ។ ម្ហូបនេះលក់បានពេល ${getItemAvailabilityText(item)}` : `Store is closed. This item is available ${getItemAvailabilityText(item)}`);
       return;
@@ -1653,12 +1766,24 @@
   function openOrderConfirm(){
     if (cart.length === 0) return;
 
+    if (!isWithinGeofence()){
+      updateGeoOverlay();
+      showGeoOverlay();
+      return;
+    }
+
     renderOrderConfirm();
     document.getElementById('orderConfirmOverlay').classList.add('show');
   }
 
   async function sendOrderToTelegram(){
     if (cart.length === 0) return;
+
+    if (!isWithinGeofence()){
+      updateGeoOverlay();
+      showGeoOverlay();
+      return;
+    }
 
     const trimmedName = (customerName || '').trim();
     const nameInput = document.getElementById('customerNameInput');
@@ -1885,10 +2010,7 @@
       const key = `${item.cat}-${item.num}`;
       seenKeys.add(key);
       const catMeta = CATEGORIES.find(c => c.id === item.cat);
-      // catMeta can be missing if a category was deleted/renamed on the
-      // server after this item was created — fall back to the raw id
-      // instead of throwing and breaking the whole grid render.
-      const catLabel = catMeta ? (lang === 'km' ? catMeta.km : catMeta.en) : item.cat;
+      const catLabel = lang === 'km' ? catMeta.km : catMeta.en;
       const name = lang === 'km' ? item.km : item.en;
       // Card display (sort position, Closed tag, hours tooltip) is based purely
       // on store hours — never on geolocation. Geofencing only gates the actual
@@ -1988,6 +2110,7 @@
     renderNavAndTabs();
     renderOrderPanel();
     renderGrid();
+    updateGeoOverlay();
     if (document.getElementById('orderConfirmOverlay').classList.contains('show')){
       renderOrderConfirm();
     }
@@ -2029,6 +2152,14 @@
   }
   closedOverlay.addEventListener('click', (e) => {
     if (e.target === closedOverlay) hideClosedPopup();
+  });
+
+  const geoOverlay = document.getElementById('geoOverlay');
+  geoOverlay.addEventListener('click', (e) => {
+    if (e.target === geoOverlay) geoOverlay.classList.remove('show');
+  });
+  document.getElementById('geoOverlayCloseBtn').addEventListener('click', () => {
+    geoOverlay.classList.remove('show');
   });
 
   const orderStatusOverlay = document.getElementById('orderStatusOverlay');
@@ -2088,6 +2219,7 @@
   setInterval(tick, 1000 * 15);
   loadStoreStatus();
   setInterval(loadStoreStatus, 1000 * 30);
+  checkGeofence();
 
   /* ================= MOBILE SLIDABLE SIDEBAR ================= */
   const sidebarEl = document.querySelector('.sidebar');
@@ -2167,34 +2299,6 @@
   renderNavAndTabs();
   renderOrderPanel();
   renderGrid();
-
-  // Pull admin-managed categories from the Categories sheet tab (via the
-  // admin dashboard's Categories panel). If the fetch fails, is empty, or
-  // the tab hasn't been populated yet, the built-in DEFAULT_CATEGORIES
-  // list above stays as-is — the menu never breaks because of this. This
-  // is what makes categories added/removed/renamed in admin.html actually
-  // show up here.
-  (function loadCategoriesFromAdmin(){
-    fetch('/.netlify/functions/get-categories')
-      .then(res => res.ok ? res.json() : Promise.reject(new Error('bad status ' + res.status)))
-      .then(data => {
-        if (data && data.ok && Array.isArray(data.categories) && data.categories.length){
-          const serverCats = data.categories.map(c => ({
-            id: c.id, km: c.km, en: c.en, icon: iconForCategoryId(c.id)
-          }));
-          CATEGORIES = [ALL_CATEGORY, ...serverCats];
-          // If the category the customer currently has selected got
-          // removed/renamed away, fall back to "All" rather than showing
-          // an empty grid for a category that no longer exists.
-          if (!CATEGORIES.some(c => c.id === activeCat)) activeCat = 'all';
-          renderNavAndTabs();
-          renderGrid();
-        }
-      })
-      .catch(err => {
-        console.warn('Using built-in categories — could not load admin categories:', err.message);
-      });
-  })();
 
   // Pull admin-managed items from the Items sheet tab (via the admin
   // dashboard). If the fetch fails, is empty, or the tab hasn't been
