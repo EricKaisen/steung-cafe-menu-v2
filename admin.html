@@ -319,42 +319,6 @@
   }
   .sidebar-backdrop.show{ display:block; }
 
-  /* ================= POS ORDER PANEL ================= */
-  .pos-layout{ display:flex; gap:16px; align-items:flex-start; }
-  .pos-items{ flex:1; min-width:0; }
-  .pos-cart{
-    width:290px; flex-shrink:0; background:var(--char-3); border:1px solid var(--line);
-    border-radius:14px; padding:14px; position:sticky; top:20px; display:flex; flex-direction:column; gap:10px;
-  }
-  .pos-cart h3{ margin:0; font-size:14px; }
-  .pos-cart-list{ display:flex; flex-direction:column; gap:8px; max-height:280px; overflow-y:auto; }
-  .pos-cart-row{ display:flex; align-items:center; gap:8px; font-size:12.5px; }
-  .pos-cart-row .nm{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .pos-cart-row .qtybox{ display:flex; align-items:center; gap:4px; }
-  .pos-cart-row .qtybox button{
-    width:22px; height:22px; border-radius:6px; background:var(--char-4); border:1px solid var(--line); color:var(--rice); font-size:13px; line-height:1;
-  }
-  .pos-item-btn{
-    background:var(--char-3); border:1px solid var(--line); border-radius:14px;
-    overflow:hidden; text-align:left; display:flex; flex-direction:column; width:100%;
-  }
-  .pos-item-btn .thumb{ aspect-ratio:1/1; background:var(--char-4); display:flex; align-items:center; justify-content:center; overflow:hidden; }
-  .pos-item-btn .thumb img{ width:100%; height:100%; object-fit:cover; }
-  .pos-item-btn .thumb svg{ width:34%; height:34%; opacity:.35; }
-  .pos-item-btn .info{ padding:8px 10px 10px; }
-  .pos-item-btn .info .n{ font-size:12.5px; font-weight:700; line-height:1.25; }
-  .pos-item-btn .info .p{ color:var(--amber); font-size:12px; font-weight:700; margin-top:2px; }
-  .pos-item-btn:active{ transform:scale(.97); }
-  .pos-total-row{ display:flex; justify-content:space-between; font-weight:800; font-size:15px; border-top:1px solid var(--line); padding-top:10px; }
-  .pos-cart-empty{ color:var(--smoke); font-size:12.5px; text-align:center; padding:14px 0; }
-  .chip-row{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px; }
-  .chip{
-    background:var(--char-3); border:1px solid var(--line); color:var(--smoke);
-    padding:6px 12px; border-radius:999px; font-size:12px; font-weight:700;
-  }
-  .chip.active{ background:var(--ember); color:#fff; border-color:var(--ember); }
-
-  .app.staff-mode [data-admin-only]{ display:none !important; }
   @media(max-width:820px){
     .menu-toggle{ display:inline-flex; }
     .sidebar{
@@ -362,8 +326,6 @@
       transform:translateX(-100%); transition:transform .2s ease;
     }
     .sidebar.open{ transform:translateX(0); }
-    .pos-layout{ flex-direction:column; }
-    .pos-cart{ width:100%; position:static; }
   }
   @media(max-width:600px){
     .topbar{ padding:14px 16px; }
@@ -382,15 +344,6 @@
     </div>
     <h1 data-i18n="loginTitle">Steung Cafe Admin</h1>
     <p class="sub" id="loginSubText" data-i18n="loginSub">Enter the admin password to continue</p>
-    <div class="lang-toggle" id="loginModeToggle" style="margin:0 auto 16px; width:fit-content;">
-      <button data-mode="admin" class="active" data-i18n="adminModeBtn">Admin</button>
-      <button data-mode="staff" data-i18n="staffModeBtn">Staff</button>
-    </div>
-    <div class="lang-toggle" id="staffMethodToggle" style="margin:0 auto 14px; width:fit-content; display:none;">
-      <button data-method="pin" class="active" data-i18n="staffMethodPin">PIN</button>
-      <button data-method="userpass" data-i18n="staffMethodUserPass">Username</button>
-    </div>
-    <input type="text" id="staffUsernameInput" data-i18n-placeholder="staffUsernamePh" placeholder="Username" style="display:none;" autocomplete="off">
     <input type="password" id="passwordInput" data-i18n-placeholder="passwordPh" placeholder="Password" autofocus>
     <div class="err" id="loginErr"></div>
     <button class="btn" id="loginBtn" data-i18n="loginBtn">Log in</button>
@@ -410,10 +363,6 @@
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
           <span data-i18n="tabDashboard">Dashboard</span>
         </button>
-        <button class="tab" data-panel="posPanel">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
-          <span data-i18n="tabPos">New Order</span>
-        </button>
         <button class="tab" data-panel="itemsPanel" data-admin-only>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
           <span data-i18n="tabItems">Menu Items</span>
@@ -429,10 +378,6 @@
         <button class="tab" data-panel="tablesPanel" data-admin-only>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="9" y1="10" x2="9" y2="20"/></svg>
           <span data-i18n="tabTables">Tables</span>
-        </button>
-        <button class="tab" data-panel="staffPanel" data-admin-only>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M20 8v6"/><path d="M23 11h-6"/></svg>
-          <span data-i18n="tabStaff">Staff</span>
         </button>
       </div>
     </div>
@@ -482,25 +427,6 @@
       <div id="dashTopItemsArea"><div class="loading" data-i18n="loadingText">Loading…</div></div>
     </div>
 
-    <!-- ============ NEW ORDER (POS) PANEL ============ -->
-    <div class="panel" id="posPanel">
-      <div class="chip-row" id="posCatChips"></div>
-      <div class="pos-layout">
-        <div class="pos-items">
-          <div id="posItemsArea"><div class="loading" data-i18n="loadingItems">Loading items…</div></div>
-        </div>
-        <div class="pos-cart">
-          <h3 data-i18n="cartTitle">Current Order</h3>
-          <div class="field"><input type="text" id="posCustomerName" data-i18n-placeholder="customerNamePh" placeholder="Customer name (optional)"></div>
-          <div class="field"><input type="text" id="posContact" data-i18n-placeholder="contactPh" placeholder="Contact (optional)"></div>
-          <div class="pos-cart-list" id="posCartList"><div class="pos-cart-empty" data-i18n="cartEmpty">No items yet — tap a menu item to add it.</div></div>
-          <div class="pos-total-row"><span data-i18n="totalCol">Total</span><span id="posCartTotal">0៛</span></div>
-          <div class="modal-msg" id="posMsg"></div>
-          <button class="btn" id="posSubmitBtn" data-i18n="placeOrderBtn">Place order</button>
-        </div>
-      </div>
-    </div>
-
     <!-- ============ ITEMS PANEL ============ -->
     <div class="panel" id="itemsPanel">
       <div class="toolbar">
@@ -543,32 +469,6 @@
         <button class="btn small" id="addTableBtn" data-i18n="addTableBtn">+ Add table</button>
       </div>
       <div id="tablesArea"></div>
-    </div>
-
-    <!-- ============ STAFF PANEL ============ -->
-    <div class="panel" id="staffPanel">
-      <div class="table-card" style="max-width:420px; margin-bottom:16px;">
-        <div class="tname" data-i18n="staffPinTitle">Staff order-only PIN</div>
-        <div class="tnote" data-i18n="staffPinDesc" style="margin-bottom:10px;">Set a PIN for staff. They enter it on this device's login screen to open an order-only view — no menu editing, reports, or settings.</div>
-        <div class="field"><label data-i18n="staffPinLabel">PIN</label><input type="text" id="staffPinInput" inputmode="numeric" placeholder="1234"></div>
-        <div class="row" style="margin-top:6px;">
-          <button class="btn" id="saveStaffPinBtn" data-i18n="saveBtn">Save</button>
-          <button class="btn ghost" id="clearStaffPinBtn" data-i18n="clearBtn">Clear</button>
-        </div>
-        <div class="modal-msg" id="staffPinMsg" style="margin-top:8px;"></div>
-      </div>
-
-      <div class="table-card" style="max-width:420px;">
-        <div class="tname" data-i18n="staffUserPassTitle">Staff username &amp; password login</div>
-        <div class="tnote" data-i18n="staffUserPassDesc" style="margin-bottom:10px;">Set a username and password as an alternative to the PIN. Staff can use either one on this device's login screen.</div>
-        <div class="field"><label data-i18n="staffUsernameLabel">Username</label><input type="text" id="staffUsernameSettingInput" autocomplete="off"></div>
-        <div class="field"><label data-i18n="staffPasswordLabel">Password</label><input type="text" id="staffPasswordSettingInput" autocomplete="off"></div>
-        <div class="row" style="margin-top:6px;">
-          <button class="btn" id="saveStaffUserPassBtn" data-i18n="saveBtn">Save</button>
-          <button class="btn ghost" id="clearStaffUserPassBtn" data-i18n="clearBtn">Clear</button>
-        </div>
-        <div class="modal-msg" id="staffUserPassMsg" style="margin-top:8px;"></div>
-      </div>
     </div>
 
   </div>
@@ -731,8 +631,7 @@
     saveLocalCategories();
     populateCategorySelects();
     renderCategories();
-    if (posCat !== 'all' && !activeCategoryIds().includes(posCat)) posCat = 'all';
-    if (items.length) { renderItems(); renderPosPanel(); }
+    if (items.length) { renderItems(); }
   }
 
   /* ---------------- i18n ---------------- */
@@ -767,33 +666,15 @@
       confirmDeleteItem:'Delete', cantUndo:"? This can't be undone.", failedDelete:'Failed to delete:',
       couldNotUpdateStatus:'Could not update menu status:', noTablesYet:'No tables yet — click "+ Add table" to create one.',
       qtyCol:'Qty', receiptTo:'Steung Cafe', receiptThanks:'Thank you!',
-      tabPos:'New Order', tabStaff:'Staff', cartTitle:'Current Order',
-      customerNamePh:'Customer name (optional)', contactPh:'Contact (optional)',
-      cartEmpty:'No items yet — tap a menu item to add it.', placeOrderBtn:'Place order',
-      placingOrderBtn:'Placing…', orderPlaced:'Order placed ✓', orderFailed:'Could not place order:',
-      adminModeBtn:'Admin', staffModeBtn:'Staff', staffLoginSub:'Enter the staff order PIN',
-      staffPinPh:'Staff PIN', staffPinNotSet:'No staff PIN has been set on this device yet.',
-      staffPinWrong:'Incorrect PIN.', staffLoginNeedsAdmin:'An admin needs to log in on this device once before staff PIN login works here.',
-      loggingInBtn:'Logging in…', staffPinTitle:'Staff order-only PIN',
-      staffPinDesc:'Set a PIN for staff. They enter it on this device\u2019s login screen to open an order-only view — no menu editing, reports, or settings.',
-      staffPinLabel:'PIN', clearBtn:'Clear', staffPinRequired:'Enter a PIN first.',
-      staffPinSaved:'Staff PIN saved on this device ✓', staffPinCleared:'Staff PIN cleared.',
+      loggingInBtn:'Logging in…',
       tabDashboard:'Dashboard', dashToday:'Today', dashOverview:'Overview',
       dashMenuItems:'Menu items', dashActiveCats:'Categories (on/total)', dashTables:'Tables',
       dashMenuStatus:'Menu status', tabCategories:'Categories', addCatBtn:'+ Add category',
-      addCatTitle:'Add category', editCatTitle:'Edit category', catActiveCheck:'Active (customers/staff can order it)',
+      addCatTitle:'Add category', editCatTitle:'Edit category', catActiveCheck:'Active (customers can order it)',
       catOnLabel:'Orderable', catOffLabel:'Off — hidden from ordering', turnOnBtn:'Turn on', turnOffBtn:'Turn off',
       noCatsYet:'No categories yet — click "+ Add category" to create one.', catOffTag:'category off',
       catInUse:'This category is used by menu items — reassign or delete those items first.',
-      confirmDeleteCat:'Delete category', categoriesOffline:'Saved on this device. Ask your developer to add a categories endpoint on the server so this also syncs to the live menu.',
-      staffMethodPin:'PIN', staffMethodUserPass:'Username', staffUsernamePh:'Username',
-      staffUserPassTitle:'Staff username & password login',
-      staffUserPassDesc:'Set a username and password as an alternative to the PIN. Staff can use either one on this device\u2019s login screen.',
-      staffUsernameLabel:'Username', staffPasswordLabel:'Password',
-      staffUserPassRequired:'Enter both a username and a password.',
-      staffUserPassSaved:'Staff username & password saved on this device ✓', staffUserPassCleared:'Staff username & password cleared.',
-      staffUserPassNotSet:'No staff username/password has been set on this device yet.',
-      staffUserPassWrong:'Incorrect username or password.', enterUsername:'Enter a username.'
+      confirmDeleteCat:'Delete category', categoriesOffline:'Saved on this device. Ask your developer to add a categories endpoint on the server so this also syncs to the live menu.'
     },
     km: {
       loginTitle:'ស្ទឹងកាហ្វេ អ្នកគ្រប់គ្រង', loginSub:'បញ្ចូលពាក្យសម្ងាត់អ្នកគ្រប់គ្រងដើម្បីបន្ត',
@@ -824,33 +705,15 @@
       confirmDeleteItem:'លុប', cantUndo:'? សកម្មភាពនេះមិនអាចមកវិញបានទេ។', failedDelete:'បរាជ័យក្នុងការលុប៖',
       couldNotUpdateStatus:'មិនអាចធ្វើបច្ចុប្បន្នភាពស្ថានភាពម៉ឺនុយបានទេ៖', noTablesYet:'មិនទាន់មានតុទេ — ចុច "+ បន្ថែមតុ" ដើម្បីបង្កើតមួយ។',
       qtyCol:'ចំនួន', receiptTo:'ស្ទឹងកាហ្វេ', receiptThanks:'អរគុណ!',
-      tabPos:'ការបញ្ជាទិញថ្មី', tabStaff:'បុគ្គលិក', cartTitle:'ការបញ្ជាទិញបច្ចុប្បន្ន',
-      customerNamePh:'ឈ្មោះអតិថិជន (មិនចាំបាច់)', contactPh:'ទំនាក់ទំនង (មិនចាំបាច់)',
-      cartEmpty:'មិនទាន់មានទេ — ចុចលើមុខម្ហូបដើម្បីបន្ថែម។', placeOrderBtn:'បញ្ជូនការបញ្ជាទិញ',
-      placingOrderBtn:'កំពុងបញ្ជូន…', orderPlaced:'បានបញ្ជូនការបញ្ជាទិញ ✓', orderFailed:'មិនអាចបញ្ជូនការបញ្ជាទិញបានទេ៖',
-      adminModeBtn:'អ្នកគ្រប់គ្រង', staffModeBtn:'បុគ្គលិក', staffLoginSub:'បញ្ចូលលេខកូដសម្ងាត់បុគ្គលិក',
-      staffPinPh:'លេខកូដបុគ្គលិក', staffPinNotSet:'មិនទាន់មានលេខកូដបុគ្គលិកទេនៅលើឧបករណ៍នេះ។',
-      staffPinWrong:'លេខកូដមិនត្រឹមត្រូវ។', staffLoginNeedsAdmin:'អ្នកគ្រប់គ្រងត្រូវតែចូលនៅលើឧបករណ៍នេះម្តងសិន មុននឹងបុគ្គលិកអាចប្រើលេខកូដបាន។',
-      loggingInBtn:'កំពុងចូល…', staffPinTitle:'លេខកូដសម្ងាត់សម្រាប់បញ្ជាទិញតែប៉ុណ្ណោះ',
-      staffPinDesc:'កំណត់លេខកូដសម្រាប់បុគ្គលិក។ ពួកគេបញ្ចូលវានៅអេក្រង់ចូលរបស់ឧបករណ៍នេះ ដើម្បីបើកទិដ្ឋភាពបញ្ជាទិញតែប៉ុណ្ណោះ — មិនអាចកែសម្រួលម៉ឺនុយ របាយការណ៍ ឬការកំណត់ទេ។',
-      staffPinLabel:'លេខកូដ', clearBtn:'សម្អាត', staffPinRequired:'សូមបញ្ចូលលេខកូដសិន។',
-      staffPinSaved:'បានរក្សាទុកលេខកូដបុគ្គលិកលើឧបករណ៍នេះ ✓', staffPinCleared:'បានលុបលេខកូដបុគ្គលិក។',
+      loggingInBtn:'កំពុងចូល…',
       tabDashboard:'ផ្ទាំងគ្រប់គ្រង', dashToday:'ថ្ងៃនេះ', dashOverview:'ទិដ្ឋភាពទូទៅ',
       dashMenuItems:'មុខម្ហូបសរុប', dashActiveCats:'ប្រភេទ (បើក/សរុប)', dashTables:'តុ',
       dashMenuStatus:'ស្ថានភាពម៉ឺនុយ', tabCategories:'ប្រភេទ', addCatBtn:'+ បន្ថែមប្រភេទ',
-      addCatTitle:'បន្ថែមប្រភេទ', editCatTitle:'កែសម្រួលប្រភេទ', catActiveCheck:'សកម្ម (អតិថិជន/បុគ្គលិកអាចបញ្ជាទិញបាន)',
+      addCatTitle:'បន្ថែមប្រភេទ', editCatTitle:'កែសម្រួលប្រភេទ', catActiveCheck:'សកម្ម (អតិថិជនអាចបញ្ជាទិញបាន)',
       catOnLabel:'អាចបញ្ជាទិញបាន', catOffLabel:'បិទ — មិនបង្ហាញសម្រាប់បញ្ជាទិញ', turnOnBtn:'បើក', turnOffBtn:'បិទ',
       noCatsYet:'មិនទាន់មានប្រភេទទេ — ចុច "+ បន្ថែមប្រភេទ" ដើម្បីបង្កើតមួយ។', catOffTag:'ប្រភេទបានបិទ',
       catInUse:'ប្រភេទនេះកំពុងប្រើដោយមុខម្ហូប — សូមផ្លាស់ប្តូរប្រភេទរបស់មុខម្ហូបទាំងនោះជាមុនសិន។',
-      confirmDeleteCat:'លុបប្រភេទ', categoriesOffline:'បានរក្សាទុកនៅលើឧបករណ៍នេះ។ សូមស្នើអ្នកអភិវឌ្ឍន៍បន្ថែម endpoint ប្រភេទនៅលើ server ដើម្បីធ្វើសមកាលកម្មទៅម៉ឺនុយផ្ទាល់ផងដែរ។',
-      staffMethodPin:'លេខកូដ', staffMethodUserPass:'ឈ្មោះអ្នកប្រើ', staffUsernamePh:'ឈ្មោះអ្នកប្រើ',
-      staffUserPassTitle:'ការចូលដោយឈ្មោះអ្នកប្រើ និងពាក្យសម្ងាត់សម្រាប់បុគ្គលិក',
-      staffUserPassDesc:'កំណត់ឈ្មោះអ្នកប្រើ និងពាក្យសម្ងាត់ជាជម្រើសផ្សេងក្រៅពីលេខកូដ។ បុគ្គលិកអាចប្រើមួយណាក៏បាននៅលើអេក្រង់ចូលរបស់ឧបករណ៍នេះ។',
-      staffUsernameLabel:'ឈ្មោះអ្នកប្រើ', staffPasswordLabel:'ពាក្យសម្ងាត់',
-      staffUserPassRequired:'សូមបញ្ចូលទាំងឈ្មោះអ្នកប្រើ និងពាក្យសម្ងាត់។',
-      staffUserPassSaved:'បានរក្សាទុកឈ្មោះអ្នកប្រើ និងពាក្យសម្ងាត់បុគ្គលិកលើឧបករណ៍នេះ ✓', staffUserPassCleared:'បានលុបឈ្មោះអ្នកប្រើ និងពាក្យសម្ងាត់បុគ្គលិក។',
-      staffUserPassNotSet:'មិនទាន់មានឈ្មោះអ្នកប្រើ/ពាក្យសម្ងាត់បុគ្គលិកនៅលើឧបករណ៍នេះទេ។',
-      staffUserPassWrong:'ឈ្មោះអ្នកប្រើ ឬពាក្យសម្ងាត់មិនត្រឹមត្រូវ។', enterUsername:'សូមបញ្ចូលឈ្មោះអ្នកប្រើ។'
+      confirmDeleteCat:'លុបប្រភេទ', categoriesOffline:'បានរក្សាទុកនៅលើឧបករណ៍នេះ។ សូមស្នើអ្នកអភិវឌ្ឍន៍បន្ថែម endpoint ប្រភេទនៅលើ server ដើម្បីធ្វើសមកាលកម្មទៅម៉ឺនុយផ្ទាល់ផងដែរ។'
     }
   };
 
@@ -869,9 +732,7 @@
     if (typeof renderItems === 'function' && items) renderItems();
     if (typeof renderCategories === 'function' && categories.length) renderCategories();
     if (typeof renderTables === 'function' && tables) renderTables();
-    if (typeof renderPosPanel === 'function' && items) renderPosPanel();
     renderStoreStatus(storeClosed);
-    if (typeof updateStaffMethodUI === 'function') updateStaffMethodUI(false);
   }
 
   function setLang(l){
@@ -927,129 +788,35 @@
     return data;
   }
 
-  let staffMode = false;
-  let loginMode = 'admin';
-
   function showApp(){
     document.getElementById('loginWrap').style.display = 'none';
     const appEl = document.getElementById('app');
     appEl.classList.add('show');
-    appEl.classList.toggle('staff-mode', staffMode);
     applyLang();
-    if (staffMode){
-      document.querySelectorAll('.tab').forEach(tb => tb.classList.remove('active'));
-      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-      document.querySelector('.tab[data-panel="posPanel"]').classList.add('active');
-      document.getElementById('posPanel').classList.add('active');
-    }
     loadItems();
-    loadCategories(); // needed for staff mode too (POS filters by category)
-    if (!staffMode){
-      loadStoreStatus();
-      loadTables();
-      loadDashboard();
-    }
+    loadCategories();
+    loadStoreStatus();
+    loadTables();
+    loadDashboard();
   }
 
   function logout(){
     token = '';
-    staffMode = false;
     sessionStorage.removeItem('scm_admin_token');
-    sessionStorage.removeItem('scm_staff_mode');
     document.getElementById('app').classList.remove('show');
-    document.getElementById('app').classList.remove('staff-mode');
     document.getElementById('sidebar').classList.remove('open');
     document.getElementById('sidebarBackdrop').classList.remove('show');
     document.getElementById('loginWrap').style.display = 'flex';
   }
 
-  let staffLoginMethod = 'pin';
-
-  function updateStaffMethodUI(resetFields){
-    if (resetFields === undefined) resetFields = true;
-    const isStaff = loginMode === 'staff';
-    document.getElementById('staffMethodToggle').style.display = isStaff ? 'flex' : 'none';
-    const isUserPass = isStaff && staffLoginMethod === 'userpass';
-    document.getElementById('staffUsernameInput').style.display = isUserPass ? 'block' : 'none';
-    document.getElementById('passwordInput').placeholder = !isStaff
-      ? t('passwordPh')
-      : (isUserPass ? t('staffPasswordLabel') : t('staffPinPh'));
-    if (resetFields){
-      document.getElementById('staffUsernameInput').value = '';
-      document.getElementById('passwordInput').value = '';
-      document.getElementById('loginErr').textContent = '';
-    }
-  }
-
-  document.querySelectorAll('#loginModeToggle button').forEach(btn => {
-    btn.addEventListener('click', () => {
-      loginMode = btn.dataset.mode;
-      document.querySelectorAll('#loginModeToggle button').forEach(b => b.classList.toggle('active', b === btn));
-      document.getElementById('loginSubText').textContent = loginMode === 'staff' ? t('staffLoginSub') : t('loginSub');
-      updateStaffMethodUI();
-    });
-  });
-
-  document.querySelectorAll('#staffMethodToggle button').forEach(btn => {
-    btn.addEventListener('click', () => {
-      staffLoginMethod = btn.dataset.method;
-      document.querySelectorAll('#staffMethodToggle button').forEach(b => b.classList.toggle('active', b === btn));
-      updateStaffMethodUI();
-    });
-  });
-
   document.getElementById('loginBtn').addEventListener('click', doLogin);
   document.getElementById('passwordInput').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
-  document.getElementById('staffUsernameInput').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
 
   async function doLogin(){
     const pw = document.getElementById('passwordInput').value;
     const errEl = document.getElementById('loginErr');
     const btn = document.getElementById('loginBtn');
     errEl.textContent = '';
-
-    if (loginMode === 'staff'){
-      const cachedToken = localStorage.getItem('scm_admin_token_cache') || '';
-
-      if (staffLoginMethod === 'userpass'){
-        const username = document.getElementById('staffUsernameInput').value.trim();
-        const storedUser = localStorage.getItem('scm_staff_username') || '';
-        const storedPass = localStorage.getItem('scm_staff_password') || '';
-        if (!storedUser || !storedPass){
-          errEl.textContent = t('staffUserPassNotSet');
-          return;
-        }
-        if (!username){
-          errEl.textContent = t('enterUsername');
-          return;
-        }
-        if (username !== storedUser || pw !== storedPass){
-          errEl.textContent = t('staffUserPassWrong');
-          return;
-        }
-      } else {
-        const storedPin = localStorage.getItem('scm_staff_pin') || '';
-        if (!storedPin){
-          errEl.textContent = t('staffPinNotSet');
-          return;
-        }
-        if (pw !== storedPin){
-          errEl.textContent = t('staffPinWrong');
-          return;
-        }
-      }
-
-      if (!cachedToken){
-        errEl.textContent = t('staffLoginNeedsAdmin');
-        return;
-      }
-      token = cachedToken;
-      staffMode = true;
-      sessionStorage.setItem('scm_admin_token', token);
-      sessionStorage.setItem('scm_staff_mode', '1');
-      showApp();
-      return;
-    }
 
     btn.disabled = true; btn.textContent = t('loggingInBtn');
     try {
@@ -1061,10 +828,7 @@
       const data = await res.json();
       if (!res.ok || !data.ok) throw new Error(data.error || 'Login failed');
       token = data.token;
-      staffMode = false;
       sessionStorage.setItem('scm_admin_token', token);
-      sessionStorage.removeItem('scm_staff_mode');
-      localStorage.setItem('scm_admin_token_cache', token); // lets this device unlock staff PIN mode later
       showApp();
     } catch (err) {
       errEl.textContent = err.message;
@@ -1159,11 +923,8 @@
       const data = await apiFetch('/admin-items');
       items = data.items || [];
       renderItems();
-      renderPosPanel();
     } catch (err) {
       area.innerHTML = `<div class="empty">${t('couldNotLoadItems')} ${escapeHtml(err.message)}</div>`;
-      const posArea = document.getElementById('posItemsArea');
-      if (posArea) posArea.innerHTML = `<div class="empty">${t('couldNotLoadItems')} ${escapeHtml(err.message)}</div>`;
     }
   }
 
@@ -1282,12 +1043,10 @@
     const c = categories.find(x => x.id === id);
     if (!c) return;
     c.active = !(c.active !== false);
-    if (!c.active && posCat === id) posCat = 'all';
     saveLocalCategories();
     renderCategories();
     populateCategorySelects();
     renderItems();
-    renderPosPanel();
     syncCategoryToServer({ id, active: c.active }, 'PUT');
   }
 
@@ -1330,7 +1089,7 @@
     try {
       if (editingCatId){
         const c = categories.find(x => x.id === editingCatId);
-        if (c){ c.km = km; c.en = en; c.active = active; if (!active && posCat === c.id) posCat = 'all'; }
+        if (c){ c.km = km; c.en = en; c.active = active; }
         await syncCategoryToServer({ id: editingCatId, km, en, active }, 'PUT');
       } else {
         const id = slugifyCatId(en || km);
@@ -1351,7 +1110,6 @@
       populateCategorySelects();
       renderCategories();
       renderItems();
-      renderPosPanel();
       closeCatModal();
       if (!categoriesBackendAvailable) {
         msgEl.textContent = '';
@@ -1373,11 +1131,9 @@
     }
     if (!confirm(`${t('confirmDeleteCat')} "${c.km || c.en}"?`)) return;
     categories = categories.filter(x => x.id !== id);
-    if (posCat === id) posCat = 'all';
     saveLocalCategories();
     populateCategorySelects();
     renderCategories();
-    renderPosPanel();
     if (categoriesBackendAvailable){
       try { await apiFetch('/admin-categories?id=' + encodeURIComponent(id), { method: 'DELETE' }); }
       catch (err) { categoriesBackendAvailable = false; }
@@ -1417,218 +1173,6 @@
   }
 
   /* ---------------- items: add/edit modal ---------------- */
-
-  /* ---------------- New Order (POS) ---------------- */
-
-  // Points at your existing order-placement Netlify function so
-  // staff-placed orders land in the same order log as the live menu.
-  // If orders still fail after this update, the most likely cause is
-  // that this path or the payload shape below doesn't match your real
-  // function — check your Netlify function's folder name (the part
-  // after /.netlify/functions/) and adjust ORDER_ENDPOINT, and check
-  // what field names it expects and adjust the `payload` object in
-  // submitPosOrder() below to match.
-  const ORDER_ENDPOINT = '/place-order';
-
-  let posCat = 'all';
-  let cart = []; // { id, name, price, qty }
-
-  function parsePrice(priceStr){
-    const n = parseFloat(String(priceStr || '0').replace(/[^\d.]/g, ''));
-    return isNaN(n) ? 0 : n;
-  }
-
-  function renderPosPanel(){
-    renderPosChips();
-    renderPosItems();
-    renderCart();
-  }
-
-  function renderPosChips(){
-    const wrap = document.getElementById('posCatChips');
-    if (!wrap) return;
-    // Only categories that are turned ON get a chip here — turning a
-    // category off removes it (and its items) from the orderable list
-    // without deleting the category or its items.
-    const activeIds = activeCategoryIds();
-    const present = [...new Set(items.filter(it => it.active !== false).map(it => it.cat))].filter(id => activeIds.includes(id));
-    const cats = ['all', ...present];
-    wrap.innerHTML = cats.map(c => `<button class="chip ${c === posCat ? 'active' : ''}" data-chip="${c}">${c === 'all' ? (lang==='km'?'គ្រប់ប្រភេទ':'All categories') : escapeHtml(catLabel(c))}</button>`).join('');
-    wrap.querySelectorAll('[data-chip]').forEach(btn => {
-      btn.addEventListener('click', () => { posCat = btn.dataset.chip; renderPosPanel(); });
-    });
-  }
-
-  function renderPosItems(){
-    const area = document.getElementById('posItemsArea');
-    if (!area) return;
-    const activeIds = activeCategoryIds();
-    let list = items.filter(it => it.active !== false && activeIds.includes(it.cat));
-    if (posCat !== 'all') list = list.filter(it => it.cat === posCat);
-    if (!list.length){
-      area.innerHTML = `<div class="empty">${t('noItemsMatch')}</div>`;
-      return;
-    }
-    area.innerHTML = `<div class="item-grid">${list.map(posItemBtnHtml).join('')}</div>`;
-    area.querySelectorAll('[data-add]').forEach(btn => {
-      btn.addEventListener('click', () => addToCart(btn.dataset.add));
-    });
-  }
-
-  function posItemBtnHtml(it){
-    const name = it.km || it.en || '(untitled)';
-    const thumb = it.img
-      ? `<img src="${escapeAttr(it.img)}" alt="">`
-      : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/></svg>`;
-    return `
-      <button class="pos-item-btn" data-add="${it.id}">
-        <div class="thumb">${thumb}</div>
-        <div class="info">
-          <div class="n">${escapeHtml(name)}</div>
-          <div class="p">${escapeHtml(it.price || '')}</div>
-        </div>
-      </button>`;
-  }
-
-  function addToCart(id){
-    const it = items.find(i => i.id === id);
-    if (!it) return;
-    if (it.active === false || !activeCategoryIds().includes(it.cat)) return; // category turned off — not orderable
-    const existing = cart.find(c => c.id === id);
-    if (existing) existing.qty += 1;
-    else cart.push({ id: it.id, name: it.km || it.en || '(untitled)', price: parsePrice(it.price), qty: 1 });
-    renderCart();
-  }
-
-  function changeQty(id, delta){
-    const row = cart.find(c => c.id === id);
-    if (!row) return;
-    row.qty += delta;
-    if (row.qty <= 0) cart = cart.filter(c => c.id !== id);
-    renderCart();
-  }
-
-  function fmtRielPos(n){ return Math.round(n || 0).toLocaleString('en-US') + '\u17DB'; }
-
-  function renderCart(){
-    const list = document.getElementById('posCartList');
-    const totalEl = document.getElementById('posCartTotal');
-    if (!list) return;
-    if (!cart.length){
-      list.innerHTML = `<div class="pos-cart-empty">${t('cartEmpty')}</div>`;
-      totalEl.textContent = fmtRielPos(0);
-      return;
-    }
-    list.innerHTML = cart.map(c => `
-      <div class="pos-cart-row">
-        <span class="nm">${escapeHtml(c.name)}</span>
-        <div class="qtybox">
-          <button data-dec="${c.id}">−</button>
-          <span>${c.qty}</span>
-          <button data-inc="${c.id}">+</button>
-        </div>
-        <span>${fmtRielPos(c.price * c.qty)}</span>
-      </div>`).join('');
-    list.querySelectorAll('[data-inc]').forEach(b => b.addEventListener('click', () => changeQty(b.dataset.inc, 1)));
-    list.querySelectorAll('[data-dec]').forEach(b => b.addEventListener('click', () => changeQty(b.dataset.dec, -1)));
-    const total = cart.reduce((s, c) => s + c.price * c.qty, 0);
-    totalEl.textContent = fmtRielPos(total);
-    const submitBtn = document.getElementById('posSubmitBtn');
-    if (submitBtn) submitBtn.disabled = !cart.length;
-  }
-
-  document.getElementById('posSubmitBtn').addEventListener('click', submitPosOrder);
-
-  async function submitPosOrder(){
-    const msgEl = document.getElementById('posMsg');
-    const btn = document.getElementById('posSubmitBtn');
-    msgEl.textContent = ''; msgEl.className = 'modal-msg';
-    if (!cart.length){
-      msgEl.textContent = t('cartEmpty');
-      msgEl.className = 'modal-msg error';
-      return;
-    }
-    const payload = {
-      customerName: document.getElementById('posCustomerName').value.trim(),
-      contact: document.getElementById('posContact').value.trim(),
-      items: cart.map(c => ({ id: c.id, name: c.name, qty: c.qty, price: c.price, total: c.price * c.qty })),
-      total: cart.reduce((s, c) => s + c.price * c.qty, 0),
-      source: 'staff-admin'
-    };
-    btn.disabled = true; btn.textContent = t('placingOrderBtn');
-    try {
-      await apiFetch(ORDER_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-      cart = [];
-      document.getElementById('posCustomerName').value = '';
-      document.getElementById('posContact').value = '';
-      renderCart();
-      msgEl.textContent = t('orderPlaced');
-      msgEl.className = 'modal-msg ok';
-    } catch (err) {
-      msgEl.textContent = t('orderFailed') + ' ' + err.message;
-      msgEl.className = 'modal-msg error';
-    } finally {
-      btn.disabled = false; btn.textContent = t('placeOrderBtn');
-    }
-  }
-
-  /* ---------------- staff PIN settings ---------------- */
-
-  const staffPinInputEl = document.getElementById('staffPinInput');
-  if (staffPinInputEl) staffPinInputEl.value = localStorage.getItem('scm_staff_pin') || '';
-
-  document.getElementById('saveStaffPinBtn').addEventListener('click', () => {
-    const val = document.getElementById('staffPinInput').value.trim();
-    const msgEl = document.getElementById('staffPinMsg');
-    if (!val){
-      msgEl.textContent = t('staffPinRequired');
-      msgEl.className = 'modal-msg error';
-      return;
-    }
-    localStorage.setItem('scm_staff_pin', val);
-    msgEl.textContent = t('staffPinSaved');
-    msgEl.className = 'modal-msg ok';
-  });
-
-  document.getElementById('clearStaffPinBtn').addEventListener('click', () => {
-    localStorage.removeItem('scm_staff_pin');
-    document.getElementById('staffPinInput').value = '';
-    const msgEl = document.getElementById('staffPinMsg');
-    msgEl.textContent = t('staffPinCleared');
-    msgEl.className = 'modal-msg ok';
-  });
-
-  /* ---------------- staff username & password settings ---------------- */
-
-  const staffUsernameSettingEl = document.getElementById('staffUsernameSettingInput');
-  const staffPasswordSettingEl = document.getElementById('staffPasswordSettingInput');
-  if (staffUsernameSettingEl) staffUsernameSettingEl.value = localStorage.getItem('scm_staff_username') || '';
-  if (staffPasswordSettingEl) staffPasswordSettingEl.value = localStorage.getItem('scm_staff_password') || '';
-
-  document.getElementById('saveStaffUserPassBtn').addEventListener('click', () => {
-    const username = staffUsernameSettingEl.value.trim();
-    const password = staffPasswordSettingEl.value.trim();
-    const msgEl = document.getElementById('staffUserPassMsg');
-    if (!username || !password){
-      msgEl.textContent = t('staffUserPassRequired');
-      msgEl.className = 'modal-msg error';
-      return;
-    }
-    localStorage.setItem('scm_staff_username', username);
-    localStorage.setItem('scm_staff_password', password);
-    msgEl.textContent = t('staffUserPassSaved');
-    msgEl.className = 'modal-msg ok';
-  });
-
-  document.getElementById('clearStaffUserPassBtn').addEventListener('click', () => {
-    localStorage.removeItem('scm_staff_username');
-    localStorage.removeItem('scm_staff_password');
-    staffUsernameSettingEl.value = '';
-    staffPasswordSettingEl.value = '';
-    const msgEl = document.getElementById('staffUserPassMsg');
-    msgEl.textContent = t('staffUserPassCleared');
-    msgEl.className = 'modal-msg ok';
-  });
 
   document.getElementById('addItemBtn').addEventListener('click', () => openItemModal(null));
   document.getElementById('cancelItemBtn').addEventListener('click', closeItemModal);
@@ -1981,7 +1525,6 @@
   /* ---------------- init ---------------- */
 
   applyLang();
-  staffMode = sessionStorage.getItem('scm_staff_mode') === '1';
   if (token) showApp();
 })();
 </script>
