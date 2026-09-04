@@ -386,6 +386,11 @@
       <button data-mode="admin" class="active" data-i18n="adminModeBtn">Admin</button>
       <button data-mode="staff" data-i18n="staffModeBtn">Staff</button>
     </div>
+    <div class="lang-toggle" id="staffMethodToggle" style="margin:0 auto 14px; width:fit-content; display:none;">
+      <button data-method="pin" class="active" data-i18n="staffMethodPin">PIN</button>
+      <button data-method="userpass" data-i18n="staffMethodUserPass">Username</button>
+    </div>
+    <input type="text" id="staffUsernameInput" data-i18n-placeholder="staffUsernamePh" placeholder="Username" style="display:none;" autocomplete="off">
     <input type="password" id="passwordInput" data-i18n-placeholder="passwordPh" placeholder="Password" autofocus>
     <div class="err" id="loginErr"></div>
     <button class="btn" id="loginBtn" data-i18n="loginBtn">Log in</button>
@@ -401,13 +406,21 @@
     </div>
     <div class="sidebar-scroll">
       <div class="tabs">
+        <button class="tab active" data-panel="dashboardPanel" data-admin-only>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+          <span data-i18n="tabDashboard">Dashboard</span>
+        </button>
         <button class="tab" data-panel="posPanel">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
           <span data-i18n="tabPos">New Order</span>
         </button>
-        <button class="tab active" data-panel="itemsPanel" data-admin-only>
+        <button class="tab" data-panel="itemsPanel" data-admin-only>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
           <span data-i18n="tabItems">Menu Items</span>
+        </button>
+        <button class="tab" data-panel="categoriesPanel" data-admin-only>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h6v6H4z"/><path d="M14 4h6v6h-6z"/><path d="M4 14h6v6H4z"/><circle cx="17" cy="17" r="3"/></svg>
+          <span data-i18n="tabCategories">Categories</span>
         </button>
         <button class="tab" data-panel="ordersPanel" data-admin-only>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>
@@ -450,8 +463,27 @@
 
   <div class="content">
 
+    <!-- ============ DASHBOARD PANEL ============ -->
+    <div class="panel active" id="dashboardPanel">
+      <div class="section-title" data-i18n="dashToday">Today</div>
+      <div class="stat-row">
+        <div class="stat-card"><div class="label" data-i18n="ordersLabel">Orders</div><div class="value" id="dashOrdersToday">–</div></div>
+        <div class="stat-card"><div class="label" data-i18n="revenueLabel">Revenue</div><div class="value" id="dashRevenueToday">–</div></div>
+        <div class="stat-card"><div class="label" data-i18n="avgOrderLabel">Avg order</div><div class="value" id="dashAvgToday">–</div></div>
+      </div>
+      <div class="section-title" data-i18n="dashOverview">Overview</div>
+      <div class="stat-row">
+        <div class="stat-card"><div class="label" data-i18n="dashMenuItems">Menu items</div><div class="value" id="dashItemCount">–</div></div>
+        <div class="stat-card"><div class="label" data-i18n="dashActiveCats">Categories (on/total)</div><div class="value" id="dashCatCount">–</div></div>
+        <div class="stat-card"><div class="label" data-i18n="dashTables">Tables</div><div class="value" id="dashTableCount">–</div></div>
+        <div class="stat-card"><div class="label" data-i18n="dashMenuStatus">Menu status</div><div class="value" id="dashMenuStatus" style="font-size:15px;">–</div></div>
+      </div>
+      <div class="section-title" data-i18n="topItems">Top items</div>
+      <div id="dashTopItemsArea"><div class="loading" data-i18n="loadingText">Loading…</div></div>
+    </div>
+
     <!-- ============ NEW ORDER (POS) PANEL ============ -->
-    <div class="panel active" id="posPanel">
+    <div class="panel" id="posPanel">
       <div class="chip-row" id="posCatChips"></div>
       <div class="pos-layout">
         <div class="pos-items">
@@ -480,6 +512,15 @@
       <div id="itemsArea"><div class="loading" data-i18n="loadingItems">Loading items…</div></div>
     </div>
 
+    <!-- ============ CATEGORIES PANEL ============ -->
+    <div class="panel" id="categoriesPanel">
+      <div class="toolbar">
+        <div class="spacer"></div>
+        <button class="btn small" id="addCatBtn" data-i18n="addCatBtn">+ Add category</button>
+      </div>
+      <div id="categoriesArea"><div class="loading" data-i18n="loadingText">Loading…</div></div>
+    </div>
+
     <!-- ============ ORDERS PANEL ============ -->
     <div class="panel" id="ordersPanel">
       <div class="toolbar">
@@ -506,7 +547,7 @@
 
     <!-- ============ STAFF PANEL ============ -->
     <div class="panel" id="staffPanel">
-      <div class="table-card" style="max-width:420px;">
+      <div class="table-card" style="max-width:420px; margin-bottom:16px;">
         <div class="tname" data-i18n="staffPinTitle">Staff order-only PIN</div>
         <div class="tnote" data-i18n="staffPinDesc" style="margin-bottom:10px;">Set a PIN for staff. They enter it on this device's login screen to open an order-only view — no menu editing, reports, or settings.</div>
         <div class="field"><label data-i18n="staffPinLabel">PIN</label><input type="text" id="staffPinInput" inputmode="numeric" placeholder="1234"></div>
@@ -515,6 +556,18 @@
           <button class="btn ghost" id="clearStaffPinBtn" data-i18n="clearBtn">Clear</button>
         </div>
         <div class="modal-msg" id="staffPinMsg" style="margin-top:8px;"></div>
+      </div>
+
+      <div class="table-card" style="max-width:420px;">
+        <div class="tname" data-i18n="staffUserPassTitle">Staff username &amp; password login</div>
+        <div class="tnote" data-i18n="staffUserPassDesc" style="margin-bottom:10px;">Set a username and password as an alternative to the PIN. Staff can use either one on this device's login screen.</div>
+        <div class="field"><label data-i18n="staffUsernameLabel">Username</label><input type="text" id="staffUsernameSettingInput" autocomplete="off"></div>
+        <div class="field"><label data-i18n="staffPasswordLabel">Password</label><input type="text" id="staffPasswordSettingInput" autocomplete="off"></div>
+        <div class="row" style="margin-top:6px;">
+          <button class="btn" id="saveStaffUserPassBtn" data-i18n="saveBtn">Save</button>
+          <button class="btn ghost" id="clearStaffUserPassBtn" data-i18n="clearBtn">Clear</button>
+        </div>
+        <div class="modal-msg" id="staffUserPassMsg" style="margin-top:8px;"></div>
       </div>
     </div>
 
@@ -559,6 +612,21 @@
   </div>
 </div>
 
+<!-- ============ CATEGORY MODAL ============ -->
+<div class="modal-backdrop" id="catModalBackdrop">
+  <div class="modal" style="max-width:340px;">
+    <h2 id="catModalTitle" data-i18n="addCatTitle">Add category</h2>
+    <div class="modal-msg" id="catModalMsg"></div>
+    <div class="field"><label data-i18n="khmerName">Khmer name</label><input type="text" id="catFieldKm"></div>
+    <div class="field"><label data-i18n="englishName">English name</label><input type="text" id="catFieldEn"></div>
+    <div class="check-row"><input type="checkbox" id="catFieldActive" checked><label for="catFieldActive" data-i18n="catActiveCheck">Active (customers/staff can order it)</label></div>
+    <div class="modal-actions">
+      <button class="btn ghost" id="cancelCatBtn" data-i18n="cancelBtn">Cancel</button>
+      <button class="btn" id="saveCatBtn" data-i18n="saveBtn">Save</button>
+    </div>
+  </div>
+</div>
+
 <!-- ============ TABLE MODAL ============ -->
 <div class="modal-backdrop" id="tableModalBackdrop">
   <div class="modal" style="max-width:340px;">
@@ -598,12 +666,74 @@
   'use strict';
 
   const FN = '/.netlify/functions';
-  const CAT_LABELS = {
-    en: { grilled:'Grilled', soft:'Soft Drinks', beer:'Beer', alcohol:'Alcohol',
-          hot:'Hot Drink', frappe:'Frappe', iced:'Iced Drink', cream:'Cream', all:'All categories' },
-    km: { grilled:'អាំង', soft:'ភេសជ្ជៈទន់', beer:'ស្រាបៀរ', alcohol:'គ្រឿងស្រវឹង',
-          hot:'ភេសជ្ជៈក្តៅ', frappe:'ហ្វ្រាបភេ', iced:'ភេសជ្ជៈត្រជាក់', cream:'ក្រែម', all:'គ្រប់ប្រភេទ' }
-  };
+
+  /* ---------------- categories ----------------
+     Categories used to be a fixed, hardcoded list. They're now editable
+     data: each one is { id, km, en, active }. "active:false" means the
+     category still shows up everywhere it's picked from (item editor,
+     filters) but its items are hidden from ordering (POS + live menu
+     if the live menu is wired to the same flag — see loadCategories()).
+
+     They're loaded from the server (GET /admin-categories) if that
+     endpoint exists. If your backend doesn't have it yet, this falls
+     back to a copy saved in this browser (localStorage) so the admin
+     still works — add the matching Netlify function later to have
+     categories sync everywhere (including the live customer menu). */
+  const CAT_STORAGE_KEY = 'scm_admin_categories';
+  const DEFAULT_CATEGORIES = [
+    { id:'grilled', km:'អាំង',         en:'Grilled',     active:true },
+    { id:'soft',    km:'ភេសជ្ជៈទន់',   en:'Soft Drinks', active:true },
+    { id:'beer',    km:'ស្រាបៀរ',       en:'Beer',        active:true },
+    { id:'alcohol', km:'គ្រឿងស្រវឹង',   en:'Alcohol',     active:true },
+    { id:'hot',     km:'ភេសជ្ជៈក្តៅ',   en:'Hot Drink',   active:true },
+    { id:'frappe',  km:'ហ្វ្រាបភេ',      en:'Frappe',      active:true },
+    { id:'iced',    km:'ភេសជ្ជៈត្រជាក់', en:'Iced Drink',  active:true },
+    { id:'cream',   km:'ក្រែម',          en:'Cream',       active:true }
+  ];
+  let categories = DEFAULT_CATEGORIES.map(c => Object.assign({}, c)); // seeded now so early renders don't break; refreshed by loadCategories()
+  let categoriesBackendAvailable = true; // flips false the first time /admin-categories isn't found
+  let categoriesLoadedOnce = false;
+
+  function catLabel(id){
+    const c = categories.find(x => x.id === id);
+    if (!c) return id;
+    return (lang === 'km' ? (c.km || c.en) : (c.en || c.km)) || id;
+  }
+  function activeCategoryIds(){
+    return categories.filter(c => c.active !== false).map(c => c.id);
+  }
+  function loadLocalCategories(){
+    try {
+      const raw = JSON.parse(localStorage.getItem(CAT_STORAGE_KEY) || 'null');
+      return Array.isArray(raw) && raw.length ? raw : null;
+    } catch (e) { return null; }
+  }
+  function saveLocalCategories(){
+    localStorage.setItem(CAT_STORAGE_KEY, JSON.stringify(categories));
+  }
+  function slugifyCatId(str){
+    const base = String(str || 'cat').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'cat';
+    let id = base, n = 1;
+    while (categories.some(c => c.id === id)) id = base + '-' + (++n);
+    return id;
+  }
+
+  async function loadCategories(){
+    try {
+      const data = await apiFetch('/admin-categories');
+      categories = (data.categories && data.categories.length) ? data.categories : (loadLocalCategories() || categories);
+      categoriesBackendAvailable = true;
+    } catch (err) {
+      categoriesBackendAvailable = false;
+      categories = loadLocalCategories() || categories;
+    }
+    categoriesLoadedOnce = true;
+    saveLocalCategories();
+    populateCategorySelects();
+    renderCategories();
+    if (posCat !== 'all' && !activeCategoryIds().includes(posCat)) posCat = 'all';
+    if (items.length) { renderItems(); renderPosPanel(); }
+  }
 
   /* ---------------- i18n ---------------- */
 
@@ -647,7 +777,23 @@
       loggingInBtn:'Logging in…', staffPinTitle:'Staff order-only PIN',
       staffPinDesc:'Set a PIN for staff. They enter it on this device\u2019s login screen to open an order-only view — no menu editing, reports, or settings.',
       staffPinLabel:'PIN', clearBtn:'Clear', staffPinRequired:'Enter a PIN first.',
-      staffPinSaved:'Staff PIN saved on this device ✓', staffPinCleared:'Staff PIN cleared.'
+      staffPinSaved:'Staff PIN saved on this device ✓', staffPinCleared:'Staff PIN cleared.',
+      tabDashboard:'Dashboard', dashToday:'Today', dashOverview:'Overview',
+      dashMenuItems:'Menu items', dashActiveCats:'Categories (on/total)', dashTables:'Tables',
+      dashMenuStatus:'Menu status', tabCategories:'Categories', addCatBtn:'+ Add category',
+      addCatTitle:'Add category', editCatTitle:'Edit category', catActiveCheck:'Active (customers/staff can order it)',
+      catOnLabel:'Orderable', catOffLabel:'Off — hidden from ordering', turnOnBtn:'Turn on', turnOffBtn:'Turn off',
+      noCatsYet:'No categories yet — click "+ Add category" to create one.', catOffTag:'category off',
+      catInUse:'This category is used by menu items — reassign or delete those items first.',
+      confirmDeleteCat:'Delete category', categoriesOffline:'Saved on this device. Ask your developer to add a categories endpoint on the server so this also syncs to the live menu.',
+      staffMethodPin:'PIN', staffMethodUserPass:'Username', staffUsernamePh:'Username',
+      staffUserPassTitle:'Staff username & password login',
+      staffUserPassDesc:'Set a username and password as an alternative to the PIN. Staff can use either one on this device\u2019s login screen.',
+      staffUsernameLabel:'Username', staffPasswordLabel:'Password',
+      staffUserPassRequired:'Enter both a username and a password.',
+      staffUserPassSaved:'Staff username & password saved on this device ✓', staffUserPassCleared:'Staff username & password cleared.',
+      staffUserPassNotSet:'No staff username/password has been set on this device yet.',
+      staffUserPassWrong:'Incorrect username or password.', enterUsername:'Enter a username.'
     },
     km: {
       loginTitle:'ស្ទឹងកាហ្វេ អ្នកគ្រប់គ្រង', loginSub:'បញ្ចូលពាក្យសម្ងាត់អ្នកគ្រប់គ្រងដើម្បីបន្ត',
@@ -688,7 +834,23 @@
       loggingInBtn:'កំពុងចូល…', staffPinTitle:'លេខកូដសម្ងាត់សម្រាប់បញ្ជាទិញតែប៉ុណ្ណោះ',
       staffPinDesc:'កំណត់លេខកូដសម្រាប់បុគ្គលិក។ ពួកគេបញ្ចូលវានៅអេក្រង់ចូលរបស់ឧបករណ៍នេះ ដើម្បីបើកទិដ្ឋភាពបញ្ជាទិញតែប៉ុណ្ណោះ — មិនអាចកែសម្រួលម៉ឺនុយ របាយការណ៍ ឬការកំណត់ទេ។',
       staffPinLabel:'លេខកូដ', clearBtn:'សម្អាត', staffPinRequired:'សូមបញ្ចូលលេខកូដសិន។',
-      staffPinSaved:'បានរក្សាទុកលេខកូដបុគ្គលិកលើឧបករណ៍នេះ ✓', staffPinCleared:'បានលុបលេខកូដបុគ្គលិក។'
+      staffPinSaved:'បានរក្សាទុកលេខកូដបុគ្គលិកលើឧបករណ៍នេះ ✓', staffPinCleared:'បានលុបលេខកូដបុគ្គលិក។',
+      tabDashboard:'ផ្ទាំងគ្រប់គ្រង', dashToday:'ថ្ងៃនេះ', dashOverview:'ទិដ្ឋភាពទូទៅ',
+      dashMenuItems:'មុខម្ហូបសរុប', dashActiveCats:'ប្រភេទ (បើក/សរុប)', dashTables:'តុ',
+      dashMenuStatus:'ស្ថានភាពម៉ឺនុយ', tabCategories:'ប្រភេទ', addCatBtn:'+ បន្ថែមប្រភេទ',
+      addCatTitle:'បន្ថែមប្រភេទ', editCatTitle:'កែសម្រួលប្រភេទ', catActiveCheck:'សកម្ម (អតិថិជន/បុគ្គលិកអាចបញ្ជាទិញបាន)',
+      catOnLabel:'អាចបញ្ជាទិញបាន', catOffLabel:'បិទ — មិនបង្ហាញសម្រាប់បញ្ជាទិញ', turnOnBtn:'បើក', turnOffBtn:'បិទ',
+      noCatsYet:'មិនទាន់មានប្រភេទទេ — ចុច "+ បន្ថែមប្រភេទ" ដើម្បីបង្កើតមួយ។', catOffTag:'ប្រភេទបានបិទ',
+      catInUse:'ប្រភេទនេះកំពុងប្រើដោយមុខម្ហូប — សូមផ្លាស់ប្តូរប្រភេទរបស់មុខម្ហូបទាំងនោះជាមុនសិន។',
+      confirmDeleteCat:'លុបប្រភេទ', categoriesOffline:'បានរក្សាទុកនៅលើឧបករណ៍នេះ។ សូមស្នើអ្នកអភិវឌ្ឍន៍បន្ថែម endpoint ប្រភេទនៅលើ server ដើម្បីធ្វើសមកាលកម្មទៅម៉ឺនុយផ្ទាល់ផងដែរ។',
+      staffMethodPin:'លេខកូដ', staffMethodUserPass:'ឈ្មោះអ្នកប្រើ', staffUsernamePh:'ឈ្មោះអ្នកប្រើ',
+      staffUserPassTitle:'ការចូលដោយឈ្មោះអ្នកប្រើ និងពាក្យសម្ងាត់សម្រាប់បុគ្គលិក',
+      staffUserPassDesc:'កំណត់ឈ្មោះអ្នកប្រើ និងពាក្យសម្ងាត់ជាជម្រើសផ្សេងក្រៅពីលេខកូដ។ បុគ្គលិកអាចប្រើមួយណាក៏បាននៅលើអេក្រង់ចូលរបស់ឧបករណ៍នេះ។',
+      staffUsernameLabel:'ឈ្មោះអ្នកប្រើ', staffPasswordLabel:'ពាក្យសម្ងាត់',
+      staffUserPassRequired:'សូមបញ្ចូលទាំងឈ្មោះអ្នកប្រើ និងពាក្យសម្ងាត់។',
+      staffUserPassSaved:'បានរក្សាទុកឈ្មោះអ្នកប្រើ និងពាក្យសម្ងាត់បុគ្គលិកលើឧបករណ៍នេះ ✓', staffUserPassCleared:'បានលុបឈ្មោះអ្នកប្រើ និងពាក្យសម្ងាត់បុគ្គលិក។',
+      staffUserPassNotSet:'មិនទាន់មានឈ្មោះអ្នកប្រើ/ពាក្យសម្ងាត់បុគ្គលិកនៅលើឧបករណ៍នេះទេ។',
+      staffUserPassWrong:'ឈ្មោះអ្នកប្រើ ឬពាក្យសម្ងាត់មិនត្រឹមត្រូវ។', enterUsername:'សូមបញ្ចូលឈ្មោះអ្នកប្រើ។'
     }
   };
 
@@ -705,9 +867,11 @@
     });
     populateCategorySelects();
     if (typeof renderItems === 'function' && items) renderItems();
+    if (typeof renderCategories === 'function' && categories.length) renderCategories();
     if (typeof renderTables === 'function' && tables) renderTables();
     if (typeof renderPosPanel === 'function' && items) renderPosPanel();
     renderStoreStatus(storeClosed);
+    if (typeof updateStaffMethodUI === 'function') updateStaffMethodUI(false);
   }
 
   function setLang(l){
@@ -717,17 +881,19 @@
   }
 
   function populateCategorySelects(){
-    const cats = ['grilled','soft','beer','alcohol','hot','frappe','iced','cream'];
+    const offTag = lang === 'km' ? ' (បិទ)' : ' (off)';
     document.querySelectorAll('.cat-select-filter').forEach(sel => {
       const cur = sel.value || 'all';
-      sel.innerHTML = `<option value="all">${CAT_LABELS[lang].all}</option>` +
-        cats.map(c => `<option value="${c}">${CAT_LABELS[lang][c]}</option>`).join('');
+      sel.innerHTML = `<option value="all">${lang === 'km' ? 'គ្រប់ប្រភេទ' : 'All categories'}</option>` +
+        categories.map(c => `<option value="${c.id}">${escapeHtml(catLabel(c.id))}${c.active === false ? offTag : ''}</option>`).join('');
       sel.value = cur;
+      if (sel.value !== cur) sel.value = 'all';
     });
     document.querySelectorAll('.cat-select-field').forEach(sel => {
-      const cur = sel.value || 'grilled';
-      sel.innerHTML = cats.map(c => `<option value="${c}">${CAT_LABELS[lang][c]}</option>`).join('');
+      const cur = sel.value || (categories[0] ? categories[0].id : '');
+      sel.innerHTML = categories.map(c => `<option value="${c.id}">${escapeHtml(catLabel(c.id))}${c.active === false ? offTag : ''}</option>`).join('');
       sel.value = cur;
+      if (sel.value !== cur && categories[0]) sel.value = categories[0].id;
     });
   }
 
@@ -777,9 +943,11 @@
       document.getElementById('posPanel').classList.add('active');
     }
     loadItems();
+    loadCategories(); // needed for staff mode too (POS filters by category)
     if (!staffMode){
       loadStoreStatus();
       loadTables();
+      loadDashboard();
     }
   }
 
@@ -795,19 +963,44 @@
     document.getElementById('loginWrap').style.display = 'flex';
   }
 
+  let staffLoginMethod = 'pin';
+
+  function updateStaffMethodUI(resetFields){
+    if (resetFields === undefined) resetFields = true;
+    const isStaff = loginMode === 'staff';
+    document.getElementById('staffMethodToggle').style.display = isStaff ? 'flex' : 'none';
+    const isUserPass = isStaff && staffLoginMethod === 'userpass';
+    document.getElementById('staffUsernameInput').style.display = isUserPass ? 'block' : 'none';
+    document.getElementById('passwordInput').placeholder = !isStaff
+      ? t('passwordPh')
+      : (isUserPass ? t('staffPasswordLabel') : t('staffPinPh'));
+    if (resetFields){
+      document.getElementById('staffUsernameInput').value = '';
+      document.getElementById('passwordInput').value = '';
+      document.getElementById('loginErr').textContent = '';
+    }
+  }
+
   document.querySelectorAll('#loginModeToggle button').forEach(btn => {
     btn.addEventListener('click', () => {
       loginMode = btn.dataset.mode;
       document.querySelectorAll('#loginModeToggle button').forEach(b => b.classList.toggle('active', b === btn));
       document.getElementById('loginSubText').textContent = loginMode === 'staff' ? t('staffLoginSub') : t('loginSub');
-      document.getElementById('passwordInput').placeholder = loginMode === 'staff' ? t('staffPinPh') : t('passwordPh');
-      document.getElementById('passwordInput').value = '';
-      document.getElementById('loginErr').textContent = '';
+      updateStaffMethodUI();
+    });
+  });
+
+  document.querySelectorAll('#staffMethodToggle button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      staffLoginMethod = btn.dataset.method;
+      document.querySelectorAll('#staffMethodToggle button').forEach(b => b.classList.toggle('active', b === btn));
+      updateStaffMethodUI();
     });
   });
 
   document.getElementById('loginBtn').addEventListener('click', doLogin);
   document.getElementById('passwordInput').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+  document.getElementById('staffUsernameInput').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
 
   async function doLogin(){
     const pw = document.getElementById('passwordInput').value;
@@ -816,16 +1009,36 @@
     errEl.textContent = '';
 
     if (loginMode === 'staff'){
-      const storedPin = localStorage.getItem('scm_staff_pin') || '';
       const cachedToken = localStorage.getItem('scm_admin_token_cache') || '';
-      if (!storedPin){
-        errEl.textContent = t('staffPinNotSet');
-        return;
+
+      if (staffLoginMethod === 'userpass'){
+        const username = document.getElementById('staffUsernameInput').value.trim();
+        const storedUser = localStorage.getItem('scm_staff_username') || '';
+        const storedPass = localStorage.getItem('scm_staff_password') || '';
+        if (!storedUser || !storedPass){
+          errEl.textContent = t('staffUserPassNotSet');
+          return;
+        }
+        if (!username){
+          errEl.textContent = t('enterUsername');
+          return;
+        }
+        if (username !== storedUser || pw !== storedPass){
+          errEl.textContent = t('staffUserPassWrong');
+          return;
+        }
+      } else {
+        const storedPin = localStorage.getItem('scm_staff_pin') || '';
+        if (!storedPin){
+          errEl.textContent = t('staffPinNotSet');
+          return;
+        }
+        if (pw !== storedPin){
+          errEl.textContent = t('staffPinWrong');
+          return;
+        }
       }
-      if (pw !== storedPin){
-        errEl.textContent = t('staffPinWrong');
-        return;
-      }
+
       if (!cachedToken){
         errEl.textContent = t('staffLoginNeedsAdmin');
         return;
@@ -932,6 +1145,8 @@
       tab.classList.add('active');
       document.getElementById(tab.dataset.panel).classList.add('active');
       if (tab.dataset.panel === 'ordersPanel' && !ordersLoadedOnce) loadOrders();
+      if (tab.dataset.panel === 'dashboardPanel') loadDashboard();
+      if (tab.dataset.panel === 'categoriesPanel' && !categoriesLoadedOnce) loadCategories();
     });
   });
 
@@ -991,7 +1206,7 @@
         <div class="thumb">${thumb}</div>
         <div class="body">
           <div class="name">${escapeHtml(name)}</div>
-          <div class="meta">${(CAT_LABELS[lang] && CAT_LABELS[lang][it.cat]) || it.cat}${it.popular ? ' · ★' : ''}${it.active === false ? ' · ' + (lang==='km' ? 'អសកម្ម' : 'inactive') : ''}</div>
+          <div class="meta">${escapeHtml(catLabel(it.cat))}${it.popular ? ' · ★' : ''}${it.active === false ? ' · ' + (lang==='km' ? 'អសកម្ម' : 'inactive') : ''}${activeCategoryIds().indexOf(it.cat) === -1 ? ' · ' + t('catOffTag') : ''}</div>
           <div class="price">${escapeHtml(it.price || '')}</div>
           <div class="row">
             <button class="btn ghost small" data-edit="${it.id}">${t('editBtn')}</button>
@@ -1017,13 +1232,202 @@
     }
   }
 
+  /* ---------------- categories: list + add/edit/toggle ---------------- */
+
+  function renderCategories(){
+    const area = document.getElementById('categoriesArea');
+    if (!area) return;
+    if (!categories.length){
+      area.innerHTML = `<div class="empty">${t('noCatsYet')}</div>`;
+      return;
+    }
+    area.innerHTML = `<div class="table-grid">${categories.map(catCardHtml).join('')}</div>`;
+    area.querySelectorAll('[data-catedit]').forEach(btn => {
+      btn.addEventListener('click', () => openCatModal(categories.find(c => c.id === btn.dataset.catedit)));
+    });
+    area.querySelectorAll('[data-cattoggle]').forEach(btn => {
+      btn.addEventListener('click', () => toggleCategory(btn.dataset.cattoggle));
+    });
+    area.querySelectorAll('[data-catdel]').forEach(btn => {
+      btn.addEventListener('click', () => deleteCategory(btn.dataset.catdel));
+    });
+  }
+
+  function catCardHtml(c){
+    const on = c.active !== false;
+    const itemCount = items.filter(it => it.cat === c.id).length;
+    return `
+      <div class="table-card">
+        <div class="tname">${escapeHtml(c.km || c.en || c.id)}</div>
+        <div class="tnote">${escapeHtml(c.km && c.en ? c.en : '')}${itemCount ? ` · ${itemCount} ${lang==='km'?'មុខម្ហូប':'items'}` : ''}</div>
+        <span class="tstatus ${on ? 'available' : 'occupied'}">${on ? t('catOnLabel') : t('catOffLabel')}</span>
+        <div class="row">
+          <button class="btn ghost small" data-catedit="${c.id}">${t('editBtn')}</button>
+          <button class="btn small" data-cattoggle="${c.id}">${on ? t('turnOffBtn') : t('turnOnBtn')}</button>
+        </div>
+        ${itemCount ? '' : `<div class="row"><button class="btn danger small" data-catdel="${c.id}">${t('deleteBtn')}</button></div>`}
+      </div>`;
+  }
+
+  async function syncCategoryToServer(payload, method){
+    if (!categoriesBackendAvailable) return;
+    try {
+      await apiFetch('/admin-categories', { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    } catch (err) {
+      categoriesBackendAvailable = false; // stop retrying every click; still saved locally
+    }
+  }
+
+  async function toggleCategory(id){
+    const c = categories.find(x => x.id === id);
+    if (!c) return;
+    c.active = !(c.active !== false);
+    if (!c.active && posCat === id) posCat = 'all';
+    saveLocalCategories();
+    renderCategories();
+    populateCategorySelects();
+    renderItems();
+    renderPosPanel();
+    syncCategoryToServer({ id, active: c.active }, 'PUT');
+  }
+
+  let editingCatId = null;
+  document.getElementById('addCatBtn').addEventListener('click', () => openCatModal(null));
+  document.getElementById('cancelCatBtn').addEventListener('click', closeCatModal);
+  document.getElementById('catModalBackdrop').addEventListener('click', e => {
+    if (e.target.id === 'catModalBackdrop') closeCatModal();
+  });
+
+  function openCatModal(c){
+    editingCatId = c ? c.id : null;
+    document.getElementById('catModalTitle').textContent = c ? t('editCatTitle') : t('addCatTitle');
+    document.getElementById('catModalMsg').textContent = '';
+    document.getElementById('catModalMsg').className = 'modal-msg';
+    document.getElementById('catFieldKm').value = c ? c.km || '' : '';
+    document.getElementById('catFieldEn').value = c ? c.en || '' : '';
+    document.getElementById('catFieldActive').checked = c ? c.active !== false : true;
+    document.getElementById('catModalBackdrop').classList.add('show');
+  }
+  function closeCatModal(){
+    document.getElementById('catModalBackdrop').classList.remove('show');
+  }
+
+  document.getElementById('saveCatBtn').addEventListener('click', async () => {
+    const msgEl = document.getElementById('catModalMsg');
+    const btn = document.getElementById('saveCatBtn');
+    msgEl.textContent = ''; msgEl.className = 'modal-msg';
+
+    const km = document.getElementById('catFieldKm').value.trim();
+    const en = document.getElementById('catFieldEn').value.trim();
+    const active = document.getElementById('catFieldActive').checked;
+    if (!km && !en){
+      msgEl.textContent = t('enterKmOrEn');
+      msgEl.className = 'modal-msg error';
+      return;
+    }
+
+    btn.disabled = true; btn.textContent = t('savingBtn');
+    try {
+      if (editingCatId){
+        const c = categories.find(x => x.id === editingCatId);
+        if (c){ c.km = km; c.en = en; c.active = active; if (!active && posCat === c.id) posCat = 'all'; }
+        await syncCategoryToServer({ id: editingCatId, km, en, active }, 'PUT');
+      } else {
+        const id = slugifyCatId(en || km);
+        const newCat = { id, km, en, active };
+        if (categoriesBackendAvailable){
+          try {
+            const data = await apiFetch('/admin-categories', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newCat) });
+            categories.push(data.category || newCat);
+          } catch (err) {
+            categoriesBackendAvailable = false;
+            categories.push(newCat);
+          }
+        } else {
+          categories.push(newCat);
+        }
+      }
+      saveLocalCategories();
+      populateCategorySelects();
+      renderCategories();
+      renderItems();
+      renderPosPanel();
+      closeCatModal();
+      if (!categoriesBackendAvailable) {
+        msgEl.textContent = '';
+      }
+    } catch (err) {
+      msgEl.textContent = err.message;
+      msgEl.className = 'modal-msg error';
+    } finally {
+      btn.disabled = false; btn.textContent = t('saveBtn');
+    }
+  });
+
+  async function deleteCategory(id){
+    const c = categories.find(x => x.id === id);
+    if (!c) return;
+    if (items.some(it => it.cat === id)){
+      alert(t('catInUse'));
+      return;
+    }
+    if (!confirm(`${t('confirmDeleteCat')} "${c.km || c.en}"?`)) return;
+    categories = categories.filter(x => x.id !== id);
+    if (posCat === id) posCat = 'all';
+    saveLocalCategories();
+    populateCategorySelects();
+    renderCategories();
+    renderPosPanel();
+    if (categoriesBackendAvailable){
+      try { await apiFetch('/admin-categories?id=' + encodeURIComponent(id), { method: 'DELETE' }); }
+      catch (err) { categoriesBackendAvailable = false; }
+    }
+  }
+
+  /* ---------------- dashboard ---------------- */
+
+  async function loadDashboard(){
+    document.getElementById('dashItemCount').textContent = items.length;
+    document.getElementById('dashCatCount').textContent = activeCategoryIds().length + ' / ' + categories.length;
+    document.getElementById('dashTableCount').textContent = tables.length;
+    document.getElementById('dashMenuStatus').textContent = storeClosed ? t('menuClosed') : t('menuOpen');
+    document.getElementById('dashOrdersToday').textContent = '…';
+    document.getElementById('dashRevenueToday').textContent = '…';
+    document.getElementById('dashAvgToday').textContent = '…';
+    document.getElementById('dashTopItemsArea').innerHTML = `<div class="loading">${t('loadingText')}</div>`;
+    try {
+      const today = todayKey();
+      const data = await apiFetch('/admin-orders?from=' + encodeURIComponent(today) + '&to=' + encodeURIComponent(today));
+      const summary = data.summary || {};
+      document.getElementById('dashOrdersToday').textContent = summary.orderCount || 0;
+      document.getElementById('dashRevenueToday').textContent = fmtRiel(summary.totalRevenue);
+      document.getElementById('dashAvgToday').textContent = fmtRiel(summary.orderCount ? summary.totalRevenue / summary.orderCount : 0);
+      const topItems = summary.topItems || [];
+      document.getElementById('dashTopItemsArea').innerHTML = topItems.length
+        ? `<div class="table-wrap"><table><thead><tr><th>${lang==='km'?'មុខម្ហូប':'Item'}</th><th>${t('qtyCol')}</th><th>${t('revenueLabel')}</th></tr></thead><tbody>${
+            topItems.map(it => `<tr><td>${escapeHtml(it.label)}</td><td>${it.qty}</td><td>${fmtRiel(it.revenue)}</td></tr>`).join('')
+          }</tbody></table></div>`
+        : `<div class="empty">${t('noSalesRange')}</div>`;
+    } catch (err) {
+      document.getElementById('dashOrdersToday').textContent = '—';
+      document.getElementById('dashRevenueToday').textContent = '—';
+      document.getElementById('dashAvgToday').textContent = '—';
+      document.getElementById('dashTopItemsArea').innerHTML = `<div class="empty">${t('couldNotLoadOrders')} ${escapeHtml(err.message)}</div>`;
+    }
+  }
+
   /* ---------------- items: add/edit modal ---------------- */
 
   /* ---------------- New Order (POS) ---------------- */
 
-  // Point this at your existing customer-facing order-placement Netlify
-  // function so staff-placed orders land in the same order log as the
-  // live menu. Adjust the path/payload shape to match that function.
+  // Points at your existing order-placement Netlify function so
+  // staff-placed orders land in the same order log as the live menu.
+  // If orders still fail after this update, the most likely cause is
+  // that this path or the payload shape below doesn't match your real
+  // function — check your Netlify function's folder name (the part
+  // after /.netlify/functions/) and adjust ORDER_ENDPOINT, and check
+  // what field names it expects and adjust the `payload` object in
+  // submitPosOrder() below to match.
   const ORDER_ENDPOINT = '/place-order';
 
   let posCat = 'all';
@@ -1043,8 +1447,13 @@
   function renderPosChips(){
     const wrap = document.getElementById('posCatChips');
     if (!wrap) return;
-    const cats = ['all', ...new Set(items.map(it => it.cat))];
-    wrap.innerHTML = cats.map(c => `<button class="chip ${c === posCat ? 'active' : ''}" data-chip="${c}">${c === 'all' ? CAT_LABELS[lang].all : (CAT_LABELS[lang][c] || c)}</button>`).join('');
+    // Only categories that are turned ON get a chip here — turning a
+    // category off removes it (and its items) from the orderable list
+    // without deleting the category or its items.
+    const activeIds = activeCategoryIds();
+    const present = [...new Set(items.filter(it => it.active !== false).map(it => it.cat))].filter(id => activeIds.includes(id));
+    const cats = ['all', ...present];
+    wrap.innerHTML = cats.map(c => `<button class="chip ${c === posCat ? 'active' : ''}" data-chip="${c}">${c === 'all' ? (lang==='km'?'គ្រប់ប្រភេទ':'All categories') : escapeHtml(catLabel(c))}</button>`).join('');
     wrap.querySelectorAll('[data-chip]').forEach(btn => {
       btn.addEventListener('click', () => { posCat = btn.dataset.chip; renderPosPanel(); });
     });
@@ -1053,7 +1462,8 @@
   function renderPosItems(){
     const area = document.getElementById('posItemsArea');
     if (!area) return;
-    let list = items.filter(it => it.active !== false);
+    const activeIds = activeCategoryIds();
+    let list = items.filter(it => it.active !== false && activeIds.includes(it.cat));
     if (posCat !== 'all') list = list.filter(it => it.cat === posCat);
     if (!list.length){
       area.innerHTML = `<div class="empty">${t('noItemsMatch')}</div>`;
@@ -1083,6 +1493,7 @@
   function addToCart(id){
     const it = items.find(i => i.id === id);
     if (!it) return;
+    if (it.active === false || !activeCategoryIds().includes(it.cat)) return; // category turned off — not orderable
     const existing = cart.find(c => c.id === id);
     if (existing) existing.qty += 1;
     else cart.push({ id: it.id, name: it.km || it.en || '(untitled)', price: parsePrice(it.price), qty: 1 });
@@ -1122,6 +1533,8 @@
     list.querySelectorAll('[data-dec]').forEach(b => b.addEventListener('click', () => changeQty(b.dataset.dec, -1)));
     const total = cart.reduce((s, c) => s + c.price * c.qty, 0);
     totalEl.textContent = fmtRielPos(total);
+    const submitBtn = document.getElementById('posSubmitBtn');
+    if (submitBtn) submitBtn.disabled = !cart.length;
   }
 
   document.getElementById('posSubmitBtn').addEventListener('click', submitPosOrder);
@@ -1185,6 +1598,38 @@
     msgEl.className = 'modal-msg ok';
   });
 
+  /* ---------------- staff username & password settings ---------------- */
+
+  const staffUsernameSettingEl = document.getElementById('staffUsernameSettingInput');
+  const staffPasswordSettingEl = document.getElementById('staffPasswordSettingInput');
+  if (staffUsernameSettingEl) staffUsernameSettingEl.value = localStorage.getItem('scm_staff_username') || '';
+  if (staffPasswordSettingEl) staffPasswordSettingEl.value = localStorage.getItem('scm_staff_password') || '';
+
+  document.getElementById('saveStaffUserPassBtn').addEventListener('click', () => {
+    const username = staffUsernameSettingEl.value.trim();
+    const password = staffPasswordSettingEl.value.trim();
+    const msgEl = document.getElementById('staffUserPassMsg');
+    if (!username || !password){
+      msgEl.textContent = t('staffUserPassRequired');
+      msgEl.className = 'modal-msg error';
+      return;
+    }
+    localStorage.setItem('scm_staff_username', username);
+    localStorage.setItem('scm_staff_password', password);
+    msgEl.textContent = t('staffUserPassSaved');
+    msgEl.className = 'modal-msg ok';
+  });
+
+  document.getElementById('clearStaffUserPassBtn').addEventListener('click', () => {
+    localStorage.removeItem('scm_staff_username');
+    localStorage.removeItem('scm_staff_password');
+    staffUsernameSettingEl.value = '';
+    staffPasswordSettingEl.value = '';
+    const msgEl = document.getElementById('staffUserPassMsg');
+    msgEl.textContent = t('staffUserPassCleared');
+    msgEl.className = 'modal-msg ok';
+  });
+
   document.getElementById('addItemBtn').addEventListener('click', () => openItemModal(null));
   document.getElementById('cancelItemBtn').addEventListener('click', closeItemModal);
   document.getElementById('itemModalBackdrop').addEventListener('click', e => {
@@ -1199,7 +1644,8 @@
     document.getElementById('itemModalMsg').className = 'modal-msg';
     document.getElementById('fieldKm').value = it ? it.km || '' : '';
     document.getElementById('fieldEn').value = it ? it.en || '' : '';
-    document.getElementById('fieldCat').value = it ? it.cat || 'grilled' : (document.getElementById('catFilter').value !== 'all' ? document.getElementById('catFilter').value : 'grilled');
+    const defaultCat = categories[0] ? categories[0].id : '';
+    document.getElementById('fieldCat').value = it ? it.cat || defaultCat : (document.getElementById('catFilter').value !== 'all' ? document.getElementById('catFilter').value : defaultCat);
     document.getElementById('fieldNum').value = it ? it.num || '' : '';
     document.getElementById('fieldPrice').value = it ? it.price || '' : '';
     document.getElementById('fieldPopular').checked = !!(it && it.popular);
