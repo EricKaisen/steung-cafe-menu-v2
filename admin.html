@@ -579,19 +579,11 @@
      back to a copy saved in this browser (localStorage) so the admin
      still works — add the matching Netlify function later to have
      categories sync everywhere (including the live customer menu). */
-  const CAT_STORAGE_KEY = 'scm_admin_categories';
-  const DEFAULT_CATEGORIES = [
-    { id:'grilled', km:'អាហារ',        en:'Food',        active:true },
-    { id:'soft',    km:'ភេសជ្ជៈទន់',   en:'Soft Drinks', active:true },
-    { id:'beer',    km:'ស្រាបៀរ',       en:'Beer',        active:true },
-    { id:'alcohol', km:'គ្រឿងស្រវឹង',   en:'Alcohol',     active:true },
-    { id:'hot',     km:'ភេសជ្ជៈក្តៅ',   en:'Hot Drink',   active:true },
-    { id:'frappe',  km:'ហ្វ្រាបភេ',      en:'Frappe',      active:true },
-    { id:'iced',    km:'ភេសជ្ជៈត្រជាក់', en:'Iced Drink',  active:true },
-    { id:'cream',   km:'ក្រែម',          en:'Cream',       active:true }
-  ];
-  let categories = DEFAULT_CATEGORIES.map(c => Object.assign({}, c)); // seeded now so early renders don't break; refreshed by loadCategories()
-  let categoriesBackendAvailable = true; // flips false the first time /admin-categories isn't found
+  /* No built-in category list and no browser copy: categories live only in the "Categories" tab
+     of the Google Sheet. If the sheet can't be read or written, the admin says so instead of
+     silently saving somewhere else. */
+  try { localStorage.removeItem('scm_admin_categories'); } catch (e) {} // drop the old browser-only copy
+  let categories = [];
   let categoriesLoadedOnce = false;
 
   function catLabel(id){
@@ -601,15 +593,6 @@
   }
   function activeCategoryIds(){
     return categories.filter(c => c.active !== false).map(c => c.id);
-  }
-  function loadLocalCategories(){
-    try {
-      const raw = JSON.parse(localStorage.getItem(CAT_STORAGE_KEY) || 'null');
-      return Array.isArray(raw) && raw.length ? raw : null;
-    } catch (e) { return null; }
-  }
-  function saveLocalCategories(){
-    localStorage.setItem(CAT_STORAGE_KEY, JSON.stringify(categories));
   }
   function slugifyCatId(str){
     const base = String(str || 'cat').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'cat';
@@ -621,14 +604,12 @@
   async function loadCategories(){
     try {
       const data = await apiFetch('/admin-categories');
-      categories = (data.categories && data.categories.length) ? data.categories : (loadLocalCategories() || categories);
-      categoriesBackendAvailable = true;
+      categories = Array.isArray(data.categories) ? data.categories : [];
     } catch (err) {
-      categoriesBackendAvailable = false;
-      categories = loadLocalCategories() || categories;
+      categories = [];
+      alert(t('couldNotLoadCats') + ' ' + err.message);
     }
     categoriesLoadedOnce = true;
-    saveLocalCategories();
     populateCategorySelects();
     renderCategories();
     if (items.length) { renderItems(); }
@@ -672,7 +653,7 @@
       dashMenuStatus:'Menu status', tabCategories:'Categories', addCatBtn:'+ Add category',
       addCatTitle:'Add category', editCatTitle:'Edit category', catActiveCheck:'Active (customers can order it)',
       catOnLabel:'Orderable', catOffLabel:'Off — hidden from ordering', turnOnBtn:'Turn on', turnOffBtn:'Turn off',
-      noCatsYet:'No categories yet — click "+ Add category" to create one.', catOffTag:'category off',
+      couldNotLoadCats:'Could not load categories from the sheet:', couldNotSaveCats:'Could not save to the sheet:', noCatsYet:'No categories yet — click "+ Add category" to create one.', catOffTag:'category off',
       catInUse:'This category is used by menu items — reassign or delete those items first.',
       confirmDeleteCat:'Delete category', categoriesOffline:'Saved on this device. Ask your developer to add a categories endpoint on the server so this also syncs to the live menu.'
     },
@@ -711,7 +692,7 @@
       dashMenuStatus:'ស្ថានភាពម៉ឺនុយ', tabCategories:'ប្រភេទ', addCatBtn:'+ បន្ថែមប្រភេទ',
       addCatTitle:'បន្ថែមប្រភេទ', editCatTitle:'កែសម្រួលប្រភេទ', catActiveCheck:'សកម្ម (អតិថិជនអាចបញ្ជាទិញបាន)',
       catOnLabel:'អាចបញ្ជាទិញបាន', catOffLabel:'បិទ — មិនបង្ហាញសម្រាប់បញ្ជាទិញ', turnOnBtn:'បើក', turnOffBtn:'បិទ',
-      noCatsYet:'មិនទាន់មានប្រភេទទេ — ចុច "+ បន្ថែមប្រភេទ" ដើម្បីបង្កើតមួយ។', catOffTag:'ប្រភេទបានបិទ',
+      couldNotLoadCats:'មិនអាចផ្ទុកប្រភេទពី Sheet បានទេ៖', couldNotSaveCats:'មិនអាចរក្សាទុកទៅ Sheet បានទេ៖', noCatsYet:'មិនទាន់មានប្រភេទទេ — ចុច "+ បន្ថែមប្រភេទ" ដើម្បីបង្កើតមួយ។', catOffTag:'ប្រភេទបានបិទ',
       catInUse:'ប្រភេទនេះកំពុងប្រើដោយមុខម្ហូប — សូមផ្លាស់ប្តូរប្រភេទរបស់មុខម្ហូបទាំងនោះជាមុនសិន។',
       confirmDeleteCat:'លុបប្រភេទ', categoriesOffline:'បានរក្សាទុកនៅលើឧបករណ៍នេះ។ សូមស្នើអ្នកអភិវឌ្ឍន៍បន្ថែម endpoint ប្រភេទនៅលើ server ដើម្បីធ្វើសមកាលកម្មទៅម៉ឺនុយផ្ទាល់ផងដែរ។'
     }
@@ -1031,23 +1012,22 @@
   }
 
   async function syncCategoryToServer(payload, method){
-    if (!categoriesBackendAvailable) return;
-    try {
-      await apiFetch('/admin-categories', { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-    } catch (err) {
-      categoriesBackendAvailable = false; // stop retrying every click; still saved locally
-    }
+    await apiFetch('/admin-categories', { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
   }
 
   async function toggleCategory(id){
     const c = categories.find(x => x.id === id);
     if (!c) return;
-    c.active = !(c.active !== false);
-    saveLocalCategories();
+    const next = !(c.active !== false);
+    try {
+      await syncCategoryToServer({ id: c.id, km: c.km, en: c.en, active: next }, 'PUT');
+      c.active = next;
+    } catch (err) {
+      alert(t('couldNotSaveCats') + ' ' + err.message);
+    }
     renderCategories();
     populateCategorySelects();
     renderItems();
-    syncCategoryToServer({ id, active: c.active }, 'PUT');
   }
 
   let editingCatId = null;
@@ -1089,31 +1069,18 @@
     try {
       if (editingCatId){
         const c = categories.find(x => x.id === editingCatId);
+        await syncCategoryToServer({ id: editingCatId, km, en, active }, 'PUT'); // throws -> shown in the modal
         if (c){ c.km = km; c.en = en; c.active = active; }
-        await syncCategoryToServer({ id: editingCatId, km, en, active }, 'PUT');
       } else {
         const id = slugifyCatId(en || km);
         const newCat = { id, km, en, active };
-        if (categoriesBackendAvailable){
-          try {
-            const data = await apiFetch('/admin-categories', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newCat) });
-            categories.push(data.category || newCat);
-          } catch (err) {
-            categoriesBackendAvailable = false;
-            categories.push(newCat);
-          }
-        } else {
-          categories.push(newCat);
-        }
+        const data = await apiFetch('/admin-categories', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newCat) });
+        categories.push(data.category || newCat);
       }
-      saveLocalCategories();
       populateCategorySelects();
       renderCategories();
       renderItems();
       closeCatModal();
-      if (!categoriesBackendAvailable) {
-        msgEl.textContent = '';
-      }
     } catch (err) {
       msgEl.textContent = err.message;
       msgEl.className = 'modal-msg error';
@@ -1130,14 +1097,15 @@
       return;
     }
     if (!confirm(`${t('confirmDeleteCat')} "${c.km || c.en}"?`)) return;
+    try {
+      await apiFetch('/admin-categories?id=' + encodeURIComponent(id), { method: 'DELETE' });
+    } catch (err) {
+      alert(t('couldNotSaveCats') + ' ' + err.message);
+      return;
+    }
     categories = categories.filter(x => x.id !== id);
-    saveLocalCategories();
     populateCategorySelects();
     renderCategories();
-    if (categoriesBackendAvailable){
-      try { await apiFetch('/admin-categories?id=' + encodeURIComponent(id), { method: 'DELETE' }); }
-      catch (err) { categoriesBackendAvailable = false; }
-    }
   }
 
   /* ---------------- dashboard ---------------- */

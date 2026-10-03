@@ -1246,17 +1246,29 @@
   const CAFE_CLOSED_TODAY = false;
 
   /* ================= DATA ================= */
-  const CATEGORIES = [
-    { id:'all',     km:'ទាំងអស់',        en:'All',          icon:'ic-flame' },
-    { id:'grilled', km:'អាំង',            en:'Grilled',      icon:'ic-flame' },
-    { id:'soft',    km:'ភេសជ្ជៈ',      en:'Soft Drinks',  icon:'ic-droplet' },
-    { id:'beer',    km:'ស្រាបៀរ',         en:'Beer',         icon:'ic-bottle' },
-    { id:'alcohol', km:'ស្រា',       en:'Alcohol',      icon:'ic-glass' },
-    { id:'hot',     km:'ភេសជ្ជៈក្ដៅ',        en:'Hot Drink',    icon:'ic-glass' },
-    { id:'frappe',  km:'ភេសជ្ជៈក្រឡុក',    en:'Frappe',       icon:'ic-can' },
-    { id:'iced',    km:'ភេសជ្ជៈត្រជាក់',      en:'Iced Drink',   icon:'ic-droplet' },
-    { id:'cream',   km:'ភេសជ្ជៈគ្រីម',      en:'Cream',        icon:'ic-glass' },
-  ];
+  /* Categories come ONLY from the "Categories" tab of the Google Sheet (edit them in admin.html).
+     There is no built-in category list any more. The sheet has no icon column, so the icon is looked
+     up by category id below; any id not listed here gets the default glass icon. */
+  const ALL_CATEGORY = { id:'all', km:'ទាំងអស់', en:'All', icon:'ic-flame' };
+  const CAT_ICONS = {
+    grilled:'ic-flame', soft:'ic-droplet', beer:'ic-bottle', alcohol:'ic-glass',
+    hot:'ic-glass', frappe:'ic-can', iced:'ic-droplet', cream:'ic-glass'
+  };
+  const DEFAULT_ICON = 'ic-glass';
+  let CATEGORIES = [ALL_CATEGORY];
+  let categoriesLoaded = false;
+
+  function escapeHtml(str){
+    return String(str == null ? '' : str).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+  }
+
+  // Items whose category isn't on the menu (e.g. set inactive in the sheet) are hidden.
+  // Until the sheet has answered, show everything so the grid is never blank.
+  function menuItems(){
+    if (!categoriesLoaded) return ITEMS;
+    const ids = new Set(CATEGORIES.map(c => c.id));
+    return ITEMS.filter(i => ids.has(i.cat));
+  }
 
   /* Updated with correct beverage images */
   const ITEMS = [
@@ -1365,7 +1377,7 @@
 
   /* ================= RENDER: SIDEBAR NAV & TABS ================= */
   function catCount(id){
-    return id === 'all' ? ITEMS.length : ITEMS.filter(i => i.cat === id).length;
+    return id === 'all' ? menuItems().length : ITEMS.filter(i => i.cat === id).length;
   }
 
   function renderNavAndTabs(){
@@ -1375,7 +1387,7 @@
     tabs.innerHTML = '';
 
     CATEGORIES.forEach(c => {
-      const label = lang === 'km' ? c.km : c.en;
+      const label = escapeHtml(lang === 'km' ? c.km : c.en);
       const isActive = c.id === activeCat;
 
       const sideEl = document.createElement('div');
@@ -1415,7 +1427,7 @@
     } else if (foodsCats.includes(item.cat)){
       return grillOpen;
     }
-    return false; // Unknown category
+    return cafeOpen || grillOpen; // Category added from the sheet: orderable whenever the cafe or the grill is open
   }
   
   function getItemAvailabilityText(item){
@@ -1426,6 +1438,10 @@
     }
     if (cafeOnlyCats.includes(item.cat)){
       return lang === 'km' ? '7ព្រឹក-5ល្ងាច' : '7 AM - 5 PM';
+    }
+    const foodsCats = ['grilled', 'beer', 'alcohol'];
+    if (!foodsCats.includes(item.cat)){
+      return lang === 'km' ? '7ព្រឹក-1យប់' : '7 AM - 1 AM'; // sheet-added category
     }
     return lang === 'km' ? '5ល្ងាច-1យប់' : '5 PM - 1 AM';
   }
@@ -1786,7 +1802,7 @@
   function renderGrid(){
     const grid = document.getElementById('grid');
     grid.innerHTML = '';
-    let list = activeCat === 'all' ? ITEMS : ITEMS.filter(i => i.cat === activeCat);
+    let list = activeCat === 'all' ? menuItems() : ITEMS.filter(i => i.cat === activeCat);
 
     const term = searchTerm.trim().toLowerCase();
     if (term){
@@ -1814,8 +1830,8 @@
     }
 
     list.forEach((item, idx) => {
-      const catMeta = CATEGORIES.find(c => c.id === item.cat);
-      const catLabel = lang === 'km' ? catMeta.km : catMeta.en;
+      const catMeta = CATEGORIES.find(c => c.id === item.cat) || { km:item.cat, en:item.cat }; // not loaded yet / unknown id
+      const catLabel = escapeHtml(lang === 'km' ? catMeta.km : catMeta.en);
       const name = lang === 'km' ? item.km : item.en;
       const isAvailable = canOrderItem(item);
       const availText = getItemAvailabilityText(item);
@@ -2056,6 +2072,34 @@
   renderNavAndTabs();
   renderOrderPanel();
   renderGrid();
+
+  function applyCategories(list){
+    CATEGORIES = [ALL_CATEGORY].concat(list);
+    categoriesLoaded = true;
+    if (!CATEGORIES.some(c => c.id === activeCat)) activeCat = 'all';
+    renderNavAndTabs();
+    renderGrid();
+  }
+
+  async function loadCategoriesFromSheet(){
+    try {
+      const res = await fetch('/.netlify/functions/get-categories');
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+      const list = (Array.isArray(data.categories) ? data.categories : [])
+        .filter(c => c && c.id && c.id !== 'all' && (c.km || c.en))
+        .map(c => ({ id:c.id, km:c.km || c.en, en:c.en || c.km, icon: CAT_ICONS[c.id] || DEFAULT_ICON }));
+      if (!list.length) throw new Error('Categories tab is empty or unreachable');
+      applyCategories(list);
+    } catch (err) {
+      // Degraded mode: the sheet couldn't be read, so build the tabs from the categories the items use
+      // (labelled by id) rather than leaving the menu without navigation.
+      console.warn('Categories sheet unavailable, deriving from items:', err.message);
+      const ids = [...new Set(ITEMS.map(i => i.cat))];
+      applyCategories(ids.map(id => ({ id, km:id, en:id, icon: CAT_ICONS[id] || DEFAULT_ICON })));
+    }
+  }
+  loadCategoriesFromSheet();
 </script>
 
 
